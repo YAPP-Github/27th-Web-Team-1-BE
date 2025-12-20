@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: api
+  profiles:
+    active: local
+server:
+  servlet:
+    context-path: /api/v1

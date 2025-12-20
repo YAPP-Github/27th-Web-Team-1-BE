@@ -1,0 +1,7 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    env_file:
+      - .env.local
+    ports:
+      - '5432'
