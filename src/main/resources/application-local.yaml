@@ -18,7 +18,7 @@ spring:
     docker:
         compose:
             enabled: true
-            file: compose.yaml
+            file: infra/local/compose.yaml
 
 logging:
     level:

@@ -28,9 +28,6 @@ RUN addgroup -S spring && adduser -S spring -G spring
 
 WORKDIR /app
 
-RUN mkdir -p /var/log/springboot && \
-    chown -R spring:spring /var/log/springboot
-
 COPY --from=build --chown=spring:spring /app/app.jar app.jar
 
 USER spring:spring
