@@ -1,0 +1,38 @@
+package kr.co.lokit.api.config.docs
+
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.servers.Server
+import org.springdoc.core.models.GroupedOpenApi
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+
+@Configuration
+class OpenApiConfig {
+    @Value("\${server.servlet.context-path:/}")
+    private lateinit var contextPath: String
+
+    @Bean
+    fun openApi(): OpenAPI =
+        OpenAPI()
+            .info(
+                Info()
+                    .title("Lokit API")
+                    .version("1.0.0")
+                    .description("Lokit API 문서"),
+            )
+            .servers(
+                listOf(
+                    Server().url(contextPath).description("API Server"),
+                ),
+            )
+
+    @Bean
+    fun apiGroup(): GroupedOpenApi =
+        GroupedOpenApi
+            .builder()
+            .group("api")
+            .packagesToScan("kr.co.lokit.api")
+            .build()
+}

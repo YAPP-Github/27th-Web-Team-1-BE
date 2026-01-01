@@ -32,3 +32,14 @@ management:
     endpoint:
         health:
             show-details: when-authorized
+
+springdoc:
+    api-docs:
+        enabled: true
+        path: /docs
+    swagger-ui:
+        enabled: true
+        path: /swagger
+        display-request-duration: true
+    default-consumes-media-type: application/json
+    default-produces-media-type: application/json
