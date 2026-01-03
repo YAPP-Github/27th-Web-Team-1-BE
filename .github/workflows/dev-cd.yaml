@@ -24,6 +24,19 @@ jobs:
                     aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
                     aws-region: ${{ env.AWS_REGION }}
 
+            -   name: Get Runner IP
+                id: ip
+                run: echo "runner_ip=$(curl -s https://checkip.amazonaws.com)" >> $GITHUB_OUTPUT
+
+            -   name: Add Runner IP to Security Group
+                run: |
+                    aws ec2 authorize-security-group-ingress \
+                        --group-id ${{ secrets.DEV_SECURITY_GROUP_ID }} \
+                        --protocol tcp \
+                        --port 22 \
+                        --cidr ${{ steps.ip.outputs.runner_ip }}/32 \
+                        --region ${{ env.AWS_REGION }}
+
             -   name: Login to Amazon ECR
                 id: login-ecr
                 uses: aws-actions/amazon-ecr-login@v2
@@ -97,3 +110,13 @@ jobs:
                         docker logs $CONTAINER_NAME --tail 30
 
                         docker image prune -af --filter "until=24h"
+
+            -   name: Remove Runner IP from Security Group
+                if: always()
+                run: |
+                    aws ec2 revoke-security-group-ingress \
+                        --group-id ${{ secrets.DEV_SECURITY_GROUP_ID }} \
+                        --protocol tcp \
+                        --port 22 \
+                        --cidr ${{ steps.ip.outputs.runner_ip }}/32 \
+                        --region ${{ env.AWS_REGION }} || true
