@@ -22,8 +22,10 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework:spring-aspects")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-restclient")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
     // implementation("org.springframework.boot:spring-boot-starter-security")
     // implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")

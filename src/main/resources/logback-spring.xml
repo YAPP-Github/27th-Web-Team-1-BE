@@ -2,7 +2,20 @@
 <configuration>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{clientIp}] [%X{requestMethod} %X{requestUri}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>requestUri</includeMdcKeyName>
+            <includeMdcKeyName>requestMethod</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
+            <includeMdcKeyName>status</includeMdcKeyName>
+            <includeMdcKeyName>latencyMs</includeMdcKeyName>
+            <includeMdcKeyName>requestBody</includeMdcKeyName>
+            <includeMdcKeyName>responseBody</includeMdcKeyName>
         </encoder>
     </appender>
 
@@ -26,7 +39,7 @@
 
     <springProfile name="prod">
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="JSON"/>
         </root>
     </springProfile>
 </configuration>
