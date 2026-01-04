@@ -11,6 +11,8 @@ spring:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
                 format_sql: true
+                show_sql: true
+                use_sql_comments: true
             jdbc:
                 time_zone: Asia/Seoul
         open-in-view: false
@@ -22,6 +24,8 @@ spring:
 
 logging:
     level:
+        org.hibernate.orm.jdbc.bind: trace
+        root: INFO
         kr.co.lokit.api: DEBUG
 
 management:
@@ -30,3 +34,14 @@ management:
             exposure:
                 include: "health"
             base-path: /actuator
+
+springdoc:
+    api-docs:
+        enabled: true
+        path: /docs
+    swagger-ui:
+        enabled: true
+        path: /swagger
+        display-request-duration: true
+    default-consumes-media-type: application/json
+    default-produces-media-type: application/json

@@ -5,7 +5,7 @@ lokit.co.kr {
         }
 
     reverse_proxy localhost:8080 {
-                                     health_uri /api/v1/actuator/health
+                                     health_uri /api/actuator/health
                                      health_interval 10s
                                      health_timeout 5s
 
