@@ -1,0 +1,29 @@
+package kr.co.lokit.api.common.exception
+
+import org.springframework.http.HttpStatus
+
+enum class ErrorCode(
+    val status: HttpStatus,
+    val code: String,
+    val message: String,
+) {
+    // Common
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 입력값입니다"),
+    INVALID_TYPE(HttpStatus.BAD_REQUEST, "COMMON_002", "잘못된 타입입니다"),
+    MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "COMMON_003", "필수 파라미터가 누락되었습니다"),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "COMMON_001", "지원하지 않는 HTTP 메서드입니다"),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_001", "서버 내부 오류가 발생했습니다"),
+
+    // Authentication & Authorization
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "인증이 필요합니다"),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_002", "유효하지 않은 토큰입니다"),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_003", "만료된 토큰입니다"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_001", "접근 권한이 없습니다"),
+
+    // Resource
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_001", "요청한 리소스를 찾을 수 없습니다"),
+    RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "RESOURCE_001", "이미 존재하는 리소스입니다"),
+
+    // Business
+    BUSINESS_RULE_VIOLATION(HttpStatus.BAD_REQUEST, "BUSINESS_001", "비즈니스 규칙 위반입니다"),
+}
