@@ -9,6 +9,8 @@ on:
             - 'gradle/**'
             - 'build.gradle.kts'
             - 'settings.gradle.kts'
+            - '**.yaml'
+            - '**/*.yaml'
     pull_request:
         branches: [ develop ]
         paths:
@@ -17,6 +19,8 @@ on:
             - 'gradle/**'
             - 'build.gradle.kts'
             - 'settings.gradle.kts'
+            - '**.yaml'
+            - '**/*.yaml'
     workflow_dispatch:
 
 env:

@@ -5,7 +5,6 @@ on:
         workflows: [ "CI - Build and Test" ]
         types:
             - completed
-        branches: [ develop ]
 
 env:
     AWS_REGION: ap-northeast-2
