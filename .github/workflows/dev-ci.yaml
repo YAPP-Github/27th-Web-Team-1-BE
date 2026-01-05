@@ -22,7 +22,6 @@ on:
             - '**.yaml'
             - '**/*.yaml'
     workflow_dispatch:
-    workflow_call:
 
 env:
     AWS_REGION: ap-northeast-2
