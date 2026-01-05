@@ -1,19 +1,21 @@
-lokit.co.kr {
+${domain} {
+    tls ${email}
+
     log {
-            output file /var/log/caddy/access.log
-            format json
-        }
+        output file ${path}
+        format json
+    }
 
-    reverse_proxy localhost:8080 {
-                                     health_uri /api/actuator/health
-                                     health_interval 10s
-                                     health_timeout 5s
+    reverse_proxy ${api-path} ${ip} {
+        health_uri ${health-path}
+        health_interval 10s
+        health_timeout 5s
 
-                                     header_up Host {host}
-                                     header_up X-Real-IP {remote}
-                                 }
-}
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+    }
 
-dev.lokit.co.kr, www.lokit.co.kr {
-    redir https://lokit.co.kr{uri} permanent
+    handle_path ${etc-path}* {
+        reverse_proxy ${ip}
+    }
 }
