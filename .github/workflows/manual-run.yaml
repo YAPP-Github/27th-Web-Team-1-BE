@@ -30,5 +30,3 @@ jobs:
         if: ${{ inputs.action == 'deploy-only' }}
         uses: ./.github/workflows/dev-cd.yaml
         secrets: inherit
-        with:
-            image_tag: ${{ inputs.image_tag }}
