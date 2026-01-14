@@ -6,19 +6,26 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
+import kr.co.lokit.api.common.exception.BusinessException
+import org.hibernate.annotations.SoftDelete
 import org.hibernate.proxy.HibernateProxy
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.LocalDateTime
-import java.util.*
 
+@SoftDelete(columnName = "is_deleted")
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 abstract class BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private var id: Long? = null
+    private var _id: Long? = null
+
+    protected val persistedId: Long?
+        get() = _id
+    val id: Long
+        get() = _id ?: throw BusinessException.NotInitializedException.entityId()
 
     @CreatedDate
     @Column(updatable = false)
@@ -28,23 +35,25 @@ abstract class BaseEntity {
     var updatedAt: LocalDateTime = LocalDateTime.now()
 
     override fun equals(other: Any?): Boolean {
+        if (this === other) {
+            return true
+        }
         if (other == null) {
             return false
         }
 
-        if (other !is HibernateProxy && this::class != other::class) {
+        val otherId: Long? =
+            when (other) {
+                is HibernateProxy -> other.hibernateLazyInitializer.identifier as? Long
+                is BaseEntity -> other.persistedId
+                else -> null
+            }
+
+        if (persistedId == null || otherId == null) {
             return false
         }
-
-        return id == getIdentifier(other)
+        return persistedId == otherId
     }
 
-    private fun getIdentifier(obj: Any): Long? =
-        if (obj is HibernateProxy) {
-            (obj.hibernateLazyInitializer.implementation as BaseEntity).id
-        } else {
-            (obj as BaseEntity).id
-        }
-
-    override fun hashCode() = Objects.hashCode(id)
+    override fun hashCode(): Int = persistedId?.hashCode() ?: 0
 }
