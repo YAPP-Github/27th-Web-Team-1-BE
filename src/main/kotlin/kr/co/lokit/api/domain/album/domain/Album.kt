@@ -8,4 +8,5 @@ data class Album(
     val photos: List<Photo>,
     val photoCount: Int = 0,
 ) {
+    var thumbnail: Photo? = null
 }

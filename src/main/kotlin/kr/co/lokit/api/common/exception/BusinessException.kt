@@ -42,7 +42,7 @@ sealed class BusinessException(
 
     class NotInitializedException(
         override val message: String,
-    ) : BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, message) {
+    ) : BusinessException(ErrorCode.NOT_INITIALIZED_VALUE_ACCESS, message) {
         companion object {
             fun entityId() = NotInitializedException("Entity id is not initialized")
         }
