@@ -1,19 +1,29 @@
 package kr.co.lokit.api.common.dto
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.servlet.http.HttpServletRequest
 import kr.co.lokit.api.common.exception.ErrorCode
 import org.springframework.http.HttpStatus
 
+@Schema(description = "API 응답")
 data class ApiResponse<T>(
+    @Schema(description = "HTTP 상태 코드", example = "200")
     val code: Int,
+    @Schema(description = "응답 메시지", example = "success")
     val message: String,
+    @Schema(description = "응답 데이터")
     val data: T,
 ) {
     companion object {
+        @Schema(description = "에러 상세 정보")
         data class ErrorDetail(
+            @Schema(description = "에러 코드", example = "COMMON_001")
             val errorCode: String,
+            @Schema(description = "에러 상세 메시지", example = "앨범을 찾을 수 없습니다.")
             val detail: String,
+            @Schema(description = "요청 URI", example = "/api/albums/1")
             val instance: String,
+            @Schema(description = "필드별 에러 목록", nullable = true)
             val errors: Map<String, String>? = null,
         )
 
