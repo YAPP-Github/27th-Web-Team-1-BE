@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class IdResponse(
     @Schema(description = "생성된 리소스의 ID", example = "1")
     val id: Long,
-)
-
-fun Long.toIdResponse(): IdResponse = IdResponse(this)
+) {
+    companion object {
+        fun from(id: Long): IdResponse = IdResponse(id)
+    }
+}
