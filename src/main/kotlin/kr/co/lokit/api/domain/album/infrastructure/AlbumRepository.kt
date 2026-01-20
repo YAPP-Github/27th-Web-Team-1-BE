@@ -1,4 +1,4 @@
-package kr.co.lokit.api.album.infrastructure
+package kr.co.lokit.api.domain.album.infrastructure
 
 import org.springframework.data.jpa.repository.JpaRepository
 

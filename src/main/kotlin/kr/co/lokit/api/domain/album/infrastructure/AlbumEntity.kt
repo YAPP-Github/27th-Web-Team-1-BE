@@ -1,4 +1,4 @@
-package kr.co.lokit.api.album.infrastructure
+package kr.co.lokit.api.domain.album.infrastructure
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -8,7 +8,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import kr.co.lokit.api.common.entity.BaseEntity
-import kr.co.lokit.api.photo.infrastructure.PhotoEntity
+import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
 
 @Entity
 class AlbumEntity(

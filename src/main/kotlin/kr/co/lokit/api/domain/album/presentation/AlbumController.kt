@@ -1,6 +1,6 @@
-package kr.co.lokit.api.album.presentation
+package kr.co.lokit.api.domain.album.presentation
 
-import kr.co.lokit.api.album.application.AlbumService
+import kr.co.lokit.api.domain.album.application.AlbumService
 import org.springframework.web.bind.annotation.RestController
 
 @RestController

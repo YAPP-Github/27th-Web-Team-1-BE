@@ -1,6 +1,6 @@
-package kr.co.lokit.api.photo.domain
+package kr.co.lokit.api.domain.photo.domain
 
-import kr.co.lokit.api.album.domain.Album
+import kr.co.lokit.api.domain.album.domain.Album
 
 data class Photo(
     val id: Long,
