@@ -17,7 +17,6 @@ fun UserEntity.toDomain(): User =
 
 fun User.toEntity(): UserEntity =
     UserEntity(
-        id = id,
         email = email,
         name = name,
         role = Role.valueOf(role.name),
