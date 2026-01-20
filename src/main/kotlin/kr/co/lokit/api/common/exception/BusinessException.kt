@@ -34,4 +34,12 @@ sealed class BusinessException(
         message: String = ErrorCode.BUSINESS_RULE_VIOLATION.message,
         cause: Throwable? = null,
     ) : BusinessException(ErrorCode.BUSINESS_RULE_VIOLATION, message, cause)
+
+    class NotInitializedException(
+        override val message: String,
+    ) : BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, message) {
+        companion object {
+            fun entityId() = NotInitializedException("Entity id is not initialized")
+        }
+    }
 }
