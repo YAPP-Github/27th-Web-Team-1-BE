@@ -11,10 +11,11 @@ import org.springframework.stereotype.Component
 class UserIdAuthenticationResolver(
     private val userDetailsService: CustomUserDetailsService,
 ) : AuthenticationResolver {
-    override fun support(credentials: String): Boolean = true
+    override fun support(credentials: String): Boolean = credentials.toLongOrNull() != null
 
     override fun authenticate(credentials: String): UsernamePasswordAuthenticationToken {
-        val userDetails = userDetailsService.loadUserByUsername(credentials)
+        val userId = credentials.toLong()
+        val userDetails = userDetailsService.loadUserById(userId)
 
         return UsernamePasswordAuthenticationToken(
             userDetails,
