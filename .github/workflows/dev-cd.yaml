@@ -52,6 +52,8 @@ jobs:
                     POSTGRES_DB: ${{ secrets.DEV_POSTGRES_DB }}
                     POSTGRES_USER: ${{ secrets.DEV_POSTGRES_USER }}
                     POSTGRES_PASSWORD: ${{ secrets.DEV_POSTGRES_PASSWORD }}
+                    JWT_SECRET: ${{ secrets.DEV_JWT_SECRET }}
+                    JWT_EXPIRATION: ${{ secrets.DEV_JWT_EXPIRATION }}
                 with:
                     host: ${{ secrets.DEV_EC2_HOST }}
                     username: ${{ secrets.DEV_EC2_USERNAME }}
@@ -78,6 +80,8 @@ jobs:
                             -e POSTGRES_USER=$POSTGRES_USER \
                             -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
                             -e TZ=Asia/Seoul \
+                            -e JWT_SECRET=$JWT_SECRET \
+                            -e JWT_EXPIRATION=$JWT_EXPIRATION \
                             --log-driver=awslogs \
                             --log-opt awslogs-region=$AWS_REGION \
                             --log-opt awslogs-group=/docker/lokit-api-dev \

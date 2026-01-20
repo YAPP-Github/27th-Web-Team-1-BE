@@ -33,6 +33,10 @@ management:
         health:
             show-details: when-authorized
 
+jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION}
+
 springdoc:
     api-docs:
         enabled: true
