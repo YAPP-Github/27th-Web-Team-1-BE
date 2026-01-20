@@ -1,6 +1,6 @@
-package kr.co.lokit.api.album.application
+package kr.co.lokit.api.domain.album.application
 
-import kr.co.lokit.api.album.infrastructure.AlbumRepository
+import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import org.springframework.stereotype.Service
 
 @Service

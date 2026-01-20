@@ -1,8 +1,8 @@
-package kr.co.lokit.api.album.mapping
+package kr.co.lokit.api.domain.album.mapping
 
-import kr.co.lokit.api.album.domain.Album
-import kr.co.lokit.api.album.infrastructure.AlbumEntity
-import kr.co.lokit.api.photo.mapping.toDomain
+import kr.co.lokit.api.domain.album.domain.Album
+import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
+import kr.co.lokit.api.domain.photo.mapping.toDomain
 
 fun AlbumEntity.toDomain(): Album = Album(
     id = this.id,

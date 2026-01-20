@@ -1,9 +1,9 @@
-package kr.co.lokit.api.photo.mapping
+package kr.co.lokit.api.domain.photo.mapping
 
-import kr.co.lokit.api.album.infrastructure.AlbumEntity
-import kr.co.lokit.api.album.mapping.toDomain
-import kr.co.lokit.api.photo.domain.Photo
-import kr.co.lokit.api.photo.infrastructure.PhotoEntity
+import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
+import kr.co.lokit.api.domain.album.mapping.toDomain
+import kr.co.lokit.api.domain.photo.domain.Photo
+import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
 
 fun Photo.toEntity(album: AlbumEntity): PhotoEntity =
     PhotoEntity(

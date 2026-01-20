@@ -1,12 +1,12 @@
-package kr.co.lokit.api.photo.infrastructure
+package kr.co.lokit.api.domain.photo.infrastructure
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import kr.co.lokit.api.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.common.entity.BaseEntity
+import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 
 @Entity
 class PhotoEntity(
