@@ -1,7 +1,6 @@
 package kr.co.lokit.api.domain.album.application
 
 import kr.co.lokit.api.common.dto.IdResponse
-import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.domain.album.mapping.toEntity
@@ -15,6 +14,6 @@ class AlbumService(
         val album = albumRequest.toEntity()
         val savedAlbum = albumRepository.save(album)
 
-        return savedAlbum.id.toIdResponse()
+        return IdResponse.from(savedAlbum.id)
     }
 }

@@ -58,7 +58,7 @@ jobs:
                     host: ${{ secrets.DEV_EC2_HOST }}
                     username: ${{ secrets.DEV_EC2_USERNAME }}
                     key: ${{ secrets.DEV_EC2_SSH_KEY }}
-                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION,POSTGRES_HOST,POSTGRES_PORT,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD
+                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION,POSTGRES_HOST,POSTGRES_PORT,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,JWT_SECRET,JWT_EXPIRATION
                     script: |
                         set -e
 
