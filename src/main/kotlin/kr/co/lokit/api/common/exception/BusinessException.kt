@@ -39,4 +39,12 @@ sealed class BusinessException(
         message: String = ErrorCode.EMAIL_ALREADY_EXISTS.message,
         cause: Throwable? = null,
     ) : BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS, message, cause)
+
+    class NotInitializedException(
+        override val message: String,
+    ) : BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, message) {
+        companion object {
+            fun entityId() = NotInitializedException("Entity id is not initialized")
+        }
+    }
 }
