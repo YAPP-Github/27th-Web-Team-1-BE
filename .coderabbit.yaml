@@ -1,0 +1,9 @@
+language: "ko-KR"
+reviews:
+    profile: "chill"
+    review_status: false
+    #모든 브랜치를 대상으로 자동 리뷰를 수행하고 싶을 때
+    auto_review:
+        enabled: true
+        target_branches:
+            - "*"
