@@ -12,7 +12,9 @@ fun Photo.toEntity(album: AlbumEntity): PhotoEntity =
         album = album,
         longitude = this.location.longitude,
         latitude = this.location.latitude,
-    )
+    ).apply {
+        this.description = this@toEntity.description
+    }
 
 fun PhotoEntity.toDomain(album: Album): Photo =
     Photo(
@@ -22,7 +24,6 @@ fun PhotoEntity.toDomain(album: Album): Photo =
         location = Location(
             longitude = this.longitude,
             latitude = this.latitude,
-        )
-    ).apply {
-        description = this@toDomain.description
-    }
+        ),
+        description = this.description,
+    )
