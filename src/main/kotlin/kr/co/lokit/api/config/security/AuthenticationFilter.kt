@@ -27,14 +27,24 @@ class AuthenticationFilter(
             val credential = request.getHeader("Authorization")
 
             if (credential != null && SecurityContextHolder.getContext().authentication == null) {
-                compositeAuthenticationResolver.authenticate(credential)?.let {
-                    it.details = WebAuthenticationDetailsSource().buildDetails(request)
-                    SecurityContextHolder.getContext().authentication = it
+                compositeAuthenticationResolver.authenticate(credential)?.let { authentication ->
+                    // 1. Authentication 생성
+                    authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
+
+                    // 2. SecurityContext에 주입
+                    val securityContext = SecurityContextHolder.createEmptyContext()
+                    securityContext.authentication = authentication
+                    SecurityContextHolder.setContext(securityContext)
                 }
             }
+
+            filterChain.doFilter(request, response)
         } catch (e: Exception) {
             logger.error("Cannot set user authentication: ${e.message}")
+            filterChain.doFilter(request, response)
+        } finally {
+            // 3. 요청 종료 → Context 폐기
+            SecurityContextHolder.clearContext()
         }
-        filterChain.doFilter(request, response)
     }
 }
