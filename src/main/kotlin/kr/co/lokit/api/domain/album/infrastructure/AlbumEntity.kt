@@ -51,6 +51,9 @@ class AlbumEntity(
     }
 
     fun addPhoto(photo: PhotoEntity) {
+        if (photos.contains(photo)) {
+            return
+        }
         if (photos.isEmpty()) {
             thumbnail = photo
         }

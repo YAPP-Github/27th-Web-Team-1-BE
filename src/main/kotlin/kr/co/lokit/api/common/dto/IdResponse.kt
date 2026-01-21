@@ -1,6 +1,7 @@
 package kr.co.lokit.api.common.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import kr.co.lokit.api.common.entity.BaseEntity
 
 @Schema(description = "ID 응답")
 data class IdResponse(
@@ -8,6 +9,6 @@ data class IdResponse(
     val id: Long,
 ) {
     companion object {
-        fun from(id: Long): IdResponse = IdResponse(id)
+        fun from(entity: BaseEntity): IdResponse = IdResponse(entity.id)
     }
 }

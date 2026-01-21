@@ -6,18 +6,18 @@ import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.photo.mapping.toDomain
 
 fun AlbumEntity.toDomain(): Album = Album(
-    id = this.id,
     title = this.title,
-    photos = this.photos.map { it.toDomain() },
-    photoCount = this.photoCount,
 ).apply {
-    this.thumbnail = this@toDomain.thumbnail?.toDomain()
+    this.id = this@toDomain.id
+    this.photoCount = this@toDomain.photoCount
+    this.photos = this@toDomain.photos.map { it.toDomain(this) }
+    this.thumbnail = this@toDomain.thumbnail?.toDomain(this)
 }
 
 fun Album.toEntity(): AlbumEntity = AlbumEntity(
     title = this.title,
 )
 
-fun AlbumRequest.toEntity(): AlbumEntity = AlbumEntity(
+fun AlbumRequest.toDomain(): Album = Album(
     title = this.title,
 )
