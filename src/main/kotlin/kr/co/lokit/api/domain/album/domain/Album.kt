@@ -4,11 +4,11 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.photo.domain.Photo
 
 data class Album(
+    val id: Long = 0L,
     val title: String,
+    val photoCount: Int = 0,
 ) {
-    var id: Long? = null
-    var photos: List<Photo> = emptyList()
-    var photoCount: Int? = null
+    var photos: List<Photo> = mutableListOf()
     var thumbnail: Photo? = null
 
     init {
