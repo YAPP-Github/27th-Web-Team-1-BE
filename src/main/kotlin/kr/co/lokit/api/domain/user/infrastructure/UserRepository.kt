@@ -1,10 +1,13 @@
 package kr.co.lokit.api.domain.user.infrastructure
 
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.security.core.userdetails.UserDetails
+import kr.co.lokit.api.domain.user.domain.User
 
-interface UserRepository : JpaRepository<UserEntity, Long> {
-    fun findByEmail(email: String): UserDetails?
+interface UserRepository {
+    fun save(user: User): User
+
+    fun findById(id: Long): User?
+
+    fun findByEmail(email: String): User?
 
     fun existsByEmail(email: String): Boolean
 }

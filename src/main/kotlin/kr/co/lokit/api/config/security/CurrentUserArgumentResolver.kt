@@ -34,10 +34,7 @@ class CurrentUserArgumentResolver(
             authentication.principal as? UserEntity
                 ?: throw BusinessException.UnauthorizedException("Invalid authentication principal")
 
-        // DB에서 최신 사용자 정보 조회
-        return userRepository
-            .findById(userEntity.id)
-            .map { it.toDomain() }
-            .orElseThrow { BusinessException.ResourceNotFoundException("User not found: ${userEntity.id}") }
+        return userRepository.findById(userEntity.id)
+            ?: throw BusinessException.ResourceNotFoundException("User not found: ${userEntity.id}")
     }
 }

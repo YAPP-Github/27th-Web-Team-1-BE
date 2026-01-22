@@ -22,6 +22,6 @@ class AuthController(
         @RequestBody request: RegisterRequest,
     ): AuthResponse =
         authService
-            .register(request.email, request.name)
+            .register(request.toDomain())
             .toAuthResponse()
 }
