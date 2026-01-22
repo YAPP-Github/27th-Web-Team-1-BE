@@ -3,6 +3,7 @@ package kr.co.lokit.api.config.security
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
+import kr.co.lokit.api.domain.user.domain.User
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
@@ -18,13 +19,17 @@ class JwtTokenProvider(
         Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
-    fun generateToken(userDetails: UserDetails): String {
+    fun generateToken(userDetails: UserDetails): String = generateToken(userDetails.username)
+
+    fun generateToken(user: User): String = generateToken(user.email)
+
+    private fun generateToken(subject: String): String {
         val now = Date()
         val expiryDate = Date(now.time + expiration)
 
         return Jwts
             .builder()
-            .subject(userDetails.username)
+            .subject(subject)
             .issuedAt(now)
             .expiration(expiryDate)
             .signWith(key)
