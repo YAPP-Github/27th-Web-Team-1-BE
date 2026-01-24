@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.album.infrastructure
 
-import org.springframework.data.jpa.repository.JpaRepository
+import kr.co.lokit.api.domain.album.domain.Album
 
-interface AlbumRepository : JpaRepository<AlbumEntity, Long> {
+interface AlbumRepository {
+    fun save(album: Album): Album
+    fun findAllByUserId(userId: Long): List<Album>
 }

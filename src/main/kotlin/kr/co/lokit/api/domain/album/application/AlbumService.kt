@@ -1,18 +1,18 @@
 package kr.co.lokit.api.domain.album.application
 
-import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
-import kr.co.lokit.api.domain.album.mapping.toEntity
 import org.springframework.stereotype.Service
 
 @Service
 class AlbumService(
     private val albumRepository: AlbumRepository
 ) {
-    fun create(album: Album): IdResponse {
-        val savedAlbum = albumRepository.save(album.toEntity())
+    fun create(album: Album): Album {
+        return albumRepository.save(album)
+    }
 
-        return IdResponse.from(savedAlbum)
+    fun getSelectableAlbums(userId: Long): List<Album> {
+        return albumRepository.findAllByUserId(userId)
     }
 }
