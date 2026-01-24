@@ -1,5 +1,6 @@
 package kr.co.lokit.api.config.security
-import kr.co.lokit.api.domain.user.infrastructure.UserRepository
+
+import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -7,15 +8,15 @@ import org.springframework.stereotype.Service
 
 @Service
 class CustomUserDetailsService(
-    private val userRepository: UserRepository,
+    private val userJpaRepository: UserJpaRepository,
 ) : UserDetailsService {
     override fun loadUserByUsername(username: String): UserDetails =
-        userRepository
+        userJpaRepository
             .findByEmail(username)
             ?: throw UsernameNotFoundException("User not found: $username")
 
     fun loadUserById(userId: Long): UserDetails =
-        userRepository
+        userJpaRepository
             .findById(userId)
             .orElseThrow { UsernameNotFoundException("User not found: $userId") }
 }

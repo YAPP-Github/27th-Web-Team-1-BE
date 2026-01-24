@@ -6,24 +6,24 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
-import jakarta.persistence.PrePersist
-import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
+import kr.co.lokit.api.domain.workspace.infrastructure.WorkSpaceEntity
+import java.time.LocalDateTime
 
 @Entity
-@Table(indexes = [Index(columnList = "photoCount"), Index(columnList = "created_at")])
+@Table(indexes = [Index(columnList = "photo_added_at, created_at")])
 class AlbumEntity(
     @Column(nullable = false, length = 10)
     val title: String,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    val workspace: WorkSpaceEntity,
 ) : BaseEntity() {
-
-    @Column(unique = true)
-    var inviteCode: String? = null
-
     @Column(nullable = false)
     var photoCount: Int = 0
         get() = photos.size
@@ -34,7 +34,7 @@ class AlbumEntity(
         cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE],
         mappedBy = "album"
     )
-    var photos = mutableListOf<PhotoEntity>()
+    var photos: MutableList<PhotoEntity> = mutableListOf()
         protected set
 
     @JoinColumn
@@ -44,17 +44,18 @@ class AlbumEntity(
     var thumbnail: PhotoEntity? = null
         protected set
 
-    @PrePersist
-    @PreUpdate
-    fun syncPhotoCount() {
-        photoCount = photos.size
-    }
+    var photoAddedAt: LocalDateTime? = null
+        protected set
 
     fun addPhoto(photo: PhotoEntity) {
+        if (photos.contains(photo)) {
+            return
+        }
         if (photos.isEmpty()) {
             thumbnail = photo
         }
         photos.add(photo)
-        syncPhotoCount()
+        photoAddedAt = LocalDateTime.now()
+        photoCount++
     }
 }

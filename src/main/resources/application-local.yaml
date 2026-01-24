@@ -49,3 +49,12 @@ springdoc:
         display-request-duration: true
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
+
+aws:
+    s3:
+        region: ${AWS_REGION:}
+        bucket: ${AWS_S3_BUCKET:}
+
+cors:
+    allowed-origins:
+        - http://localhost:3000

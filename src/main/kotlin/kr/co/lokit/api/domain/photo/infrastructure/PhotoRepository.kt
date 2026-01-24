@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.photo.infrastructure
 
-import org.springframework.data.jpa.repository.JpaRepository
+import kr.co.lokit.api.domain.photo.domain.Photo
 
-interface PhotoRepository : JpaRepository<PhotoEntity, Long> {
+interface PhotoRepository {
+    fun save(photo: Photo): Photo
 }

@@ -1,13 +1,9 @@
 package kr.co.lokit.api.domain.photo.domain
 
-import kr.co.lokit.api.domain.album.domain.Album
-
 data class Photo(
-    val id: Long,
+    val id: Long = 0L,
     val url: String,
-    val album: Album,
-    val longitude: Double,
-    val latitude: Double,
-) {
-    var description: String? = null
-}
+    val albumId: Long,
+    val location: Location,
+    val description: String? = null,
+)

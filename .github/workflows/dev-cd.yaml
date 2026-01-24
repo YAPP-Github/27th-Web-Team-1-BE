@@ -54,11 +54,13 @@ jobs:
                     POSTGRES_PASSWORD: ${{ secrets.DEV_POSTGRES_PASSWORD }}
                     JWT_SECRET: ${{ secrets.DEV_JWT_SECRET }}
                     JWT_EXPIRATION: ${{ secrets.DEV_JWT_EXPIRATION }}
+                    AWS_S3_BUCKET: ${{ secrets.DEV_AWS_S3_BUCKET }}
+                    CORS_ALLOWED_ORIGINS: ${{ secrets.DEV_CORS_ALLOWED_ORIGINS }}
                 with:
                     host: ${{ secrets.DEV_EC2_HOST }}
                     username: ${{ secrets.DEV_EC2_USERNAME }}
                     key: ${{ secrets.DEV_EC2_SSH_KEY }}
-                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION,POSTGRES_HOST,POSTGRES_PORT,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,JWT_SECRET,JWT_EXPIRATION
+                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION,POSTGRES_HOST,POSTGRES_PORT,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,JWT_SECRET,JWT_EXPIRATION,AWS_S3_BUCKET,CORS_ALLOWED_ORIGINS
                     script: |
                         set -e
 
@@ -82,6 +84,9 @@ jobs:
                             -e TZ=Asia/Seoul \
                             -e JWT_SECRET=$JWT_SECRET \
                             -e JWT_EXPIRATION=$JWT_EXPIRATION \
+                            -e AWS_REGION=$AWS_REGION \
+                            -e AWS_S3_BUCKET=$AWS_S3_BUCKET \
+                            -e CORS_ALLOWED_ORIGINS=$CORS_ALLOWED_ORIGINS \
                             --log-driver=awslogs \
                             --log-opt awslogs-region=$AWS_REGION \
                             --log-opt awslogs-group=/docker/lokit-api-dev \

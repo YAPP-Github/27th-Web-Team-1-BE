@@ -42,9 +42,11 @@ sealed class BusinessException(
 
     class NotInitializedException(
         override val message: String,
-    ) : BusinessException(ErrorCode.NOT_INITIALIZED_VALUE_ACCESS, message) {
-        companion object {
-            fun entityId() = NotInitializedException("Entity id is not initialized")
-        }
-    }
+    ) : BusinessException(ErrorCode.NOT_INITIALIZED_VALUE_ACCESS, message)
 }
+
+inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =
+    BusinessException.ResourceNotFoundException("${T::class.simpleName}(id=$id)을(를) 찾을 수 없습니다")
+
+fun entityIdNotInitialized(entityName: String): BusinessException.NotInitializedException =
+    BusinessException.NotInitializedException("${entityName}의 id가 초기화되지 않았습니다")
