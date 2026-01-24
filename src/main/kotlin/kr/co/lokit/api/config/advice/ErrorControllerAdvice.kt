@@ -145,11 +145,13 @@ class ErrorControllerAdvice {
     fun handleException(
         ex: Exception,
         request: HttpServletRequest,
-    ): ApiResponse<ErrorDetail> =
-        ApiResponse.failure(
+    ): ApiResponse<ErrorDetail> {
+        log.error("Unhandled exception occurred: ${ex.message}", ex)
+        return ApiResponse.failure(
             status = HttpStatus.INTERNAL_SERVER_ERROR,
             detail = ErrorCode.INTERNAL_SERVER_ERROR.message,
             request = request,
             errorCode = ErrorCode.INTERNAL_SERVER_ERROR.code,
         )
+    }
 }
