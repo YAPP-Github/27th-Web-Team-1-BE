@@ -6,7 +6,7 @@ spring:
         driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: create-drop
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -35,6 +35,10 @@ management:
                 include: "health"
             base-path: /actuator
 
+jwt:
+    secret: ${JWT_SECRET:local-dev-jwt-secret-key-minimum-32-chars}
+    expiration: ${JWT_EXPIRATION:86400000}  # 24시간
+
 springdoc:
     api-docs:
         enabled: true
@@ -45,3 +49,12 @@ springdoc:
         display-request-duration: true
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
+
+aws:
+    s3:
+        region: ${AWS_REGION:}
+        bucket: ${AWS_S3_BUCKET:}
+
+cors:
+    allowed-origins:
+        - http://localhost:3000
