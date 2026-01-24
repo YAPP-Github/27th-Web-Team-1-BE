@@ -1,17 +1,40 @@
 package kr.co.lokit.api.domain.photo.presentation
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.photo.dto.CreatePhotoRequest
+import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.dto.PresignedUrlRequest
 
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Photo", description = "사진 API")
 interface PhotoApi {
+    @Operation(
+        summary = "사진 목록 조회",
+        description = "앨범별로 그룹화된 사진 목록을 조회합니다. (카카오/인스타그램 스타일)",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = [Content(schema = Schema(implementation = PhotoListResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증 필요",
+                content = [Content()],
+            ),
+        ],
+    )
+    fun getPhotos(albumId: Long): PhotoListResponse
 
     @Operation(
         summary = "Presigned URL 발급",
@@ -20,7 +43,10 @@ interface PhotoApi {
             ApiResponse(responseCode = "200", description = "Presigned URL 발급 성공"),
         ],
     )
-    fun getPresignedUrl(request: PresignedUrlRequest, userId: Long): PresignedUrl
+    fun getPresignedUrl(
+        request: PresignedUrlRequest,
+        userId: Long,
+    ): PresignedUrl
 
     @Operation(
         summary = "사진 생성",
@@ -30,5 +56,8 @@ interface PhotoApi {
             ApiResponse(responseCode = "404", description = "앨범을 찾을 수 없음 (ALBUM_001)"),
         ],
     )
-    fun create(request: CreatePhotoRequest, userId: Long): IdResponse
+    fun create(
+        request: CreatePhotoRequest,
+        userId: Long,
+    ): IdResponse
 }
