@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/auth")
 class AuthController(
     private val authService: AuthService,
-) {
+) : AuthApi {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    fun register(
+    override fun register(
         @RequestBody request: RegisterRequest,
     ): AuthResponse =
         authService
-            .register(request.email, request.name)
+            .register(request.toDomain())
             .toAuthResponse()
 }

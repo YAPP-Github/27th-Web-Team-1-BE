@@ -27,14 +27,19 @@ class AuthenticationFilter(
             val credential = request.getHeader("Authorization")
 
             if (credential != null && SecurityContextHolder.getContext().authentication == null) {
-                compositeAuthenticationResolver.authenticate(credential)?.let {
-                    it.details = WebAuthenticationDetailsSource().buildDetails(request)
-                    SecurityContextHolder.getContext().authentication = it
+                compositeAuthenticationResolver.authenticate(credential)?.let { authentication ->
+                    authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
+
+                    val securityContext = SecurityContextHolder.createEmptyContext()
+                    securityContext.authentication = authentication
+                    SecurityContextHolder.setContext(securityContext)
                 }
             }
         } catch (e: Exception) {
             logger.error("Cannot set user authentication: ${e.message}")
         }
+
+        // SecurityContext 정리는 Spring Security의 SecurityContextHolderFilter가 담당
         filterChain.doFilter(request, response)
     }
 }

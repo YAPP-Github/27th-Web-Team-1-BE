@@ -1,7 +1,10 @@
 package kr.co.lokit.api.config.docs
 
+import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.security.SecurityRequirement
+import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.beans.factory.annotation.Value
@@ -21,12 +24,25 @@ class OpenApiConfig {
                     .title("Lokit API")
                     .version("1.0.0")
                     .description("Lokit API 문서"),
-            )
-            .servers(
+            ).servers(
                 listOf(
                     Server().url(contextPath).description("API Server"),
                 ),
-            )
+            ).components(
+                Components()
+                    .addSecuritySchemes(
+                        SECURITY_SCHEME_NAME,
+                        SecurityScheme()
+                            .type(SecurityScheme.Type.APIKEY)
+                            .`in`(SecurityScheme.In.HEADER)
+                            .name("Authorization")
+                            .description("JWT 토큰 또는 사용자 ID (dev/local 환경)"),
+                    ),
+            ).addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+
+    companion object {
+        const val SECURITY_SCHEME_NAME = "Authorization"
+    }
 
     @Bean
     fun apiGroup(): GroupedOpenApi =
