@@ -21,6 +21,8 @@ enum class ErrorCode(
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_003", "만료된 토큰입니다"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_004", "접근 권한이 없습니다"),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_005", "이미 등록된 이메일입니다"),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_006", "유효하지 않은 리프레시 토큰입니다"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AUTH_007", "사용자를 찾을 수 없습니다"),
 
     // Resource
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_001", "요청한 리소스를 찾을 수 없습니다"),

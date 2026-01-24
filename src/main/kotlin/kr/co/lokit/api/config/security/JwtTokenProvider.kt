@@ -8,22 +8,30 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import java.util.Date
+import java.util.UUID
 import javax.crypto.SecretKey
 
 @Component
 class JwtTokenProvider(
     @Value("\${jwt.secret}") private val secret: String,
     @Value("\${jwt.expiration}") private val expiration: Long,
+    @Value("\${jwt.refresh-expiration}") private val refreshExpiration: Long,
 ) {
     private val key: SecretKey by lazy {
         Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
-    fun generateToken(userDetails: UserDetails): String = generateToken(userDetails.username)
+    fun generateAccessToken(userDetails: UserDetails): String = generateAccessToken(userDetails.username)
 
-    fun generateToken(user: User): String = generateToken(user.email)
+    fun generateAccessToken(user: User): String = generateAccessToken(user.email)
 
-    private fun generateToken(subject: String): String {
+    @Deprecated("Use generateAccessToken instead", ReplaceWith("generateAccessToken(userDetails)"))
+    fun generateToken(userDetails: UserDetails): String = generateAccessToken(userDetails)
+
+    @Deprecated("Use generateAccessToken instead", ReplaceWith("generateAccessToken(user)"))
+    fun generateToken(user: User): String = generateAccessToken(user)
+
+    private fun generateAccessToken(subject: String): String {
         val now = Date()
         val expiryDate = Date(now.time + expiration)
 
@@ -35,6 +43,10 @@ class JwtTokenProvider(
             .signWith(key)
             .compact()
     }
+
+    fun generateRefreshToken(): String = UUID.randomUUID().toString()
+
+    fun getRefreshTokenExpirationMillis(): Long = refreshExpiration
 
     fun getUsernameFromToken(token: String): String = getClaims(token).subject
 

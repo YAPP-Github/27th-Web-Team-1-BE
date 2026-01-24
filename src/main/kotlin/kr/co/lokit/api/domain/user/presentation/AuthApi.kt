@@ -7,8 +7,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
-import kr.co.lokit.api.domain.user.dto.AuthResponse
-import kr.co.lokit.api.domain.user.dto.RegisterRequest
+import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
+import kr.co.lokit.api.domain.user.dto.LoginRequest
+import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import org.springframework.web.bind.annotation.RequestBody
 
 @Tag(name = "Auth", description = "인증 관련 API")
@@ -22,7 +23,7 @@ interface AuthApi {
             ApiResponse(
                 responseCode = "201",
                 description = "회원가입 성공",
-                content = [Content(schema = Schema(implementation = AuthResponse::class))],
+                content = [Content(schema = Schema(implementation = JwtTokenResponse::class))],
             ),
             ApiResponse(
                 responseCode = "400",
@@ -36,8 +37,31 @@ interface AuthApi {
             ),
         ],
     )
-    @SecurityRequirements // 인증 불필요
-    fun register(
-        @RequestBody request: RegisterRequest,
-    ): AuthResponse
+    @SecurityRequirements
+    fun login(
+        @RequestBody request: LoginRequest,
+    ): JwtTokenResponse
+
+    @Operation(
+        summary = "토큰 갱신",
+        description = "Refresh Token으로 새로운 Access Token을 발급받습니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "토큰 갱신 성공",
+                content = [Content(schema = Schema(implementation = JwtTokenResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "유효하지 않은 Refresh Token",
+                content = [Content()],
+            ),
+        ],
+    )
+    @SecurityRequirements
+    fun refresh(
+        @RequestBody request: RefreshTokenRequest,
+    ): JwtTokenResponse
 }

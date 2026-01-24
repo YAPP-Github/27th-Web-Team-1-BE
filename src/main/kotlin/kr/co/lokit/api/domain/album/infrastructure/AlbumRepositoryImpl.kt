@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class AlbumRepositoryImpl(
-    private val albumRepository: AlbumJpaRepository,
+    private val albumJpaRepository: AlbumJpaRepository,
     private val workspaceJpaRepository: WorkspaceJpaRepository,
 ) : AlbumRepository {
 
@@ -19,11 +19,26 @@ class AlbumRepositoryImpl(
         val workspace = workspaceJpaRepository.findByIdOrNull(album.workspaceId)
             ?: throw entityNotFound<WorkSpace>(album.workspaceId)
         val albumEntity = album.toEntity(workspace)
-        val savedEntity = albumRepository.save(albumEntity)
+        val savedEntity = albumJpaRepository.save(albumEntity)
         return savedEntity.toDomain()
     }
 
-    override fun findAllByUserId(userId: Long): List<Album> {
-        return albumRepository.findAllByUserId(userId).map { it.toDomain() }
+    override fun findById(id: Long): Album? =
+        albumJpaRepository.findByIdOrNull(id)?.toDomain()
+
+    override fun findAllByUserId(userId: Long): List<Album> =
+        albumJpaRepository.findAllByUserId(userId).map { it.toDomain() }
+
+    override fun updateTitle(id: Long, title: String): Album {
+        val albumEntity = albumJpaRepository.findByIdOrNull(id)
+            ?: throw entityNotFound<Album>(id)
+        albumEntity.updateTitle(title)
+        return albumEntity.toDomain()
+    }
+
+    override fun deleteById(id: Long) {
+        val albumEntity = albumJpaRepository.findByIdOrNull(id)
+            ?: throw entityNotFound<Album>(id)
+        albumJpaRepository.delete(albumEntity)
     }
 }

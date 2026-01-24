@@ -43,6 +43,16 @@ sealed class BusinessException(
     class NotInitializedException(
         override val message: String,
     ) : BusinessException(ErrorCode.NOT_INITIALIZED_VALUE_ACCESS, message)
+
+    class InvalidRefreshTokenException(
+        message: String = ErrorCode.INVALID_REFRESH_TOKEN.message,
+        cause: Throwable? = null,
+    ) : BusinessException(ErrorCode.INVALID_REFRESH_TOKEN, message, cause)
+
+    class UserNotFoundException(
+        message: String = ErrorCode.USER_NOT_FOUND.message,
+        cause: Throwable? = null,
+    ) : BusinessException(ErrorCode.USER_NOT_FOUND, message, cause)
 }
 
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =

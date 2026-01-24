@@ -3,16 +3,25 @@ package kr.co.lokit.api.domain.album.application
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AlbumService(
     private val albumRepository: AlbumRepository,
 ) {
-    fun create(album: Album): Album {
-        return albumRepository.save(album)
-    }
+    @Transactional
+    fun create(album: Album): Album =
+        albumRepository.save(album)
 
-    fun getSelectableAlbums(userId: Long): List<Album> {
-        return albumRepository.findAllByUserId(userId)
-    }
+    @Transactional(readOnly = true)
+    fun getSelectableAlbums(userId: Long): List<Album> =
+        albumRepository.findAllByUserId(userId)
+
+    @Transactional
+    fun updateTitle(id: Long, title: String): Album =
+        albumRepository.updateTitle(id, title)
+
+    @Transactional
+    fun delete(id: Long) =
+        albumRepository.deleteById(id)
 }

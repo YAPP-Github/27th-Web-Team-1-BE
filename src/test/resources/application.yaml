@@ -39,6 +39,7 @@ server:
 jwt:
     secret: test-jwt-secret-key-minimum-32-characters-long
     expiration: 86400000
+    refresh-expiration: 604800000
 
 springdoc:
     api-docs:

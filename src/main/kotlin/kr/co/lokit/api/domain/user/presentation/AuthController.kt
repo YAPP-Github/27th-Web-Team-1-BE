@@ -1,8 +1,9 @@
 package kr.co.lokit.api.domain.user.presentation
 
 import kr.co.lokit.api.domain.user.application.AuthService
-import kr.co.lokit.api.domain.user.dto.AuthResponse
-import kr.co.lokit.api.domain.user.dto.RegisterRequest
+import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
+import kr.co.lokit.api.domain.user.dto.LoginRequest
+import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import kr.co.lokit.api.domain.user.mapping.toAuthResponse
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
@@ -12,16 +13,24 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("auth")
 class AuthController(
     private val authService: AuthService,
 ) : AuthApi {
-    @PostMapping("/register")
+    @PostMapping("login")
     @ResponseStatus(HttpStatus.CREATED)
-    override fun register(
-        @RequestBody request: RegisterRequest,
-    ): AuthResponse =
+    override fun login(
+        @RequestBody request: LoginRequest,
+    ): JwtTokenResponse =
         authService
-            .register(request.toDomain())
+            .login(request.toDomain())
+            .toAuthResponse()
+
+    @PostMapping("refresh")
+    override fun refresh(
+        @RequestBody request: RefreshTokenRequest,
+    ): JwtTokenResponse =
+        authService
+            .refresh(request.refreshToken)
             .toAuthResponse()
 }
