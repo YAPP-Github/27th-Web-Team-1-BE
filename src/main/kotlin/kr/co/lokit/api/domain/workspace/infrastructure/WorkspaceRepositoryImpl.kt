@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.workspace.infrastructure
 
-import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.workspace.domain.WorkSpace
 import kr.co.lokit.api.domain.workspace.mapping.toDomain
@@ -23,7 +24,7 @@ class WorkspaceRepositoryImpl(
 
     override fun saveWithUser(workspace: WorkSpace, userId: Long): WorkSpace {
         val userEntity = userJpaRepository.findByIdOrNull(userId)
-            ?: throw BusinessException.UserNotFoundException()
+            ?: throw entityNotFound<User>(userId)
 
         val workspaceEntity = workspace.toEntity()
         val savedWorkspace = workspaceJpaRepository.save(workspaceEntity)
@@ -35,5 +36,24 @@ class WorkspaceRepositoryImpl(
         savedWorkspace.addUser(workspaceUser)
 
         return savedWorkspace.toDomain()
+    }
+
+    override fun findByInviteCode(inviteCode: String): WorkSpace? =
+        workspaceJpaRepository.findByInviteCode(inviteCode)?.toDomain()
+
+    override fun addUser(workspaceId: Long, userId: Long): WorkSpace {
+        val workspaceEntity = workspaceJpaRepository.findByIdOrNull(workspaceId)
+            ?: throw entityNotFound<WorkSpace>(workspaceId)
+
+        val userEntity = userJpaRepository.findByIdOrNull(userId)
+            ?: throw entityNotFound<User>(userId)
+
+        val workspaceUser = WorkspaceUserEntity(
+            workspace = workspaceEntity,
+            user = userEntity,
+        )
+        workspaceEntity.addUser(workspaceUser)
+
+        return workspaceEntity.toDomain()
     }
 }

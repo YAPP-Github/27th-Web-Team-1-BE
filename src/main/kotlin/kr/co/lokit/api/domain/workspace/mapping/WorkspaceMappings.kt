@@ -12,4 +12,6 @@ fun WorkSpaceEntity.toDomain(): WorkSpace =
     WorkSpace(
         id = this.id,
         name = this.name,
+        inviteCode = this.inviteCode,
+        userIds = this.workspaceUsers.map { it.user.id },
     )

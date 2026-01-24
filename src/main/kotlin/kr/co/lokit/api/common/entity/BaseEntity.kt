@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
-import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.entityIdNotInitialized
 import org.hibernate.annotations.SoftDelete
 import org.hibernate.proxy.HibernateProxy
 import org.springframework.data.annotation.CreatedDate
@@ -25,7 +25,7 @@ abstract class BaseEntity {
     protected val persistedId: Long?
         get() = _id
     val id: Long
-        get() = _id ?: throw BusinessException.NotInitializedException.entityId()
+        get() = _id ?: throw entityIdNotInitialized(this::class.simpleName ?: "Unknown")
 
     @CreatedDate
     @Column(updatable = false)

@@ -26,15 +26,6 @@ enum class ErrorCode(
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_001", "요청한 리소스를 찾을 수 없습니다"),
     RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "RESOURCE_002", "이미 존재하는 리소스입니다"),
 
-    // Album
-    ALBUM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALBUM_001", "앨범을 찾을 수 없습니다"),
-
-    // User
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "사용자를 찾을 수 없습니다"),
-
-    // Workspace
-    WORKSPACE_NOT_FOUND(HttpStatus.NOT_FOUND, "WORKSPACE_001", "워크스페이스를 찾을 수 없습니다"),
-
     // Business
     BUSINESS_RULE_VIOLATION(HttpStatus.BAD_REQUEST, "BUSINESS_001", "비즈니스 규칙 위반입니다"),
 }

@@ -11,3 +11,14 @@ data class AlbumRequest(
     @Schema(description = "워크스페이스 ID", example = "1")
     val workspaceId: Long,
 )
+
+data class SelectableAlbumResponse(
+    val albums: List<SelectableAlbum>,
+) {
+    data class SelectableAlbum(
+        val id: Long,
+        val title: String,
+        val photoCount: Int,
+        val thumbnailUrl: String?,
+    )
+}

@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.photo.infrastructure
 
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption
@@ -10,6 +11,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.time.Duration
 
 @Component
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
 class S3PresignedUrlGenerator(
     private val s3Presigner: S3Presigner,
     @Qualifier("bucketName") private val bucket: String,
