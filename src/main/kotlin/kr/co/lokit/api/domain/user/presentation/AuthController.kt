@@ -4,7 +4,7 @@ import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.LoginRequest
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
-import kr.co.lokit.api.domain.user.mapping.toAuthResponse
+import kr.co.lokit.api.domain.user.mapping.toJwtTokenResponse
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -24,7 +24,7 @@ class AuthController(
     ): JwtTokenResponse =
         authService
             .login(request.toDomain())
-            .toAuthResponse()
+            .toJwtTokenResponse()
 
     @PostMapping("refresh")
     override fun refresh(
@@ -32,5 +32,5 @@ class AuthController(
     ): JwtTokenResponse =
         authService
             .refresh(request.refreshToken)
-            .toAuthResponse()
+            .toJwtTokenResponse()
 }

@@ -2,9 +2,9 @@ package kr.co.lokit.api.domain.album.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.album.domain.Album
-import kr.co.lokit.api.domain.workspace.domain.WorkSpace
 import kr.co.lokit.api.domain.album.mapping.toDomain
 import kr.co.lokit.api.domain.album.mapping.toEntity
+import kr.co.lokit.api.domain.workspace.domain.WorkSpace
 import kr.co.lokit.api.domain.workspace.infrastructure.WorkspaceJpaRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
@@ -43,6 +43,6 @@ class AlbumRepositoryImpl(
     }
 
     override fun findAllWithPhotos(): List<AlbumEntity> {
-        return albumRepository.findAllWithPhotos()
+        return albumJpaRepository.findAllWithPhotos()
     }
 }

@@ -16,6 +16,4 @@ class UserRepositoryImpl(
     override fun findById(id: Long): User? = userJpaRepository.findById(id).orElse(null)?.toDomain()
 
     override fun findByEmail(email: String): User? = userJpaRepository.findByEmail(email)?.toDomain()
-
-    override fun existsByEmail(email: String): Boolean = userJpaRepository.existsByEmail(email)
 }

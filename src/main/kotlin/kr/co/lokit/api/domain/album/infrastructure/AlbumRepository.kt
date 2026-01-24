@@ -8,4 +8,5 @@ interface AlbumRepository {
     fun findAllByUserId(userId: Long): List<Album>
     fun updateTitle(id: Long, title: String): Album
     fun deleteById(id: Long)
+    fun findAllWithPhotos(): List<AlbumEntity>
 }
