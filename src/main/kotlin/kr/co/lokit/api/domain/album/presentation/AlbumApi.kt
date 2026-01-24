@@ -2,11 +2,13 @@ package kr.co.lokit.api.domain.album.presentation
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.dto.SelectableAlbumResponse
 
+@SecurityRequirement(name = "Authorization")
 @Tag(name = "Album", description = "앨범 API")
 interface AlbumApi {
 

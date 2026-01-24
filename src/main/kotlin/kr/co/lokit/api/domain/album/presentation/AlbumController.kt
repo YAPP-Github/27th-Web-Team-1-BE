@@ -3,6 +3,7 @@ package kr.co.lokit.api.domain.album.presentation
 import jakarta.validation.Valid
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
+import kr.co.lokit.api.config.security.CurrentUserId
 import kr.co.lokit.api.domain.album.application.AlbumService
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
@@ -24,11 +25,11 @@ class AlbumController(
 ) : AlbumApi {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    override fun create(@RequestBody @Valid albumRequest: AlbumRequest, userId: Long): IdResponse =
+    override fun create(@RequestBody @Valid albumRequest: AlbumRequest, @CurrentUserId userId: Long): IdResponse =
         albumService.create(albumRequest.toDomain(userId)).toIdResponse(Album::id)
 
     @GetMapping("selectable")
     @ResponseStatus(HttpStatus.OK)
-    override fun getSelectableAlbums(userId: Long): SelectableAlbumResponse =
+    override fun getSelectableAlbums(@CurrentUserId userId: Long): SelectableAlbumResponse =
         albumService.getSelectableAlbums(userId).toSelectableResponse()
 }
