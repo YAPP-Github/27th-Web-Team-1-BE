@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 
 @SecurityRequirement(name = "Authorization")
@@ -59,6 +61,12 @@ interface MapApi {
             required = true,
         )
         bbox: String,
+        @Parameter(
+            description = "앨범 ID (선택). 지정 시 해당 앨범의 사진만 조회",
+            example = "1",
+            required = false,
+        )
+        albumId: Long?,
     ): MapPhotosResponse
 
     @Operation(
@@ -109,4 +117,75 @@ interface MapApi {
         )
         size: Int,
     ): ClusterPhotosPageResponse
+
+    @Operation(
+        summary = "앨범 지도 정보 조회",
+        description = """
+            앨범 ID를 기반으로 해당 앨범 사진들의 중심 좌표와 바운딩 박스를 조회합니다.
+
+            - 앨범에 사진이 없는 경우 centerLongitude, centerLatitude, boundingBox가 null
+            - 앨범 선택 시 지도를 해당 위치로 이동하는 데 사용
+        """,
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = [Content(schema = Schema(implementation = AlbumMapInfoResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증 필요",
+                content = [Content()],
+            ),
+        ],
+    )
+    fun getAlbumMapInfo(
+        @Parameter(
+            description = "앨범 ID",
+            example = "1",
+            required = true,
+        )
+        albumId: Long,
+    ): AlbumMapInfoResponse
+
+    @Operation(
+        summary = "위치 정보 조회",
+        description = """
+            좌표를 기반으로 해당 위치의 주소 정보를 조회합니다.
+
+            - Kakao 역지오코딩 API를 사용하여 좌표 → 주소 변환
+            - 도로명 주소 우선, 없으면 지번 주소 반환
+            - 건물명이 있으면 placeName에 포함
+        """,
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = [Content(schema = Schema(implementation = LocationInfoResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증 필요",
+                content = [Content()],
+            ),
+        ],
+    )
+    fun getLocationInfo(
+        @Parameter(
+            description = "경도",
+            example = "127.0276",
+            required = true,
+        )
+        lng: Double,
+        @Parameter(
+            description = "위도",
+            example = "37.4979",
+            required = true,
+        )
+        lat: Double,
+    ): LocationInfoResponse
 }
