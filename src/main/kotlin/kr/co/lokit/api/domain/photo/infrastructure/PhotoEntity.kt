@@ -12,6 +12,7 @@ import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point
 import org.locationtech.jts.geom.PrecisionModel
+import java.time.LocalDateTime
 
 @Entity
 @Table(
@@ -41,6 +42,9 @@ class PhotoEntity(
 
     @Column(length = 1000)
     var description: String? = null
+
+    @Column(name = "taken_at", nullable = false)
+    var takenAt: LocalDateTime = LocalDateTime.now()
 
     companion object {
         private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)

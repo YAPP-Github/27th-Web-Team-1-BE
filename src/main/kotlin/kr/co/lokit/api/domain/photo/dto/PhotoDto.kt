@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.photo.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDateTime
 
 @Schema(description = "위치 정보")
 data class LocationResponse(
@@ -52,6 +53,8 @@ data class CreatePhotoRequest(
     val longitude: Double,
     @Schema(description = "위도", example = "37.4979")
     val latitude: Double,
+    @Schema(description = "촬영일시 (EXIF 데이터)", example = "2026-01-06T14:30:00")
+    val takenAt: LocalDateTime,
     @Schema(description = "사진 설명", example = "가족 여행 사진")
     val description: String? = null,
 )

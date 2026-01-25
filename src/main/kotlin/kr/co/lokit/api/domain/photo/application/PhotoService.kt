@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
+import kr.co.lokit.api.domain.map.application.AlbumBoundsService
 import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional
 class PhotoService(
     private val photoRepository: PhotoRepository,
     private val albumRepository: AlbumRepository,
+    private val albumBoundsService: AlbumBoundsService,
     private val s3PresignedUrlGenerator: S3PresignedUrlGenerator?,
 ) {
     @Transactional(readOnly = true)
@@ -29,7 +31,16 @@ class PhotoService(
             ?: throw UnsupportedOperationException("S3 is not enabled")
     }
 
-    fun create(photo: Photo): Photo = photoRepository.save(photo)
+    @Transactional
+    fun create(photo: Photo): Photo {
+        val saved = photoRepository.save(photo)
+        albumBoundsService.updateBoundsOnPhotoAdd(
+            photo.albumId,
+            photo.location.longitude,
+            photo.location.latitude,
+        )
+        return saved
+    }
 
     companion object {
         const val KEY_TEMPLATE = "photos/%d/%s_%s"

@@ -16,6 +16,7 @@ fun CreatePhotoRequest.toDomain(): Photo =
         albumId = albumId,
         location = Location(longitude, latitude),
         description = description,
+        takenAt = takenAt,
     )
 
 fun Photo.toEntity(album: AlbumEntity): PhotoEntity =
@@ -25,6 +26,7 @@ fun Photo.toEntity(album: AlbumEntity): PhotoEntity =
         location = PhotoEntity.createPoint(this.location.longitude, this.location.latitude),
     ).apply {
         this.description = this@toEntity.description
+        this.takenAt = this@toEntity.takenAt
     }
 
 fun PhotoEntity.toDomain(): Photo =
@@ -38,6 +40,7 @@ fun PhotoEntity.toDomain(): Photo =
                 latitude = this.latitude,
             ),
         description = this.description,
+        takenAt = this.takenAt,
     )
 
 fun PhotoEntity.toResponse(): PhotoResponse =
