@@ -90,6 +90,7 @@ jobs:
                             -e AWS_S3_BUCKET=$AWS_S3_BUCKET \
                             -e CORS_ALLOWED_ORIGINS=$CORS_ALLOWED_ORIGINS \
                             -e JWT_REFRESH_EXPIRATION=$JWT_REFRESH_EXPIRATION \
+                            -e KAKAO_API_KEY=$KAKAO_API_KEY \
                             --log-driver=awslogs \
                             --log-opt awslogs-region=$AWS_REGION \
                             --log-opt awslogs-group=/docker/lokit-api-dev \
