@@ -1,6 +1,9 @@
 package kr.co.lokit.api.domain.user.presentation
 
+import kr.co.lokit.api.common.dto.IdResponse
+import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.domain.user.application.AuthService
+import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.LoginRequest
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
@@ -21,10 +24,9 @@ class AuthController(
     @ResponseStatus(HttpStatus.CREATED)
     override fun login(
         @RequestBody request: LoginRequest,
-    ): JwtTokenResponse =
+    ): IdResponse =
         authService
-            .login(request.toDomain())
-            .toJwtTokenResponse()
+            .login(request.toDomain()).toIdResponse(User::id)
 
     @PostMapping("refresh")
     override fun refresh(

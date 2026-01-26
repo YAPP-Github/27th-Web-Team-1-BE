@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
+import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.LoginRequest
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
@@ -16,14 +17,14 @@ import org.springframework.web.bind.annotation.RequestBody
 interface AuthApi {
     @Operation(
         summary = "회원가입",
-        description = "이메일과 이름으로 신규 사용자를 등록하고 JWT 토큰을 발급합니다.",
+        description = "이메일과 이름으로 신규 사용자를 등록하고 개발환경 임시 인증용 헤더에 사용할 회원 ID를 발급합니다.",
     )
     @ApiResponses(
         value = [
             ApiResponse(
                 responseCode = "201",
                 description = "회원가입 성공",
-                content = [Content(schema = Schema(implementation = JwtTokenResponse::class))],
+                content = [Content(schema = Schema(implementation = IdResponse::class))],
             ),
             ApiResponse(
                 responseCode = "400",
@@ -40,7 +41,7 @@ interface AuthApi {
     @SecurityRequirements
     fun login(
         @RequestBody request: LoginRequest,
-    ): JwtTokenResponse
+    ): IdResponse
 
     @Operation(
         summary = "토큰 갱신",

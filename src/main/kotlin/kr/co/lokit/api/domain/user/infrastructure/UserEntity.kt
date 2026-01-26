@@ -8,7 +8,6 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.entity.BaseEntity
-import kr.co.lokit.api.domain.user.domain.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
@@ -20,36 +19,17 @@ import org.springframework.security.core.userdetails.UserDetails
 )
 class UserEntity(
     @Column(nullable = false)
-    private val email: String,
+    val email: String,
     @Column(nullable = false)
-    private val name: String,
+    val name: String,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val role: UserRole = UserRole.USER,
 ) : BaseEntity(),
     UserDetails {
-    override fun getAuthorities(): Collection<GrantedAuthority> = listOf(SimpleGrantedAuthority("ROLE_${role.name}"))
+    override fun getAuthorities(): Collection<GrantedAuthority> = listOf(SimpleGrantedAuthority(role.authority))
 
     override fun getPassword(): String? = null
 
     override fun getUsername(): String = email
-
-    fun getName(): String = name
-
-    fun toDomain(): User =
-        User(
-            id = id,
-            email = email,
-            name = name,
-            role = UserRole.USER,
-        )
-
-    companion object {
-        fun from(user: User): UserEntity =
-            UserEntity(
-                email = user.email,
-                name = user.name,
-                role = UserRole.valueOf(user.role.name),
-            )
-    }
 }

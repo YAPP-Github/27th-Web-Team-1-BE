@@ -9,7 +9,7 @@ fun UserEntity.toDomain(): User =
     User(
         id = id,
         email = username,
-        name = getName(),
+        name = name,
         role = UserRole.valueOf(role.name),
     )
 

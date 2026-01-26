@@ -3,6 +3,7 @@ package kr.co.lokit.api.config.security
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
+import kr.co.lokit.api.domain.user.mapping.toDomain
 import org.springframework.core.MethodParameter
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component

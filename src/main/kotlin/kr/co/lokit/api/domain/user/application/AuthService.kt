@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenEntity
 import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserRepository
+import kr.co.lokit.api.domain.user.mapping.toDomain
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -20,10 +21,8 @@ class AuthService(
     private val jwtTokenProvider: JwtTokenProvider,
 ) {
     @Transactional
-    fun login(user: User): JwtTokenResponse {
-        val savedUser = userRepository.findByEmail(user.email) ?: userRepository.save(user)
-        return generateTokensAndSave(savedUser)
-    }
+    fun login(user: User): User =
+        userRepository.findByEmail(user.email) ?: userRepository.save(user)
 
     @Transactional
     fun refresh(refreshToken: String): JwtTokenResponse {
