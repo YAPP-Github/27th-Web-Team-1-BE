@@ -3,7 +3,12 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <layout class="kr.co.lokit.api.config.logging.MaskingPatternLayout">
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{clientIp}] [%X{requestMethod} %X{requestUri}] %-5level %logger{36} - %msg%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{clientIp}] [%X{requestMethod}
+                    %X{requestUri}] %-5level %logger{36} - %msg%n
+                </pattern>
+                <maskPattern>
+                    ("?(?:access_?token|refresh_?token|token|authorization)"?\s*[:=]\s*"?(?:Bearer\s*)?)[^",\s}]+
+                </maskPattern>
             </layout>
         </encoder>
     </appender>
@@ -22,12 +27,16 @@
     <springProfile name="dev, prod">
         <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout"/>
+                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
+                    <maskPattern>
+                        ("?(?:access_?token|refresh_?token|token|authorization)"?\s*[:=]\s*"?(?:Bearer\s*)?)[^",\s}]+
+                    </maskPattern>
+                </layout>
             </encoder>
         </appender>
 
         <root level="INFO">
-            <appender-ref ref="JSON" />
+            <appender-ref ref="JSON"/>
         </root>
     </springProfile>
 </configuration>
