@@ -46,6 +46,7 @@ springdoc:
         enabled: true
         path: /swagger
         display-request-duration: true
+        groups-order: desc
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
 
