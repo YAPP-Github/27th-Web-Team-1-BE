@@ -51,6 +51,7 @@ springdoc:
 
 aws:
     s3:
+        enabled: true
         region: ${AWS_REGION}
         bucket: ${AWS_S3_BUCKET}
 

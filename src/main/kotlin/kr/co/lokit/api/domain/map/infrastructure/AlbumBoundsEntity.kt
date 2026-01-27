@@ -6,13 +6,12 @@ import jakarta.persistence.Index
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
 
-@Entity
+@Entity(name = "album_bounds")
 @Table(
-    name = "album_bounds",
-    indexes = [Index(name = "idx_album_bounds_album_id", columnList = "album_id", unique = true)],
+    indexes = [Index(columnList = "album_id")],
 )
 class AlbumBoundsEntity(
-    @Column(name = "album_id", nullable = false, unique = true)
+    @Column(name = "album_id", nullable = false)
     val albumId: Long,
     @Column(name = "min_longitude", nullable = false)
     var minLongitude: Double,

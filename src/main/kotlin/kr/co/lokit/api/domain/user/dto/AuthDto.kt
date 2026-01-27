@@ -12,6 +12,12 @@ data class LoginRequest(
         )
 }
 
+data class LoginResponse(
+    val userId: Long,
+    val workspaceId: Long,
+    val albumId: Long,
+)
+
 data class RefreshTokenRequest(
     val refreshToken: String,
 )

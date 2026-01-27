@@ -19,14 +19,7 @@
         <logger name="kr.co.lokit.api" level="DEBUG"/>
     </springProfile>
 
-    <springProfile name="dev">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
-        <logger name="kr.co.lokit.api" level="DEBUG"/>
-    </springProfile>
-
-    <springProfile name="prod">
+    <springProfile name="dev, prod">
         <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
                 <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout"/>

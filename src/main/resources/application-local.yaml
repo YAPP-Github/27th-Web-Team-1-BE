@@ -1,8 +1,8 @@
 spring:
     datasource:
-        url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-        username: ${POSTGRES_USER}
-        password: ${POSTGRES_PASSWORD}
+        url: jdbc:postgresql://${POSTGRES_HOST:}:${POSTGRES_PORT:}/${POSTGRES_DB:}
+        username: ${POSTGRES_USER:}
+        password: ${POSTGRES_PASSWORD:}
         driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
@@ -53,8 +53,9 @@ springdoc:
 
 aws:
     s3:
-        region: ${AWS_REGION}
-        bucket: ${AWS_S3_BUCKET}
+        enabled: false
+        region: ${AWS_REGION:}
+        bucket: ${AWS_S3_BUCKET:}
 
 cors:
     allowed-origins:
@@ -62,4 +63,4 @@ cors:
 
 kakao:
     api:
-        key: ${KAKAO_API_KEY}
+        key: ${KAKAO_API_KEY:}

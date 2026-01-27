@@ -10,7 +10,7 @@ import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
-import kr.co.lokit.api.domain.photo.infrastructure.S3PresignedUrlGenerator
+import kr.co.lokit.api.domain.photo.infrastructure.file.S3PresignedUrlGenerator
 import kr.co.lokit.api.domain.photo.mapping.toPhotoListResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

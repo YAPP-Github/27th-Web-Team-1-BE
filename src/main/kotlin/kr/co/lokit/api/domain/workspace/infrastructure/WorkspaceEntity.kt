@@ -5,14 +5,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.OneToMany
-import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.common.util.InviteCodeGenerator
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 
-@Entity
-@Table(name = "workspace")
-class WorkSpaceEntity(
+@Entity(name = "Workspace")
+class WorkspaceEntity(
     @Column(nullable = false, length = 20)
     val name: String,
 ) : BaseEntity() {
