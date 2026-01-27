@@ -2,13 +2,18 @@ package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
+import kr.co.lokit.api.domain.album.application.AlbumService
+import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
+import kr.co.lokit.api.domain.user.dto.LoginResponse
 import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenEntity
 import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserRepository
 import kr.co.lokit.api.domain.user.mapping.toDomain
+import kr.co.lokit.api.domain.workspace.application.WorkspaceService
+import kr.co.lokit.api.domain.workspace.domain.Workspace
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,11 +24,24 @@ class AuthService(
     private val userRepository: UserRepository,
     private val userJpaRepository: UserJpaRepository,
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
+    private val albumService: AlbumService,
+    private val workSpaceService: WorkspaceService,
     private val jwtTokenProvider: JwtTokenProvider,
 ) {
+    // 임시 회원가입/로그인 기능
     @Transactional
-    fun login(user: User): User =
+    fun login(user: User): LoginResponse {
         userRepository.findByEmail(user.email) ?: userRepository.save(user)
+
+        val workspace = workSpaceService.create(Workspace(name = "default workspace"), user.id)
+        val album = albumService.create(Album(title = "default album", workspaceId = workspace.id))
+
+        return LoginResponse(
+            userId = user.id,
+            workspaceId = workspace.id,
+            albumId = album.id,
+        )
+    }
 
     @Transactional
     fun refresh(refreshToken: String): JwtTokenResponse {

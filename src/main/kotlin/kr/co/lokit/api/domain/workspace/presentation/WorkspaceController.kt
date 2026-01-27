@@ -5,7 +5,7 @@ import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.config.security.CurrentUserId
 import kr.co.lokit.api.domain.workspace.application.WorkspaceService
-import kr.co.lokit.api.domain.workspace.domain.WorkSpace
+import kr.co.lokit.api.domain.workspace.domain.Workspace
 import kr.co.lokit.api.domain.workspace.dto.CreateWorkspaceRequest
 import kr.co.lokit.api.domain.workspace.dto.JoinWorkspaceRequest
 import org.springframework.http.HttpStatus
@@ -27,8 +27,8 @@ class WorkspaceController(
         @RequestBody @Valid request: CreateWorkspaceRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
-        workspaceService.create(WorkSpace(name = request.name), userId)
-            .toIdResponse(WorkSpace::id)
+        workspaceService.create(Workspace(name = request.name), userId)
+            .toIdResponse(Workspace::id)
 
     @PostMapping("join")
     @ResponseStatus(HttpStatus.OK)
@@ -37,5 +37,5 @@ class WorkspaceController(
         @CurrentUserId userId: Long,
     ): IdResponse =
         workspaceService.joinByInviteCode(request.inviteCode, userId)
-            .toIdResponse(WorkSpace::id)
+            .toIdResponse(Workspace::id)
 }
