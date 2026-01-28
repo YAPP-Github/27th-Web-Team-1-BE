@@ -1,0 +1,56 @@
+spring:
+    application:
+        name: api
+    jackson:
+        time-zone: Asia/Seoul
+
+    datasource:
+        url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+
+    jpa:
+        hibernate:
+            ddl-auto: create-drop
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.H2Dialect
+                format_sql: true
+                show_sql: true
+        open-in-view: false
+    docker:
+        compose:
+            enabled: false
+
+    h2:
+        console:
+            enabled: false
+
+logging:
+    level:
+        org.hibernate.SQL: DEBUG
+        org.hibernate.orm.jdbc.bind: TRACE
+
+server:
+    servlet:
+        context-path: /api
+
+jwt:
+    secret: test-jwt-secret-key-minimum-32-characters-long
+    expiration: 86400000
+    refresh-expiration: 604800000
+
+springdoc:
+    api-docs:
+        enabled: false
+    swagger-ui:
+        enabled: false
+
+aws:
+    s3:
+        enabled: false
+        bucket: ${AWS_S3_BUCKET:}
+
+cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}

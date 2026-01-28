@@ -35,11 +35,28 @@ sealed class BusinessException(
         cause: Throwable? = null,
     ) : BusinessException(ErrorCode.BUSINESS_RULE_VIOLATION, message, cause)
 
+    class UserAlreadyExistsException(
+        message: String = ErrorCode.EMAIL_ALREADY_EXISTS.message,
+        cause: Throwable? = null,
+    ) : BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS, message, cause)
+
     class NotInitializedException(
         override val message: String,
-    ) : BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, message) {
-        companion object {
-            fun entityId() = NotInitializedException("Entity id is not initialized")
-        }
-    }
+    ) : BusinessException(ErrorCode.NOT_INITIALIZED_VALUE_ACCESS, message)
+
+    class InvalidRefreshTokenException(
+        message: String = ErrorCode.INVALID_REFRESH_TOKEN.message,
+        cause: Throwable? = null,
+    ) : BusinessException(ErrorCode.INVALID_REFRESH_TOKEN, message, cause)
+
+    class UserNotFoundException(
+        message: String = ErrorCode.USER_NOT_FOUND.message,
+        cause: Throwable? = null,
+    ) : BusinessException(ErrorCode.USER_NOT_FOUND, message, cause)
 }
+
+inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =
+    BusinessException.ResourceNotFoundException("${T::class.simpleName}(id=$id)을(를) 찾을 수 없습니다")
+
+fun entityIdNotInitialized(entityName: String): BusinessException.NotInitializedException =
+    BusinessException.NotInitializedException("${entityName}의 id가 초기화되지 않았습니다")

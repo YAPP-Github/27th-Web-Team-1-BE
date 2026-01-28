@@ -32,7 +32,11 @@ class MdcLoggingFilter : OncePerRequestFilter() {
                 MediaType.TEXT_PLAIN_VALUE,
                 MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             )
+        private val EXCLUDED_PATHS = setOf("/api/actuator/health")
     }
+
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+        EXCLUDED_PATHS.contains(request.requestURI)
 
     override fun doFilterInternal(
         request: HttpServletRequest,
