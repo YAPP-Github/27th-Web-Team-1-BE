@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.RestController
 class PhotoController(
     private val photoService: PhotoService,
 ) : PhotoApi {
-    @GetMapping
-    override fun getPhotos(albumId: Long): PhotoListResponse = photoService.getPhotosByAlbum()
+    @GetMapping("album/{albumId}")
+    override fun getPhotos(@PathVariable albumId: Long): PhotoListResponse = photoService.getPhotosByAlbum()
 
     @PostMapping("presigned-url")
     @ResponseStatus(HttpStatus.OK)

@@ -30,7 +30,7 @@ class S3PresignedUrlGenerator(
             .build()
 
         val presignedUrl = s3Presigner.presignPutObject(presignRequest)
-        val objectUrl = OBJECT_URL_TEMPLATE.format(presignedUrl, presignRequest)
+        val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, key)
 
         return PresignedUrl(
             presignedUrl = presignedUrl.url().toString(),

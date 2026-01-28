@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.user.presentation
 
 import kr.co.lokit.api.domain.user.application.AuthService
+import kr.co.lokit.api.domain.user.application.TempLoginService
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.LoginRequest
 import kr.co.lokit.api.domain.user.dto.LoginResponse
@@ -17,13 +18,14 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("auth")
 class AuthController(
     private val authService: AuthService,
+    private val tempLoginService: TempLoginService,
 ) : AuthApi {
     @PostMapping("login")
     @ResponseStatus(HttpStatus.CREATED)
     override fun login(
         @RequestBody request: LoginRequest,
     ): LoginResponse =
-        authService
+        tempLoginService
             .login(request.toDomain())
 
     @PostMapping("refresh")

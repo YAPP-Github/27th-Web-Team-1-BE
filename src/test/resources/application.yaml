@@ -50,6 +50,7 @@ springdoc:
 aws:
     s3:
         enabled: false
+        bucket: ${AWS_S3_BUCKET:}
 
 cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
