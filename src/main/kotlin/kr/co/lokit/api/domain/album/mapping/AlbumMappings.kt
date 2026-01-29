@@ -37,6 +37,6 @@ fun List<Album>.toSelectableResponse(): SelectableAlbumResponse =
             id = it.id,
             title = it.title,
             photoCount = it.photoCount,
-            thumbnailUrls = it.thumbnails.map { photo -> photo.url },
+            thumbnailUrls = it.thumbnails.mapNotNull { photo -> photo.url },
         )
     })

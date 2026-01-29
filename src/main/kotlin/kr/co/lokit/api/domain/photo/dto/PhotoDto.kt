@@ -75,6 +75,18 @@ data class PresignedUrlRequest(
     val contentType: String,
 )
 
+@Schema(description = "사진 수정 요청")
+data class UpdatePhotoRequest(
+    @Schema(description = "앨범 ID", example = "1")
+    val albumId: Long? = null,
+    @Schema(description = "경도", example = "127.0276")
+    val longitude: Double? = null,
+    @Schema(description = "위도", example = "37.4979")
+    val latitude: Double? = null,
+    @Schema(description = "사진 설명", example = "수정된 사진 설명")
+    val description: String? = null,
+)
+
 @Schema(description = "사진 상세 정보")
 data class PhotoDetailResponse(
     @Schema(description = "사진 ID", example = "1")

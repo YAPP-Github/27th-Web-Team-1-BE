@@ -14,17 +14,17 @@ import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 
 fun CreatePhotoRequest.toDomain(userId: Long): Photo =
     Photo(
-        url = url,
         albumId = albumId,
-        uploadedById = userId,
         location = Location(longitude, latitude),
         description = description,
-        takenAt = takenAt,
-    )
+    ).apply {
+        uploadedById = userId
+        takenAt = this@toDomain.takenAt
+    }
 
 fun Photo.toEntity(album: AlbumEntity, uploadedBy: UserEntity): PhotoEntity =
     PhotoEntity(
-        url = this.url,
+        url = this.url!!,
         album = album,
         location = PhotoEntity.createPoint(this.location.longitude, this.location.latitude),
         uploadedBy = uploadedBy,
@@ -36,17 +36,13 @@ fun Photo.toEntity(album: AlbumEntity, uploadedBy: UserEntity): PhotoEntity =
 fun PhotoEntity.toDomain(): Photo =
     Photo(
         id = this.id,
-        url = this.url,
         albumId = this.album.id,
-        uploadedById = this.uploadedBy.id,
-        location =
-            Location(
-                longitude = this.longitude,
-                latitude = this.latitude,
-            ),
+        location = Location(longitude = this.longitude, latitude = this.latitude),
         description = this.description,
-        takenAt = this.takenAt,
-    )
+    ).apply {
+        uploadedById = this@toDomain.uploadedBy.id
+        takenAt = this@toDomain.takenAt
+    }
 
 fun PhotoEntity.toResponse(): PhotoResponse =
     PhotoResponse(

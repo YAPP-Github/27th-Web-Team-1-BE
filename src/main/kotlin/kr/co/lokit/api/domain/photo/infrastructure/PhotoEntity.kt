@@ -25,15 +25,15 @@ import java.time.LocalDateTime
 )
 class PhotoEntity(
     @Column(nullable = false, length = 2100)
-    val url: String,
+    var url: String,
     @JoinColumn(name = "album_id", nullable = false)
     @ManyToOne
-    val album: AlbumEntity,
+    var album: AlbumEntity,
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
-    val location: Point,
+    var location: Point,
     @ManyToOne
     @JoinColumn(name = "uploaded_by", nullable = false)
-    val uploadedBy: UserEntity,
+    var uploadedBy: UserEntity,
 ) : BaseEntity() {
     val longitude: Double
         get() = location.x
@@ -48,8 +48,16 @@ class PhotoEntity(
     @Column(length = 1000)
     var description: String? = null
 
+    fun updateDescription(description: String?) {
+        this.description = description
+    }
+
+    fun updateLocation(longitude: Double, latitude: Double) {
+        this.location = createPoint(longitude, latitude)
+    }
+
     @Column(name = "taken_at", nullable = false)
-    var takenAt: LocalDateTime = LocalDateTime.now()
+    var takenAt: LocalDateTime? = LocalDateTime.now()
 
     companion object {
         private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)

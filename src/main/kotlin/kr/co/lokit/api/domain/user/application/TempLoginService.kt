@@ -52,19 +52,20 @@ class TempLoginService(
             val latitude = GANGNAM_LATITUDE + ThreadLocalRandom.current().nextDouble(-0.01, 0.01)
             val photo = photoRepository.save(
                 Photo(
-                    url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(
-                        bucket,
-                        tempPhoto
-                    ),
                     albumId = album.id,
-                    uploadedById = userId,
                     location = Location(
                         longitude = longitude,
                         latitude = latitude,
                     ),
                     description = DESCRIPTIONS.get(ThreadLocalRandom.current().nextInt(DESCRIPTIONS.size)),
+                ).apply {
+                    url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(
+                        bucket,
+                        tempPhoto
+                    )
+                    uploadedById = userId
                     takenAt = LocalDateTime.now().minusDays(ThreadLocalRandom.current().nextInt(100).toLong())
-                )
+                }
             )
             photos.add(photo)
             albumBoundsService.updateBoundsOnPhotoAdd(album.id, longitude, latitude)
@@ -79,7 +80,7 @@ class TempLoginService(
             photos = photos.map {
                 LoginPhotoResponse(
                     photoId = it.id,
-                    url = it.url,
+                    url = it.url!!,
                     longitude = it.location.longitude,
                     latitude = it.location.latitude,
                     description = it.description,

@@ -14,6 +14,7 @@ import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.dto.PresignedUrlRequest
+import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
 
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Photo", description = "사진 API")
@@ -97,6 +98,37 @@ interface PhotoApi {
             example = "1",
             required = true,
         )
-        photoId: Long,
+        id: Long,
     ): PhotoDetailResponse
+
+    @Operation(
+        summary = "사진 수정",
+        description = "사진의 설명을 수정합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "수정 성공"),
+            ApiResponse(responseCode = "404", description = "사진을 찾을 수 없음 (PHOTO_001)", content = [Content()]),
+        ],
+    )
+    fun update(
+        @Parameter(description = "사진 ID", example = "1", required = true)
+        id: Long,
+        request: UpdatePhotoRequest,
+    ): IdResponse
+
+    @Operation(
+        summary = "사진 삭제",
+        description = "사진을 삭제합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "삭제 성공"),
+            ApiResponse(responseCode = "404", description = "사진을 찾을 수 없음 (PHOTO_001)", content = [Content()]),
+        ],
+    )
+    fun delete(
+        @Parameter(description = "사진 ID", example = "1", required = true)
+        id: Long,
+    )
 }
