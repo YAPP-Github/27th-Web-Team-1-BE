@@ -1,11 +1,10 @@
 package kr.co.lokit.api.domain.user.presentation
 
-import kr.co.lokit.api.common.dto.IdResponse
-import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.domain.user.application.AuthService
-import kr.co.lokit.api.domain.user.domain.User
+import kr.co.lokit.api.domain.user.application.TempLoginService
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.LoginRequest
+import kr.co.lokit.api.domain.user.dto.LoginResponse
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import kr.co.lokit.api.domain.user.mapping.toJwtTokenResponse
 import org.springframework.http.HttpStatus
@@ -19,14 +18,15 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("auth")
 class AuthController(
     private val authService: AuthService,
+    private val tempLoginService: TempLoginService,
 ) : AuthApi {
     @PostMapping("login")
     @ResponseStatus(HttpStatus.CREATED)
     override fun login(
         @RequestBody request: LoginRequest,
-    ): IdResponse =
-        authService
-            .login(request.toDomain()).toIdResponse(User::id)
+    ): LoginResponse =
+        tempLoginService
+            .login(request.toDomain())
 
     @PostMapping("refresh")
     override fun refresh(

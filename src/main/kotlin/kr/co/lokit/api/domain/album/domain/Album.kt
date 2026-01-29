@@ -10,6 +10,7 @@ data class Album(
 ) {
     var photos: List<Photo> = mutableListOf()
     var thumbnail: Photo? = null
+    var thumbnails: List<Photo> = mutableListOf()
 
     init {
         require(title.length <= 10) { "앨범 제목은 10자 이내여야 합니다." }

@@ -7,6 +7,7 @@ import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.regex.Pattern
 
 class MaskingJsonLayout : LayoutBase<ILoggingEvent>() {
     private val objectMapper = JsonMapper.builder().build()
@@ -14,7 +15,16 @@ class MaskingJsonLayout : LayoutBase<ILoggingEvent>() {
         DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
             .withZone(ZoneId.systemDefault())
-    private val engine = LogMaskingEngine.createDefault()
+    private val maskPatterns = mutableListOf<Pattern>()
+
+    private fun mask(input: String?): String {
+        if (input.isNullOrEmpty()) return ""
+        var result = input
+        for (pattern in maskPatterns) {
+            result = pattern.matcher(result).replaceAll("$1***")
+        }
+        return result
+    }
 
     override fun doLayout(event: ILoggingEvent): String {
         val logMap = mutableMapOf<String, Any?>()
@@ -23,12 +33,12 @@ class MaskingJsonLayout : LayoutBase<ILoggingEvent>() {
         logMap["level"] = event.level.toString()
         logMap["logger"] = event.loggerName
         logMap["thread"] = event.threadName
-        logMap["message"] = engine.mask(event.formattedMessage)
+        logMap["message"] = mask(event.formattedMessage)
 
         // MDC properties
         val mdc = event.mdcPropertyMap
         if (mdc.isNotEmpty()) {
-            val maskedMdc = mdc.mapValues { (_, value) -> engine.mask(value) }
+            val maskedMdc = mdc.mapValues { (_, value) -> mask(value) }
             logMap["context"] = maskedMdc
         }
 

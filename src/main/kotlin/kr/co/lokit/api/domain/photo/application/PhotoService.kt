@@ -9,8 +9,9 @@ import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
-import kr.co.lokit.api.domain.photo.infrastructure.S3PresignedUrlGenerator
+import kr.co.lokit.api.domain.photo.infrastructure.file.S3PresignedUrlGenerator
 import kr.co.lokit.api.domain.photo.mapping.toPhotoListResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -60,13 +61,30 @@ class PhotoService(
         return PhotoDetailResponse(
             id = photoDetail.id,
             url = photoDetail.url,
-            takenAt = photoDetail.takenAt.toDateString(),
+            takenAt = photoDetail.takenAt?.toDateString()!!,
             albumName = photoDetail.albumName,
             uploaderName = photoDetail.uploaderName,
             address = locationInfo.address,
             description = photoDetail.description,
         )
     }
+
+    @Transactional
+    fun update(photoId: Long, request: UpdatePhotoRequest): Photo {
+        val photo = photoRepository.update(photoId, request)
+        if (request.longitude != null && request.latitude != null) {
+            albumBoundsService.updateBoundsOnPhotoAdd(
+                photo.albumId,
+                photo.location.longitude,
+                photo.location.latitude,
+            )
+        }
+        return photo
+    }
+
+    @Transactional
+    fun delete(photoId: Long) =
+        photoRepository.deleteById(photoId)
 
     companion object {
         const val KEY_TEMPLATE = "photos/%d/%s_%s"

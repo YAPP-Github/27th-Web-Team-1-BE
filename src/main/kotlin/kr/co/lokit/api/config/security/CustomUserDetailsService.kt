@@ -1,6 +1,7 @@
 package kr.co.lokit.api.config.security
 
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -17,6 +18,6 @@ class CustomUserDetailsService(
 
     fun loadUserById(userId: Long): UserDetails =
         userJpaRepository
-            .findById(userId)
-            .orElseThrow { UsernameNotFoundException("User not found: $userId") }
+            .findByIdOrNull(userId)
+            ?: throw UsernameNotFoundException("User not found: $userId")
 }

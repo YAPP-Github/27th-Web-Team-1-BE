@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
+import io.swagger.v3.oas.models.tags.Tag
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -27,6 +28,14 @@ class OpenApiConfig {
             ).servers(
                 listOf(
                     Server().url(contextPath).description("API Server"),
+                ),
+            ).tags(
+                listOf(
+                    Tag().name("Auth").description("인증 API"),
+                    Tag().name("Workspace").description("워크스페이스 API"),
+                    Tag().name("Album").description("앨범 API"),
+                    Tag().name("Photo").description("사진 API"),
+                    Tag().name("Map").description("지도 API"),
                 ),
             ).components(
                 Components()

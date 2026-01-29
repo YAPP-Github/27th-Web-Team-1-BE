@@ -6,7 +6,7 @@ spring:
         driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: create-drop
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -46,11 +46,13 @@ springdoc:
         enabled: true
         path: /swagger
         display-request-duration: true
+        tags-sorter: alpha
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
 
 aws:
     s3:
+        enabled: true
         region: ${AWS_REGION}
         bucket: ${AWS_S3_BUCKET}
 

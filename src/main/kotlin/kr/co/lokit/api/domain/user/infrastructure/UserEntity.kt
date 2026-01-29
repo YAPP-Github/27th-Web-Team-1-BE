@@ -4,21 +4,15 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.Table
-import jakarta.persistence.UniqueConstraint
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.entity.BaseEntity
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
-@Entity
-@Table(
-    name = "users",
-    uniqueConstraints = [UniqueConstraint(name = "uk_users_email", columnNames = ["email"])],
-)
+@Entity(name = "Users")
 class UserEntity(
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     val email: String,
     @Column(nullable = false)
     val name: String,

@@ -2,7 +2,6 @@ package kr.co.lokit.api.domain.photo.infrastructure
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -16,24 +15,25 @@ import org.locationtech.jts.geom.Point
 import org.locationtech.jts.geom.PrecisionModel
 import java.time.LocalDateTime
 
-@Entity
+@Entity(name = "Photo")
 @Table(
-    name = "photo",
     indexes = [
-        Index(name = "idx_photo_location", columnList = "location"),
+        Index(columnList = "location"),
+        Index(columnList = "album_id"),
+        Index(columnList = "uploaded_by"),
     ],
 )
 class PhotoEntity(
     @Column(nullable = false, length = 2100)
-    val url: String,
-    @JoinColumn(nullable = false)
+    var url: String,
+    @JoinColumn(name = "album_id", nullable = false)
     @ManyToOne
-    val album: AlbumEntity,
+    var album: AlbumEntity,
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
-    val location: Point,
-    @ManyToOne(fetch = FetchType.LAZY)
+    var location: Point,
+    @ManyToOne
     @JoinColumn(name = "uploaded_by", nullable = false)
-    val uploadedBy: UserEntity,
+    var uploadedBy: UserEntity,
 ) : BaseEntity() {
     val longitude: Double
         get() = location.x
@@ -48,8 +48,16 @@ class PhotoEntity(
     @Column(length = 1000)
     var description: String? = null
 
+    fun updateDescription(description: String?) {
+        this.description = description
+    }
+
+    fun updateLocation(longitude: Double, latitude: Double) {
+        this.location = createPoint(longitude, latitude)
+    }
+
     @Column(name = "taken_at", nullable = false)
-    var takenAt: LocalDateTime = LocalDateTime.now()
+    var takenAt: LocalDateTime? = LocalDateTime.now()
 
     companion object {
         private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)

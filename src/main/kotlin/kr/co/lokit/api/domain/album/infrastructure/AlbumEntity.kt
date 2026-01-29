@@ -12,24 +12,31 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
-import kr.co.lokit.api.domain.workspace.infrastructure.WorkSpaceEntity
+import kr.co.lokit.api.domain.workspace.infrastructure.WorkspaceEntity
 import java.time.LocalDateTime
 
-@Entity
+@Entity(name = "Album")
 @Table(
-    name = "album",
-    indexes = [Index(columnList = "photo_added_at, created_at")],
+    indexes = [
+        Index(columnList = "photo_added_at, created_at"),
+        Index(columnList = "workspace_id"),
+        Index(columnList = "thumbnail_id")
+    ],
 )
 class AlbumEntity(
     @Column(nullable = false, length = 10)
     var title: String,
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
-    val workspace: WorkSpaceEntity,
+    @ManyToOne
+    @JoinColumn(name = "workspace_id", nullable = false)
+    val workspace: WorkspaceEntity,
 ) : BaseEntity() {
+
+    init {
+        workspace.addAlbum(this)
+    }
+
     @Column(nullable = false)
     var photoCount: Int = 0
-        get() = photos.size
         protected set
 
     @OneToMany(
@@ -40,7 +47,7 @@ class AlbumEntity(
     var photos: MutableList<PhotoEntity> = mutableListOf()
         protected set
 
-    @JoinColumn
+    @JoinColumn(name = "thumbnail_id")
     @OneToOne(
         cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE],
     )
