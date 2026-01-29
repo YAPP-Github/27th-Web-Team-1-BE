@@ -54,6 +54,7 @@ fun PhotoEntity.toResponse(): PhotoResponse =
                 latitude = this.latitude,
             ),
         description = this.description,
+        takenAt = this.takenAt,
     )
 
 fun AlbumEntity.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse =

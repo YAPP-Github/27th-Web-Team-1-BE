@@ -58,6 +58,7 @@ class PhotoController(
     ): IdResponse = photoService.update(id, request).toIdResponse(Photo::id)
 
     @DeleteMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     override fun delete(
         @PathVariable id: Long,
     ) = photoService.delete(id)

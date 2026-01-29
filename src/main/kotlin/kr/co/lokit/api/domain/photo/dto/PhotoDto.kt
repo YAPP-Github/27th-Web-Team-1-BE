@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.photo.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
 import java.time.LocalDateTime
 
 @Schema(description = "위치 정보")
@@ -21,6 +22,8 @@ data class PhotoResponse(
     val location: LocationResponse,
     @Schema(description = "사진 설명", example = "아름다운 풍경")
     val description: String?,
+    @Schema(description = "사진의 촬영 일시")
+    val takenAt: LocalDateTime?,
 )
 
 @Schema(description = "앨범별 사진 목록")
@@ -45,6 +48,7 @@ data class PhotoListResponse(
 
 @Schema(description = "사진 생성 요청")
 data class CreatePhotoRequest(
+    @field:NotBlank(message = "사진 URL은 필수입니다.")
     @Schema(description = "사진 URL", example = "https://bucket.s3.amazonaws.com/photos/1/image.jpg")
     val url: String,
     @Schema(description = "앨범 ID", example = "1")
@@ -69,8 +73,10 @@ data class PresignedUrl(
 
 @Schema(description = "Presigned URL 요청")
 data class PresignedUrlRequest(
+    @field:NotBlank(message = "파일명은 필수입니다.")
     @Schema(description = "파일명", example = "image.jpg")
     val fileName: String,
+    @field:NotBlank(message = "파일 MIME 타입은 필수입니다.")
     @Schema(description = "파일 MIME 타입", example = "image/jpeg")
     val contentType: String,
 )

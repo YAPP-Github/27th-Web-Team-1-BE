@@ -5,7 +5,7 @@ spring:
         time-zone: Asia/Seoul
 
     datasource:
-        url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+        url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
         driver-class-name: org.h2.Driver
         username: sa
         password:
@@ -15,7 +15,6 @@ spring:
             ddl-auto: create-drop
         properties:
             hibernate:
-                dialect: org.hibernate.dialect.H2Dialect
                 format_sql: true
                 show_sql: true
         open-in-view: false
@@ -50,7 +49,13 @@ springdoc:
 aws:
     s3:
         enabled: false
-        bucket: ${AWS_S3_BUCKET:}
+        region: ap-northeast-2
+        bucket: test-bucket
 
 cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    allowed-origins:
+        - http://localhost:3000
+
+kakao:
+    api:
+        key: test-key
