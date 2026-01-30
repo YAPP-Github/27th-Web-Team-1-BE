@@ -18,7 +18,6 @@ import java.time.LocalDateTime
 @Entity(name = "Photo")
 @Table(
     indexes = [
-        Index(columnList = "location"),
         Index(columnList = "album_id"),
         Index(columnList = "uploaded_by"),
     ],

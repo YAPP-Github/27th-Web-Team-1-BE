@@ -11,4 +11,8 @@ data class Photo(
     var uploadedById: Long,
     var takenAt: LocalDateTime = LocalDateTime.now(),
 ) {
+    fun hasLocation(): Boolean {
+        return location.longitude != 0.0 && location.latitude != 0.0
+
+    }
 }

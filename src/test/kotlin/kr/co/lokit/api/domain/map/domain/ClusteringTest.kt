@@ -58,13 +58,29 @@ class ClusteringTest {
     @Test
     fun `GridCell에서 BBox를 계산할 수 있다`() {
         val cell = GridCell(zoom = 14, cellX = 1, cellY = 1)
-        val gridSize = GridConfig.getGridSize(14)
+        val gridSize = GridValues.getGridSize(14)
         val bbox = cell.toBBox()
 
         assertEquals(gridSize, bbox.west)
         assertEquals(gridSize, bbox.south)
         assertEquals(gridSize * 2, bbox.east)
         assertEquals(gridSize * 2, bbox.north)
+    }
+
+    @Test
+    fun `BBox를 중심 좌표에서 생성할 수 있다`() {
+        val zoom = 14
+        val longitude = 127.0
+        val latitude = 37.5
+        val gridSize = GridValues.getGridSize(zoom)
+        val halfSize = gridSize / 2
+
+        val bbox = BBox.fromCenter(zoom, longitude, latitude)
+
+        assertEquals(longitude - halfSize, bbox.west)
+        assertEquals(latitude - halfSize, bbox.south)
+        assertEquals(longitude + halfSize, bbox.east)
+        assertEquals(latitude + halfSize, bbox.north)
     }
 
     @Test

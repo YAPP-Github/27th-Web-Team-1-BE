@@ -1,18 +1,15 @@
 package kr.co.lokit.api.domain.photo.application
 
-import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.common.util.DateTimeUtils.toDateString
+import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.domain.map.application.AlbumBoundsService
 import kr.co.lokit.api.domain.map.infrastructure.geocoding.MapClient
 import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
-import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
-import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
 import kr.co.lokit.api.domain.photo.infrastructure.file.S3PresignedUrlGenerator
-import kr.co.lokit.api.domain.photo.mapping.toPhotoListResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,12 +22,12 @@ class PhotoService(
     private val mapClient: MapClient,
 ) {
     @Transactional(readOnly = true)
-    fun getPhotosByAlbum(): PhotoListResponse = albumRepository.findAllWithPhotos().toPhotoListResponse()
+    fun getPhotosByAlbum(albumId: Long): List<Album> =
+        albumRepository.findByIdWithPhotos(albumId)
 
     fun generatePresignedUrl(
         fileName: String,
         contentType: String,
-        userId: Long,
     ): PresignedUrl {
         val key = KEY_TEMPLATE.format(fileName, contentType)
         return s3PresignedUrlGenerator?.generate(key, contentType)
@@ -51,7 +48,6 @@ class PhotoService(
     @Transactional(readOnly = true)
     fun getPhotoDetail(photoId: Long): PhotoDetailResponse {
         val photoDetail = photoRepository.findDetailById(photoId)
-            ?: throw entityNotFound<Photo>(photoId)
 
         val locationInfo = mapClient.reverseGeocode(
             photoDetail.location.longitude,
@@ -70,16 +66,33 @@ class PhotoService(
     }
 
     @Transactional
-    fun update(photoId: Long, request: UpdatePhotoRequest): Photo {
-        val photo = photoRepository.update(photoId, request)
-        if (request.longitude != null && request.latitude != null) {
+    fun update(
+        id: Long,
+        userId: Long,
+        albumId: Long,
+        description: String?,
+        longitude: Double,
+        latitude: Double
+    ): Photo {
+        val photo = photoRepository.findById(id)
+        val updated = photo.copy(
+            albumId = albumId,
+            description = description,
+            location = photo.location.copy(
+                longitude = longitude,
+                latitude = latitude,
+            ),
+        )
+        val result = photoRepository.apply(updated)
+
+        if (updated.hasLocation()) {
             albumBoundsService.updateBoundsOnPhotoAdd(
-                photo.albumId,
-                photo.location.longitude,
-                photo.location.latitude,
+                updated.albumId,
+                updated.location.longitude,
+                updated.location.latitude,
             )
         }
-        return photo
+        return result
     }
 
     @Transactional

@@ -7,6 +7,7 @@ import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import kr.co.lokit.api.domain.workspace.infrastructure.WorkspaceEntity
+import org.locationtech.jts.geom.Point
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import java.time.LocalDateTime
 
@@ -51,7 +52,7 @@ fun createPhotoEntity(
     url: String = "https://example.com/photo.jpg",
     takenAt: LocalDateTime = LocalDateTime.of(2025, 1, 1, 12, 0),
     album: AlbumEntity = createAlbumEntity(),
-    location: org.locationtech.jts.geom.Point = PhotoEntity.createPoint(127.0, 37.5),
+    location: Point = PhotoEntity.createPoint(127.0, 37.5),
     uploadedBy: UserEntity = createUserEntity(),
 ): PhotoEntity {
     val entity = PhotoEntity(
@@ -74,7 +75,7 @@ fun createAlbumBoundsEntity(
     maxLatitude: Double = 37.5,
 ): AlbumBoundsEntity {
     val entity = AlbumBoundsEntity(
-        albumId = albumId,
+        standardId = albumId,
         minLongitude = minLongitude,
         maxLongitude = maxLongitude,
         minLatitude = minLatitude,

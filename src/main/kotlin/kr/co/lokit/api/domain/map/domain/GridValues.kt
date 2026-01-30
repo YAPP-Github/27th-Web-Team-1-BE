@@ -8,7 +8,7 @@ package kr.co.lokit.api.domain.map.domain
  * - z13: ~210m
  * - z14: ~105m
  */
-object GridConfig {
+object GridValues {
     private val GRID_SIZES: Map<Int, Double> =
         mapOf(
             10 to 0.015625,      // 1/64 degrees
@@ -19,6 +19,8 @@ object GridConfig {
         )
 
     private const val DEFAULT_GRID_SIZE = 0.001953125 // ~210m
+    const val HOME_ZOOM_LEVEL = 13
+    const val CLUSTER_ZOOM_THRESHOLD = 15
 
     fun getGridSize(zoom: Int): Double = GRID_SIZES[zoom] ?: DEFAULT_GRID_SIZE
 

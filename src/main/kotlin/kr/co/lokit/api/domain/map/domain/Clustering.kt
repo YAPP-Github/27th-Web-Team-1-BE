@@ -10,6 +10,17 @@ data class BBox(
     val north: Double,
 ) {
     companion object {
+        fun fromCenter(zoom: Int, longitude: Double, latitude: Double): BBox {
+            val gridSize = GridValues.getGridSize(zoom)
+            val halfSize = gridSize / 2
+            return BBox(
+                west = longitude - halfSize,
+                south = latitude - halfSize,
+                east = longitude + halfSize,
+                north = latitude + halfSize,
+            )
+        }
+
         fun fromString(bbox: String): BBox {
             val parts = bbox.split(",")
             require(parts.size == 4) { "bbox는 ,로 구분된 네 가지 실수 값을 가져아한다: west,south,east,north" }
@@ -59,7 +70,7 @@ data class GridCell(
     val cellY: Long,
 ) {
     fun toBBox(): BBox {
-        val gridSize = GridConfig.getGridSize(zoom)
+        val gridSize = GridValues.getGridSize(zoom)
         val west = cellX * gridSize
         val south = cellY * gridSize
         return BBox(

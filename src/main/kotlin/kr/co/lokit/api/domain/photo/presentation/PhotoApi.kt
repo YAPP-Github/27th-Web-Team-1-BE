@@ -48,7 +48,6 @@ interface PhotoApi {
     )
     fun getPresignedUrl(
         request: PresignedUrlRequest,
-        userId: Long,
     ): PresignedUrl
 
     @Operation(
@@ -115,6 +114,7 @@ interface PhotoApi {
         @Parameter(description = "사진 ID", example = "1", required = true)
         id: Long,
         request: UpdatePhotoRequest,
+        userId: Long,
     ): IdResponse
 
     @Operation(

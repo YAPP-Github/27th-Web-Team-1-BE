@@ -45,34 +45,24 @@ class TempLoginService(
                 workspaceId = workspace.id
             )
         )
-        val photos = mutableListOf<Photo>()
-
-        for (tempPhoto in TEMP_PHOTOS) {
+        val photoRequests = TEMP_PHOTOS.map { tempPhoto ->
             val longitude = GANGNAM_LONGITUDE - ThreadLocalRandom.current().nextDouble(-0.01, 0.01)
             val latitude = GANGNAM_LATITUDE + ThreadLocalRandom.current().nextDouble(-0.01, 0.01)
-            val photo = photoRepository.save(
-                Photo(
-                    albumId = album.id,
-                    location = Location(
-                        longitude = longitude,
-                        latitude = latitude,
-                    ),
-                    description = DESCRIPTIONS.get(ThreadLocalRandom.current().nextInt(DESCRIPTIONS.size)),
-                    url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(
-                        bucket,
-                        tempPhoto
-                    ),
-                    uploadedById = userId,
-                    takenAt = LocalDateTime.now().minusDays(ThreadLocalRandom.current().nextInt(100).toLong())
-                )
+            Photo(
+                albumId = album.id,
+                location = Location(longitude = longitude, latitude = latitude),
+                description = DESCRIPTIONS[ThreadLocalRandom.current().nextInt(DESCRIPTIONS.size)],
+                url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(bucket, tempPhoto),
+                uploadedById = userId,
+                takenAt = LocalDateTime.now().minusDays(ThreadLocalRandom.current().nextInt(100).toLong())
             )
-            photos.add(photo)
-            albumBoundsService.updateBoundsOnPhotoAdd(album.id, longitude, latitude)
         }
 
-        val albumMapInfo = mapService.getAlbumMapInfo(album.id)
+        val photos = photoRepository.saveAll(photoRequests)
+        val locations = photos.map { it.location.longitude to it.location.latitude }
+        albumBoundsService.updateBoundsFromLocations(album.id, locations)
 
-        photos.forEach { println(it) } // 왜 url 같은 3개 데이터가 출력이 안되지?
+        val albumMapInfo = mapService.getAlbumMapInfo(album.id)
 
         return LoginResponse(
             userId = userId,
@@ -81,7 +71,7 @@ class TempLoginService(
             photos = photos.map {
                 LoginPhotoResponse(
                     photoId = it.id,
-                    url = it.url!!,
+                    url = it.url,
                     longitude = it.location.longitude,
                     latitude = it.location.latitude,
                     description = it.description,

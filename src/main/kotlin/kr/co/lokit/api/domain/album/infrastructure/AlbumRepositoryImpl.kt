@@ -42,7 +42,11 @@ class AlbumRepositoryImpl(
         albumJpaRepository.delete(albumEntity)
     }
 
-    override fun findAllWithPhotos(): List<AlbumEntity> {
-        return albumJpaRepository.findAllWithPhotos()
+    override fun findAllWithPhotos(): List<Album> {
+        return albumJpaRepository.findAllWithPhotos().map { it.toDomain() }
+    }
+
+    override fun findByIdWithPhotos(id: Long): List<Album> {
+        return albumJpaRepository.findByIdWithPhotos(id).map { it.toDomain() }
     }
 }

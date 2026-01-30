@@ -13,6 +13,7 @@ import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.dto.PresignedUrlRequest
 import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
 import kr.co.lokit.api.domain.photo.mapping.toDomain
+import kr.co.lokit.api.domain.photo.mapping.toPhotoListResponse
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -30,14 +31,14 @@ class PhotoController(
     private val photoService: PhotoService,
 ) : PhotoApi {
     @GetMapping("album/{albumId}")
-    override fun getPhotos(@PathVariable albumId: Long): PhotoListResponse = photoService.getPhotosByAlbum()
+    override fun getPhotos(@PathVariable albumId: Long): PhotoListResponse =
+        photoService.getPhotosByAlbum(albumId).toPhotoListResponse()
 
     @PostMapping("presigned-url")
     @ResponseStatus(HttpStatus.OK)
     override fun getPresignedUrl(
         @RequestBody @Valid request: PresignedUrlRequest,
-        @CurrentUserId userId: Long,
-    ): PresignedUrl = photoService.generatePresignedUrl(request.fileName, request.contentType, userId)
+    ): PresignedUrl = photoService.generatePresignedUrl(request.fileName, request.contentType)
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -55,7 +56,10 @@ class PhotoController(
     override fun update(
         @PathVariable id: Long,
         @RequestBody @Valid request: UpdatePhotoRequest,
-    ): IdResponse = photoService.update(id, request).toIdResponse(Photo::id)
+        @CurrentUserId userId: Long,
+    ): IdResponse =
+        photoService.update(id, userId, request.albumId, request.description, request.longitude, request.latitude)
+            .toIdResponse(Photo::id)
 
     @DeleteMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

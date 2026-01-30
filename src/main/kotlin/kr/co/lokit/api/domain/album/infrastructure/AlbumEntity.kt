@@ -8,7 +8,6 @@ import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
@@ -20,7 +19,6 @@ import java.time.LocalDateTime
     indexes = [
         Index(columnList = "photo_added_at, created_at"),
         Index(columnList = "workspace_id"),
-        Index(columnList = "thumbnail_id")
     ],
 )
 class AlbumEntity(
@@ -47,12 +45,11 @@ class AlbumEntity(
     var photos: MutableList<PhotoEntity> = mutableListOf()
         protected set
 
-    @JoinColumn(name = "thumbnail_id")
-    @OneToOne(
-        cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE],
-    )
-    var thumbnail: PhotoEntity? = null
-        protected set
+    val thumbnail: PhotoEntity?
+        get() = photos.maxByOrNull { it.createdAt }
+
+    val thumbnails: List<PhotoEntity>
+        get() = photos.sortedByDescending { it.createdAt }.take(4)
 
     var photoAddedAt: LocalDateTime? = null
         protected set
@@ -60,9 +57,6 @@ class AlbumEntity(
     fun addPhoto(photo: PhotoEntity) {
         if (photos.contains(photo)) {
             return
-        }
-        if (photos.isEmpty()) {
-            thumbnail = photo
         }
         photos.add(photo)
         photoAddedAt = LocalDateTime.now()

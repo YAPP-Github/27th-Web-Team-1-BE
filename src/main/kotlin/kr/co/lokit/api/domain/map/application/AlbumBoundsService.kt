@@ -15,15 +15,50 @@ class AlbumBoundsService(
         longitude: Double,
         latitude: Double,
     ) {
-        val existingBounds = albumBoundsRepository.findByAlbumId(albumId)
+        val existingBounds = albumBoundsRepository.findByAlbumIdOrNull(albumId)
 
-        if (existingBounds == null) {
+        existingBounds?.apply {
+            val expanded = existingBounds.expandedWith(longitude, latitude)
+            albumBoundsRepository.apply(expanded)
+        } ?: run {
             albumBoundsRepository.save(
                 AlbumBounds.createInitial(albumId, longitude, latitude),
             )
+        }
+    }
+
+    @Transactional
+    fun updateBoundsFromLocations(
+        albumId: Long,
+        locations: List<Pair<Double, Double>>,
+    ) {
+        if (locations.isEmpty()) return
+
+        val minLon = locations.minOf { it.first }
+        val maxLon = locations.maxOf { it.first }
+        val minLat = locations.minOf { it.second }
+        val maxLat = locations.maxOf { it.second }
+
+        val existingBounds = albumBoundsRepository.findByAlbumIdOrNull(albumId)
+
+        if (existingBounds != null) {
+            val expanded = existingBounds.copy(
+                minLongitude = minOf(existingBounds.minLongitude, minLon),
+                maxLongitude = maxOf(existingBounds.maxLongitude, maxLon),
+                minLatitude = minOf(existingBounds.minLatitude, minLat),
+                maxLatitude = maxOf(existingBounds.maxLatitude, maxLat),
+            )
+            albumBoundsRepository.apply(expanded)
         } else {
-            val expanded = existingBounds.expandedWith(longitude, latitude)
-            albumBoundsRepository.updateBounds(expanded)
+            albumBoundsRepository.save(
+                AlbumBounds(
+                    albumId = albumId,
+                    minLongitude = minLon,
+                    maxLongitude = maxLon,
+                    minLatitude = minLat,
+                    maxLatitude = maxLat,
+                ),
+            )
         }
     }
 }

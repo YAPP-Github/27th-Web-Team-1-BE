@@ -30,9 +30,9 @@ fun createPhotoRequest(
 )
 
 fun createUpdatePhotoRequest(
-    albumId: Long? = null,
-    longitude: Double? = null,
-    latitude: Double? = null,
+    albumId: Long,
+    longitude: Double,
+    latitude: Double,
     description: String? = null,
 ) = UpdatePhotoRequest(
     albumId = albumId,

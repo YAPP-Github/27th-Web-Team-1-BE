@@ -35,6 +35,7 @@ class ErrorControllerAdvice {
             exception = ex,
             request = request,
             errorCode = ex.errorCode,
+            errors = ex.errors.ifEmpty { null },
         )
     }
 

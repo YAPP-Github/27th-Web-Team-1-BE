@@ -14,6 +14,18 @@ data class AlbumBounds(
     val centerLatitude: Double
         get() = (minLatitude + maxLatitude) / 2
 
+    fun toBBox(zoom: Int): BBox {
+        val gridSize = GridValues.getGridSize(zoom)
+        val west = centerLongitude * gridSize
+        val south = centerLatitude * gridSize
+        return BBox(
+            west = west,
+            south = south,
+            east = west + gridSize,
+            north = south + gridSize,
+        )
+    }
+
     fun expandedWith(longitude: Double, latitude: Double): AlbumBounds =
         copy(
             minLongitude = minOf(minLongitude, longitude),

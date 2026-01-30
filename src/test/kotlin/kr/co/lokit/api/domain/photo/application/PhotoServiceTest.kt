@@ -73,7 +73,8 @@ class PhotoServiceTest {
 
     @Test
     fun `존재하지 않는 사진 조회 시 예외가 발생한다`() {
-        `when`(photoRepository.findDetailById(999L)).thenReturn(null)
+        `when`(photoRepository.findDetailById(999L))
+            .thenThrow(BusinessException.ResourceNotFoundException("PhotoDetail(id=999)을(를) 찾을 수 없습니다"))
 
         assertThrows<BusinessException.ResourceNotFoundException> {
             photoService.getPhotoDetail(999L)
@@ -89,23 +90,27 @@ class PhotoServiceTest {
 
     @Test
     fun `사진을 수정할 수 있다`() {
-        val request = createUpdatePhotoRequest(description = "수정된 설명")
-        val updatedPhoto = createPhoto(id = 1L, description = "수정된 설명")
-        `when`(photoRepository.update(1L, request)).thenReturn(updatedPhoto)
+        val request = createUpdatePhotoRequest(1L, 0.0, 0.0, description = "수정된 설명")
+        val originalPhoto = createPhoto()
+        val updatedPhoto = createPhoto(id = 1L, description = "수정된 설명", location = createLocation(0.0, 0.0))
+        `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        `when`(photoRepository.apply(createPhoto(description = "수정된 설명", location = createLocation(0.0, 0.0)))).thenReturn(updatedPhoto)
 
-        val result = photoService.update(1L, request)
+        val result = photoService.update(1L, 1L, 1L, request.description, request.longitude, request.latitude)
 
         assertEquals("수정된 설명", result.description)
     }
 
     @Test
     fun `사진 위치 수정 시 앨범 바운드도 업데이트된다`() {
-        val request = createUpdatePhotoRequest(longitude = 128.0, latitude = 38.0)
+        val request = createUpdatePhotoRequest(1L, longitude = 128.0, latitude = 38.0)
+        val originalPhoto = createPhoto()
         val updatedPhoto = createPhoto(id = 1L, location = createLocation(longitude = 128.0, latitude = 38.0))
-        `when`(photoRepository.update(1L, request)).thenReturn(updatedPhoto)
+        `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        `when`(photoRepository.apply(createPhoto(location = createLocation(128.0, 38.0)))).thenReturn(updatedPhoto)
         doNothing().`when`(albumBoundsService).updateBoundsOnPhotoAdd(1L, 128.0, 38.0)
 
-        photoService.update(1L, request)
+        photoService.update(1L, 1L, 1L, request.description, request.longitude, request.latitude)
 
         verify(albumBoundsService).updateBoundsOnPhotoAdd(1L, 128.0, 38.0)
     }

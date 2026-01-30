@@ -1,9 +1,11 @@
 package kr.co.lokit.api.domain.map.presentation
 
+import kr.co.lokit.api.config.security.CurrentUserId
 import kr.co.lokit.api.domain.map.application.MapService
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
@@ -18,6 +20,10 @@ import org.springframework.web.bind.annotation.RestController
 class MapController(
     private val mapService: MapService,
 ) : MapApi {
+    @GetMapping("home")
+    override fun home(@CurrentUserId userId: Long, longitude: Double, latitude: Double): HomeResponse =
+        mapService.home(userId, longitude, latitude)
+
     @GetMapping("/photos")
     override fun getPhotos(
         @RequestParam zoom: Int,

@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.photo.mapping
 
+import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.photo.domain.Location
 import kr.co.lokit.api.domain.photo.domain.Photo
@@ -24,7 +25,7 @@ fun CreatePhotoRequest.toDomain(userId: Long): Photo =
 
 fun Photo.toEntity(album: AlbumEntity, uploadedBy: UserEntity): PhotoEntity =
     PhotoEntity(
-        url = this.url!!,
+        url = this.url,
         album = album,
         location = PhotoEntity.createPoint(this.location.longitude, this.location.latitude),
         uploadedBy = uploadedBy,
@@ -44,20 +45,20 @@ fun PhotoEntity.toDomain(): Photo =
         takenAt = this@toDomain.takenAt
     )
 
-fun PhotoEntity.toResponse(): PhotoResponse =
+fun Photo.toResponse(): PhotoResponse =
     PhotoResponse(
         id = this.id,
         url = this.url,
         location =
             LocationResponse(
-                longitude = this.longitude,
-                latitude = this.latitude,
+                longitude = this.location.longitude,
+                latitude = this.location.latitude,
             ),
         description = this.description,
         takenAt = this.takenAt,
     )
 
-fun AlbumEntity.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse =
+fun Album.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse =
     AlbumWithPhotosResponse(
         id = this.id,
         title = this.title,
@@ -66,7 +67,7 @@ fun AlbumEntity.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse =
         photos = this.photos.map { it.toResponse() },
     )
 
-fun List<AlbumEntity>.toPhotoListResponse(): PhotoListResponse =
+fun List<Album>.toPhotoListResponse(): PhotoListResponse =
     PhotoListResponse(
         albums = this.map { it.toAlbumWithPhotosResponse() },
     )

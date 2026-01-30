@@ -11,6 +11,7 @@ import kr.co.lokit.api.fixture.createPhotoRequest
 import kr.co.lokit.api.fixture.createUpdatePhotoRequest
 import kr.co.lokit.api.fixture.userAuth
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
@@ -101,14 +102,15 @@ class PhotoControllerTest {
     @Test
     fun `사진 수정 성공`() {
         val updatedPhoto = createPhoto(id = 1L, description = "수정됨")
-        doReturn(updatedPhoto).`when`(photoService).update(anyLong(), anyObject())
+        doReturn(updatedPhoto).`when`(photoService)
+            .update(anyLong(), anyLong(), anyLong(), anyObject(), anyDouble(), anyDouble())
 
         mockMvc.perform(
             put("/photos/1")
-                .with(user("test").roles("USER"))
+                .with(authentication(userAuth()))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createUpdatePhotoRequest(description = "수정됨"))),
+                .content(objectMapper.writeValueAsString(createUpdatePhotoRequest(1L, 0.0, 0.0, description = "수정됨"))),
         )
             .andExpect(status().isOk)
     }

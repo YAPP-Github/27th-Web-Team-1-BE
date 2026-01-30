@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
@@ -18,14 +19,20 @@ import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
 @Tag(name = "Map", description = "지도 API")
 interface MapApi {
     @Operation(
+        summary = "홈 조회(홈 화면 초기 진입 시 1회 호출)",
+        description = ""
+    )
+    fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse
+
+    @Operation(
         summary = "지도 사진 조회",
         description = """
             줌 레벨과 바운딩 박스를 기반으로 지도에 표시할 사진 또는 클러스터를 조회합니다.
 
             - **줌 레벨 < 15**: ST_SnapToGrid를 사용하여 사진을 클러스터링하여 반환
-              - clusterId: 줌 레벨 + 그리드 셀 인덱스 (예: z14_130234_38456)
-              - count: 클러스터 내 사진 개수
-              - thumbnailUrl: 클러스터 내 가장 최근 생성된 사진의 URL
+            - clusterId: 줌 레벨 + 그리드 셀 인덱스 (예: z14_130234_38456)
+            - count: 클러스터 내 사진 개수
+            - thumbnailUrl: 클러스터 내 가장 최근 생성된 사진의 URL
 
             - **줌 레벨 >= 15**: 개별 사진 썸네일을 반환
         """,

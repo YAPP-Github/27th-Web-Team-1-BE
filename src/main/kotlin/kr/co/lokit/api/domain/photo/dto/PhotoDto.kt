@@ -84,11 +84,11 @@ data class PresignedUrlRequest(
 @Schema(description = "사진 수정 요청")
 data class UpdatePhotoRequest(
     @Schema(description = "앨범 ID", example = "1")
-    val albumId: Long? = null,
+    val albumId: Long,
     @Schema(description = "경도", example = "127.0276")
-    val longitude: Double? = null,
+    val longitude: Double,
     @Schema(description = "위도", example = "37.4979")
-    val latitude: Double? = null,
+    val latitude: Double,
     @Schema(description = "사진 설명", example = "수정된 사진 설명")
     val description: String? = null,
 )

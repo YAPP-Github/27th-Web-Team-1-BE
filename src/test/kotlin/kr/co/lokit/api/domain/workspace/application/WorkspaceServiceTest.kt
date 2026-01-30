@@ -56,6 +56,6 @@ class WorkspaceServiceTest {
             workspaceService.joinByInviteCode("invalid1", 1L)
         }
 
-        assertEquals("유효하지 않은 초대 코드입니다", exception.message)
+        assertEquals("Workspace을(를) (invalid1)로 찾을 수 없습니다", exception.message)
     }
 }

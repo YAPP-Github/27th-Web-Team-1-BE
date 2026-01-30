@@ -1,10 +1,12 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.ClusterId
-import kr.co.lokit.api.domain.map.domain.GridConfig
+import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
@@ -15,6 +17,7 @@ import kr.co.lokit.api.domain.map.mapping.toAlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.mapping.toClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
+import java.util.concurrent.StructuredTaskScope
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -22,10 +25,18 @@ import org.springframework.transaction.annotation.Transactional
 class MapService(
     private val mapRepository: MapRepository,
     private val albumBoundsRepository: AlbumBoundsRepository,
+    private val albumRepository: AlbumRepository,
     private val mapClient: MapClient,
 ) {
-    companion object {
-        private const val CLUSTER_ZOOM_THRESHOLD = 15
+    fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse {
+        val bBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+
+        StructuredTaskScope.ShutdownOnFailure().use { scope ->
+            val location = scope.fork { mapClient.reverseGeocode(longitude, latitude) }
+            val albums = scope.fork { albumRepository.findAllByUserId(userId) }
+            scope.join().throwIfFailed()
+            return HomeResponse.of(location.get(), albums.get(), bBox)
+        }
     }
 
     @Transactional(readOnly = true)
@@ -34,7 +45,7 @@ class MapService(
         bbox: BBox,
         albumId: Long? = null,
     ): MapPhotosResponse =
-        if (zoom < CLUSTER_ZOOM_THRESHOLD) {
+        if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
             getClusteredPhotos(zoom, bbox, albumId)
         } else {
             getIndividualPhotos(bbox, albumId)
@@ -45,7 +56,7 @@ class MapService(
         bbox: BBox,
         albumId: Long? = null,
     ): MapPhotosResponse {
-        val gridSize = GridConfig.getGridSize(zoom)
+        val gridSize = GridValues.getGridSize(zoom)
 
         val clusters =
             mapRepository.findClustersWithinBBox(
@@ -99,7 +110,7 @@ class MapService(
 
     @Transactional(readOnly = true)
     fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse {
-        val bounds = albumBoundsRepository.findByAlbumId(albumId)
+        val bounds = albumBoundsRepository.findByAlbumIdOrNull(albumId)
         return bounds.toAlbumMapInfoResponse(albumId)
     }
 

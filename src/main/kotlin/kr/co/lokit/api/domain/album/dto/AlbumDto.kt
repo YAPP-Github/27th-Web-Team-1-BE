@@ -21,13 +21,20 @@ data class UpdateAlbumTitleRequest(
     val title: String,
 )
 
+@Schema(description = "선택 가능한 앨범 응답")
 data class SelectableAlbumResponse(
+    @Schema(description = "선택 가능한 앨범 목록")
     val albums: List<SelectableAlbum>,
 ) {
+    @Schema(description = "선택 가능한 앨범 정보")
     data class SelectableAlbum(
+        @Schema(description = "앨범 ID", example = "1")
         val id: Long,
+        @Schema(description = "앨범 제목", example = "여행 앨범")
         val title: String,
+        @Schema(description = "앨범 내 사진 수", example = "10")
         val photoCount: Int,
-        val thumbnailUrls: List<String>,
+        @Schema(description = "앨범 썸네일 URL", example = "https://example.com/thumbnail.jpg")
+        val thumbnailUrl: String?,
     )
 }
