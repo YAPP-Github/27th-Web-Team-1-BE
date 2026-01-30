@@ -1,9 +1,9 @@
 package kr.co.lokit.api.domain.album.presentation
 
 import jakarta.validation.Valid
+import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
-import kr.co.lokit.api.config.security.CurrentUserId
 import kr.co.lokit.api.domain.album.application.AlbumService
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.dto.AlbumRequest

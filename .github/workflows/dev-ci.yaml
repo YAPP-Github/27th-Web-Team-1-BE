@@ -1,66 +1,38 @@
-name: CI - Build and Test
+name: CI - Build Test & Docker
 
 on:
     push:
         branches: [ develop ]
-        paths:
-            - '**.kt'
-            - '**/*.kt'
-            - 'gradle/**'
-            - 'build.gradle.kts'
-            - 'settings.gradle.kts'
-            - '**.yaml'
-            - '**/*.yaml'
     pull_request:
         branches: [ develop ]
-        paths:
-            - '**.kt'
-            - '**/*.kt'
-            - 'gradle/**'
-            - 'build.gradle.kts'
-            - 'settings.gradle.kts'
-            - '**.yaml'
-            - '**/*.yaml'
     workflow_dispatch:
 
 env:
     AWS_REGION: ap-northeast-2
 
 jobs:
-    build-and-test:
+    build:
         runs-on: ubuntu-latest
 
         steps:
-            -   name: Checkout code
+            -   name: Checkout
                 uses: actions/checkout@v4
 
-            -   name: Set up JDK 24
+            -   name: Set up JDK 24 (Gradle cache)
                 uses: actions/setup-java@v4
                 with:
                     java-version: '24'
                     distribution: 'temurin'
-                    cache: 'gradle'
+                    cache: gradle
 
-            -   name: Grant execute permission for gradlew
-                run: chmod +x gradlew
-
-            -   name: Cache Gradle packages
-                uses: actions/cache@v4
-                with:
-                    path: |
-                        ~/.gradle/caches
-                        ~/.gradle/wrapper
-                    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-                    restore-keys: |
-                        ${{ runner.os }}-gradle-
-
-            -   name: Build with Gradle
-                run: ./gradlew clean build -x test --parallel --build-cache
-
-            -   name: Run tests
+            -   name: Build & Test (single Gradle run)
                 env:
                     SPRING_PROFILES_ACTIVE: test
-                run: ./gradlew test --parallel
+                run: |
+                    ./gradlew build \
+                        --parallel \
+                        --build-cache \
+                        --no-daemon
 
             -   name: Test Report
                 uses: dorny/test-reporter@v1
@@ -84,7 +56,7 @@ jobs:
             -   name: Set up Docker Buildx
                 uses: docker/setup-buildx-action@v3
 
-            -   name: Build and push Docker image to ECR
+            -   name: Build & Push Docker Image
                 env:
                     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
                     ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
@@ -93,14 +65,8 @@ jobs:
                     docker buildx build \
                         --platform linux/amd64 \
                         --file infra/Dockerfile \
-                        --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache \
-                        --cache-to type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache,mode=max \
                         --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-                        --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
                         --tag $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest \
+                        --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
                         --push \
-                        --build-arg BUILDKIT_INLINE_CACHE=1 \
                         .
-
-            -   name: Image digest
-                run: echo "Image pushed successfully"

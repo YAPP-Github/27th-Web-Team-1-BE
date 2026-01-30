@@ -1,9 +1,9 @@
 package kr.co.lokit.api.domain.workspace.presentation
 
 import jakarta.validation.Valid
+import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
-import kr.co.lokit.api.config.security.CurrentUserId
 import kr.co.lokit.api.domain.workspace.application.WorkspaceService
 import kr.co.lokit.api.domain.workspace.domain.Workspace
 import kr.co.lokit.api.domain.workspace.dto.CreateWorkspaceRequest

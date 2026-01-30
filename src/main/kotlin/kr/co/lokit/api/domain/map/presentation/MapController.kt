@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.map.presentation
 
-import kr.co.lokit.api.config.security.CurrentUserId
+import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.domain.map.application.MapService
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse

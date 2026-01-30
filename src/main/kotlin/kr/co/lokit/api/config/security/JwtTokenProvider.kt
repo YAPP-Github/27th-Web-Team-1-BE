@@ -5,12 +5,14 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import kr.co.lokit.api.domain.user.domain.User
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import java.util.*
 import javax.crypto.SecretKey
 
 @Component
+@Profile("!local", "!dev")
 class JwtTokenProvider(
     @Value("\${jwt.secret}") private val secret: String,
     @Value("\${jwt.expiration}") private val expiration: Long,
@@ -24,12 +26,6 @@ class JwtTokenProvider(
     fun generateAccessToken(userDetails: UserDetails): String = generateAccessToken(userDetails.username)
 
     fun generateAccessToken(user: User): String = generateAccessToken(user.email)
-
-    @Deprecated("Use generateAccessToken instead", ReplaceWith("generateAccessToken(userDetails)"))
-    fun generateToken(userDetails: UserDetails): String = generateAccessToken(userDetails)
-
-    @Deprecated("Use generateAccessToken instead", ReplaceWith("generateAccessToken(user)"))
-    fun generateToken(user: User): String = generateAccessToken(user)
 
     private fun generateAccessToken(subject: String): String {
         val now = Date()

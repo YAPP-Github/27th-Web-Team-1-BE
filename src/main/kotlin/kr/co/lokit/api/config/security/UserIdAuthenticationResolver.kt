@@ -16,11 +16,8 @@ class UserIdAuthenticationResolver(
             && credentials.substringAfter(" ").trim().toLongOrNull() != null
 
     override fun authenticate(credentials: String): UsernamePasswordAuthenticationToken {
-        val userId = if (credentials.startsWith("bearer") || credentials.startsWith("Bearer")) {
-            credentials.substringAfter(" ").trim().toLong()
-        } else {
-            credentials.toLong()
-        }
+        require(credentials.startsWith("bearer") || credentials.startsWith("Bearer"))
+        val userId = credentials.substringAfter(" ").trim().toLong()
 
         val userDetails = userDetailsService.loadUserById(userId)
 

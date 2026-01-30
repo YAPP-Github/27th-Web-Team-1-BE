@@ -1,9 +1,9 @@
 package kr.co.lokit.api.domain.photo.presentation
 
 import jakarta.validation.Valid
+import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
-import kr.co.lokit.api.config.security.CurrentUserId
 import kr.co.lokit.api.domain.photo.application.PhotoService
 import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.dto.CreatePhotoRequest

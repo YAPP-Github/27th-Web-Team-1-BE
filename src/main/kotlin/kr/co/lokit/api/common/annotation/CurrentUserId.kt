@@ -1,4 +1,4 @@
-package kr.co.lokit.api.config.security
+package kr.co.lokit.api.common.annotation
 
 /**
  * 현재 인증된 사용자의 ID만 가져오는 어노테이션

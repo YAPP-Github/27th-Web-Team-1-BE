@@ -1,5 +1,6 @@
 package kr.co.lokit.api.config.security
 
+import kr.co.lokit.api.common.annotation.CurrentUser
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
@@ -32,7 +33,6 @@ class CurrentUserArgumentResolver : HandlerMethodArgumentResolver {
             authentication.principal as? UserEntity
                 ?: throw BusinessException.UnauthorizedException("Invalid authentication principal")
 
-        // DB 조회 없이 detached entity에서 직접 도메인 객체로 변환
         return userEntity.toDomain()
     }
 }

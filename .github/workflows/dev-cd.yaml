@@ -99,11 +99,6 @@ jobs:
                             --memory="700m" \
                             --memory-swap="1400m" \
                             --cpus="1.5" \
-                            --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:8080/api/actuator/health || exit 1" \
-                            --health-interval=30s \
-                            --health-timeout=5s \
-                            --health-retries=3 \
-                            --health-start-period=40s \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
 
                         timeout=60
