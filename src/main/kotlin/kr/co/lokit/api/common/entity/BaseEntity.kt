@@ -8,7 +8,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.PostLoad
 import jakarta.persistence.PostPersist
-import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Transient
 import jakarta.persistence.Version
 import kr.co.lokit.api.common.exception.entityIdNotInitialized
@@ -25,8 +24,7 @@ import java.time.LocalDateTime
 @EntityListeners(AuditingEntityListener::class)
 abstract class BaseEntity : Persistable<Long> {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "default_seq")
-    @SequenceGenerator(name = "default_seq", sequenceName = "default_id_seq", allocationSize = 50)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private var _id: Long? = null
 
     @Transient

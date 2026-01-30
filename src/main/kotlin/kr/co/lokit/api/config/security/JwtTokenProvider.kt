@@ -15,6 +15,7 @@ class JwtTokenProvider(
     @Value("\${jwt.secret}") private val secret: String,
     @Value("\${jwt.expiration}") private val expiration: Long,
     @Value("\${jwt.refresh-expiration}") private val refreshExpiration: Long,
+    @Value("\${spring.profiles.active}") private val profile: String
 ) {
     private val key: SecretKey by lazy {
         Keys.hmacShaKeyFor(secret.toByteArray())
@@ -57,7 +58,8 @@ class JwtTokenProvider(
         return username == userDetails.username && !isTokenExpired(token)
     }
 
-    fun canParse(token: String): Boolean = token.startsWith("bearer") || token.startsWith("Bearer")
+    fun canParse(token: String): Boolean =
+        profile != "local" && (token.startsWith("bearer") || token.startsWith("Bearer"))
 
     private fun isTokenExpired(token: String): Boolean = getClaims(token).expiration.before(Date())
 
