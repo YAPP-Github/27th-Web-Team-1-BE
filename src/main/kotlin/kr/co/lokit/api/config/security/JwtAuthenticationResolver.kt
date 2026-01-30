@@ -1,13 +1,11 @@
 package kr.co.lokit.api.config.security
 
-import org.springframework.context.annotation.Profile
 import org.springframework.core.annotation.Order
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.stereotype.Component
 
 @Component
-@Order(1)
-@Profile(value = ["!dev", "!local"])
+@Order(2)
 class JwtAuthenticationResolver(
     private val jwtTokenProvider: JwtTokenProvider,
     private val userDetailsService: CustomUserDetailsService,
