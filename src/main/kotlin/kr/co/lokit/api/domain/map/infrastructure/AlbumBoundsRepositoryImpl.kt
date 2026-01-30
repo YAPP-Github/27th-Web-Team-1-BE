@@ -1,9 +1,10 @@
 package kr.co.lokit.api.domain.map.infrastructure
 
-import jakarta.persistence.EntityNotFoundException
+import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
 import kr.co.lokit.api.domain.map.mapping.toDomain
 import kr.co.lokit.api.domain.map.mapping.toEntity
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -16,16 +17,19 @@ class AlbumBoundsRepositoryImpl(
         return jpaRepository.save(entity).toDomain()
     }
 
-    override fun findByAlbumId(albumId: Long): AlbumBounds? =
-        jpaRepository.findByAlbumId(albumId)?.toDomain()
+    override fun findByAlbumIdOrNull(albumId: Long): AlbumBounds? =
+        jpaRepository.findByStandardId(albumId)?.toDomain()
 
-    override fun updateBounds(bounds: AlbumBounds): AlbumBounds {
-        val entity = jpaRepository.findByAlbumId(bounds.albumId)
-            ?: throw EntityNotFoundException("AlbumBounds not found for albumId: ${bounds.albumId}")
-        entity.minLongitude = bounds.minLongitude
-        entity.maxLongitude = bounds.maxLongitude
-        entity.minLatitude = bounds.minLatitude
-        entity.maxLatitude = bounds.maxLatitude
+    override fun apply(bounds: AlbumBounds): AlbumBounds {
+        val entity = jpaRepository.findByIdOrNull(bounds.id)
+            ?: throw entityNotFound<AlbumBounds>(bounds.id)
+
+        entity.apply {
+            minLongitude = bounds.minLongitude
+            maxLongitude = bounds.maxLongitude
+            minLatitude = bounds.minLatitude
+            maxLatitude = bounds.maxLatitude
+        }
         return entity.toDomain()
     }
 }

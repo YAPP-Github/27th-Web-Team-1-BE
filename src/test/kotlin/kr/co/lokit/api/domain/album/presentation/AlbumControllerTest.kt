@@ -4,9 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.domain.album.application.AlbumService
-import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.dto.UpdateAlbumTitleRequest
+import kr.co.lokit.api.fixture.createAlbum
+import kr.co.lokit.api.fixture.createAlbumRequest
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyString
@@ -45,7 +46,7 @@ class AlbumControllerTest {
 
     @Test
     fun `앨범 생성 성공`() {
-        val savedAlbum = Album(id = 1L, title = "여행", workspaceId = 1L)
+        val savedAlbum = createAlbum(id = 1L, title = "여행")
         doReturn(savedAlbum).`when`(albumService).create(anyObject())
 
         mockMvc.perform(
@@ -53,7 +54,7 @@ class AlbumControllerTest {
                 .with(user("test").roles("USER"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(AlbumRequest(title = "여행", workspaceId = 1L))),
+                .content(objectMapper.writeValueAsString(createAlbumRequest(title = "여행"))),
         )
             .andExpect(status().isCreated)
     }
@@ -72,7 +73,7 @@ class AlbumControllerTest {
 
     @Test
     fun `앨범 제목 수정 성공`() {
-        val updatedAlbum = Album(id = 1L, title = "새 제목", workspaceId = 1L)
+        val updatedAlbum = createAlbum(id = 1L, title = "새 제목")
         doReturn(updatedAlbum).`when`(albumService).updateTitle(anyLong(), anyString())
 
         mockMvc.perform(

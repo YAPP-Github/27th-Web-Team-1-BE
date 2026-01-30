@@ -2,7 +2,9 @@ package kr.co.lokit.api.domain.map.mapping
 
 import kr.co.lokit.api.common.dto.PageResult
 import kr.co.lokit.api.common.util.DateTimeUtils.toDateString
+import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.ClusterId
+import kr.co.lokit.api.domain.map.dto.BoundingBoxResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
@@ -46,4 +48,12 @@ fun PageResult<ClusterPhotoProjection>.toClusterPhotosPageResponse(): ClusterPho
         totalElements = totalElements,
         totalPages = totalPages,
         last = isLast,
+    )
+
+fun BBox.toResponse(): BoundingBoxResponse =
+    BoundingBoxResponse(
+        west = west,
+        south = south,
+        east = east,
+        north = north,
     )

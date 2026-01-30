@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 
 @Entity(name = "RefreshToken")
 @Table(
-    indexes = [Index(columnList = "user_id")]
+    indexes = [Index(columnList = "user_id"), Index(columnList = "token")],
 )
 class RefreshTokenEntity(
     @Column(nullable = false)

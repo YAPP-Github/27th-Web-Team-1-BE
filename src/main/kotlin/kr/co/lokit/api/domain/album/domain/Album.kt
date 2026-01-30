@@ -9,8 +9,12 @@ data class Album(
     val photoCount: Int = 0,
 ) {
     var photos: List<Photo> = mutableListOf()
-    var thumbnail: Photo? = null
-    var thumbnails: List<Photo> = mutableListOf()
+
+    val thumbnail: Photo?
+        get() = photos.maxByOrNull { it.takenAt }
+
+    val thumbnails: List<Photo>
+        get() = photos.sortedByDescending { it.takenAt }.take(4)
 
     init {
         require(title.length <= 10) { "앨범 제목은 10자 이내여야 합니다." }

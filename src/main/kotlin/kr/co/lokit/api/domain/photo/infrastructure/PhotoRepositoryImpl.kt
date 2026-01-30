@@ -1,11 +1,11 @@
 package kr.co.lokit.api.domain.photo.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.common.util.ParallelQuery
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
 import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.domain.PhotoDetail
-import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
 import kr.co.lokit.api.domain.photo.mapping.toDomain
 import kr.co.lokit.api.domain.photo.mapping.toEntity
 import kr.co.lokit.api.domain.photo.mapping.toPhotoDetail
@@ -22,38 +22,18 @@ class PhotoRepositoryImpl(
     private val userJpaRepository: UserJpaRepository,
 ) : PhotoRepository {
     override fun save(photo: Photo): Photo {
-        val albumEntity =
-            albumJpaRepository.findByIdOrNull(photo.albumId)
-                ?: throw entityNotFound<Album>(photo.albumId)
-        val userEntity =
-            userJpaRepository.findByIdOrNull(photo.uploadedById!!)
-                ?: throw entityNotFound<User>(photo.uploadedById!!)
+        val (albumEntity, userEntity) = ParallelQuery.execute(
+            { albumJpaRepository.findByIdOrNull(photo.albumId) ?: throw entityNotFound<Album>(photo.albumId) },
+            { userJpaRepository.findByIdOrNull(photo.uploadedById) ?: throw entityNotFound<User>(photo.uploadedById) },
+        )
         val photoEntity = photo.toEntity(albumEntity, userEntity)
         val savedEntity = photoJpaRepository.save(photoEntity)
         return savedEntity.toDomain()
     }
 
-    override fun findDetailById(id: Long): PhotoDetail? =
-        photoJpaRepository.findByIdWithRelations(id).orElse(null)?.toPhotoDetail()
-
-    @Transactional
-    override fun update(id: Long, request: UpdatePhotoRequest): Photo {
-        val entity = photoJpaRepository.findByIdOrNull(id)
+    override fun findDetailById(id: Long): PhotoDetail =
+        photoJpaRepository.findByIdWithRelations(id)?.toPhotoDetail()
             ?: throw entityNotFound<Photo>(id)
-
-        entity.apply {
-            request.description?.let { description = it }
-            request.albumId?.let {
-                album = albumJpaRepository.findByIdOrNull(it)
-                    ?: throw entityNotFound<Album>(it)
-            }
-            if (request.longitude != null && request.latitude != null) {
-                updateLocation(request.longitude, request.latitude)
-            }
-        }
-
-        return entity.toDomain()
-    }
 
     @Transactional
     override fun deleteById(id: Long) {
@@ -61,5 +41,44 @@ class PhotoRepositoryImpl(
             throw entityNotFound<Photo>(id)
         }
         photoJpaRepository.deleteById(id)
+    }
+
+    @Transactional
+    override fun findAllByUserId(userId: Long): List<Photo> {
+        return photoJpaRepository.findAllByUploadedById(userId)
+            .map { it.toDomain() }
+    }
+
+    @Transactional
+    override fun findById(id: Long): Photo {
+        return photoJpaRepository.findByIdOrNull(id)?.toDomain()
+            ?: throw entityNotFound<Photo>(id)
+    }
+
+    override fun saveAll(photos: List<Photo>): List<Photo> {
+        if (photos.isEmpty()) return emptyList()
+        val first = photos.first()
+        val (albumEntity, userEntity) = ParallelQuery.execute(
+            { albumJpaRepository.findByIdOrNull(first.albumId) ?: throw entityNotFound<Album>(first.albumId) },
+            { userJpaRepository.findByIdOrNull(first.uploadedById) ?: throw entityNotFound<User>(first.uploadedById) },
+        )
+        val entities = photos.map { it.toEntity(albumEntity, userEntity) }
+        return photoJpaRepository.saveAll(entities).map { it.toDomain() }
+    }
+
+    @Transactional
+    override fun apply(photo: Photo): Photo {
+        val (albumEntity, userEntity, photoEntity) = ParallelQuery.execute(
+            { albumJpaRepository.findByIdOrNull(photo.albumId) ?: throw entityNotFound<Album>(photo.albumId) },
+            { userJpaRepository.findByIdOrNull(photo.uploadedById) ?: throw entityNotFound<User>(photo.uploadedById) },
+            { photoJpaRepository.findByIdOrNull(photo.id) ?: throw entityNotFound<Photo>(photo.id) },
+        )
+        photoEntity.apply {
+            this.album = albumEntity
+            this.uploadedBy = userEntity
+            this.url = photo.url
+            this.description = photo.description
+        }
+        return photoEntity.toDomain()
     }
 }

@@ -15,8 +15,6 @@ fun AlbumEntity.toDomain(): Album =
         photoCount = this.photoCount,
     ).apply {
         this.photos = this@toDomain.photos.map { it.toDomain() }
-        this.thumbnail = this@toDomain.thumbnail?.toDomain()
-        this.thumbnails = this@toDomain.photos.take(4).map { it.toDomain() }
     }
 
 fun Album.toEntity(workspace: WorkspaceEntity): AlbumEntity =
@@ -37,6 +35,6 @@ fun List<Album>.toSelectableResponse(): SelectableAlbumResponse =
             id = it.id,
             title = it.title,
             photoCount = it.photoCount,
-            thumbnailUrls = it.thumbnails.mapNotNull { photo -> photo.url },
+            thumbnailUrl = it.thumbnail?.url,
         )
     })

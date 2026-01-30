@@ -1,9 +1,10 @@
 package kr.co.lokit.api.domain.album.infrastructure
 
 import kr.co.lokit.api.common.exception.BusinessException
-import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.workspace.infrastructure.WorkspaceEntity
 import kr.co.lokit.api.domain.workspace.infrastructure.WorkspaceJpaRepository
+import kr.co.lokit.api.fixture.createAlbum
+import kr.co.lokit.api.fixture.createWorkspaceEntity
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -31,12 +32,12 @@ class AlbumRepositoryTest {
 
     @BeforeEach
     fun setUp() {
-        workspace = workspaceJpaRepository.save(WorkspaceEntity(name = "테스트"))
+        workspace = workspaceJpaRepository.save(createWorkspaceEntity())
     }
 
     @Test
     fun `앨범을 저장할 수 있다`() {
-        val album = Album(title = "여행", workspaceId = workspace.id)
+        val album = createAlbum(title = "여행", workspaceId = workspace.id)
 
         val saved = albumRepository.save(album)
 
@@ -47,7 +48,7 @@ class AlbumRepositoryTest {
 
     @Test
     fun `ID로 앨범을 조회할 수 있다`() {
-        val saved = albumRepository.save(Album(title = "여행", workspaceId = workspace.id))
+        val saved = albumRepository.save(createAlbum(title = "여행", workspaceId = workspace.id))
 
         val found = albumRepository.findById(saved.id)
 
@@ -65,7 +66,7 @@ class AlbumRepositoryTest {
 
     @Test
     fun `앨범 제목을 수정할 수 있다`() {
-        val saved = albumRepository.save(Album(title = "여행", workspaceId = workspace.id))
+        val saved = albumRepository.save(createAlbum(title = "여행", workspaceId = workspace.id))
 
         val updated = albumRepository.updateTitle(saved.id, "새 제목")
 
@@ -82,7 +83,7 @@ class AlbumRepositoryTest {
 
     @Test
     fun `앨범을 삭제할 수 있다`() {
-        val saved = albumRepository.save(Album(title = "여행", workspaceId = workspace.id))
+        val saved = albumRepository.save(createAlbum(title = "여행", workspaceId = workspace.id))
 
         albumRepository.deleteById(saved.id)
 

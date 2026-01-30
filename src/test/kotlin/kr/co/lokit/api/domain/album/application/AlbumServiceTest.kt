@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.album.application
 
-import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
+import kr.co.lokit.api.fixture.createAlbum
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -22,8 +22,8 @@ class AlbumServiceTest {
 
     @Test
     fun `앨범을 생성할 수 있다`() {
-        val album = Album(title = "여행", workspaceId = 1L)
-        val savedAlbum = Album(id = 1L, title = "여행", workspaceId = 1L)
+        val album = createAlbum(title = "여행")
+        val savedAlbum = createAlbum(id = 1L, title = "여행")
         `when`(albumRepository.save(album)).thenReturn(savedAlbum)
 
         val result = albumService.create(album)
@@ -35,8 +35,8 @@ class AlbumServiceTest {
     @Test
     fun `사용자의 선택 가능한 앨범 목록을 조회할 수 있다`() {
         val albums = listOf(
-            Album(id = 1L, title = "앨범1", workspaceId = 1L),
-            Album(id = 2L, title = "앨범2", workspaceId = 1L),
+            createAlbum(id = 1L, title = "앨범1"),
+            createAlbum(id = 2L, title = "앨범2"),
         )
         `when`(albumRepository.findAllByUserId(1L)).thenReturn(albums)
 
@@ -49,7 +49,7 @@ class AlbumServiceTest {
 
     @Test
     fun `앨범 제목을 수정할 수 있다`() {
-        val updatedAlbum = Album(id = 1L, title = "새 제목", workspaceId = 1L)
+        val updatedAlbum = createAlbum(id = 1L, title = "새 제목")
         `when`(albumRepository.updateTitle(1L, "새 제목")).thenReturn(updatedAlbum)
 
         val result = albumService.updateTitle(1L, "새 제목")

@@ -2,17 +2,16 @@ package kr.co.lokit.api.domain.photo.presentation
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.domain.photo.application.PhotoService
-import kr.co.lokit.api.domain.photo.domain.Location
-import kr.co.lokit.api.domain.photo.domain.Photo
-import kr.co.lokit.api.domain.photo.dto.CreatePhotoRequest
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
-import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
-import kr.co.lokit.api.domain.user.infrastructure.UserEntity
+import kr.co.lokit.api.fixture.createPhoto
+import kr.co.lokit.api.fixture.createPhotoRequest
+import kr.co.lokit.api.fixture.createUpdatePhotoRequest
+import kr.co.lokit.api.fixture.userAuth
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
@@ -20,7 +19,6 @@ import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
@@ -50,17 +48,9 @@ class PhotoControllerTest {
     @MockitoBean
     lateinit var photoService: PhotoService
 
-    private fun userAuth(): UsernamePasswordAuthenticationToken {
-        val userEntity = UserEntity(email = "test@test.com", name = "테스트", role = UserRole.USER)
-        val field = userEntity.javaClass.superclass.getDeclaredField("_id")
-        field.isAccessible = true
-        field.set(userEntity, 1L)
-        return UsernamePasswordAuthenticationToken(userEntity, null, userEntity.authorities)
-    }
-
     @Test
     fun `사진 생성 성공`() {
-        val savedPhoto = Photo(id = 1L, albumId = 1L, location = Location(127.0, 37.5))
+        val savedPhoto = createPhoto(id = 1L)
         doReturn(savedPhoto).`when`(photoService).create(anyObject())
 
         mockMvc.perform(
@@ -70,13 +60,7 @@ class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        CreatePhotoRequest(
-                            url = "https://example.com/photo.jpg",
-                            albumId = 1L,
-                            longitude = 127.0,
-                            latitude = 37.5,
-                            takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),
-                        ),
+                        createPhotoRequest(takenAt = LocalDateTime.of(2026, 1, 1, 12, 0)),
                     ),
                 ),
         )
@@ -117,15 +101,16 @@ class PhotoControllerTest {
 
     @Test
     fun `사진 수정 성공`() {
-        val updatedPhoto = Photo(id = 1L, albumId = 1L, location = Location(127.0, 37.5), description = "수정됨")
-        doReturn(updatedPhoto).`when`(photoService).update(anyLong(), anyObject())
+        val updatedPhoto = createPhoto(id = 1L, description = "수정됨")
+        doReturn(updatedPhoto).`when`(photoService)
+            .update(anyLong(), anyLong(), anyLong(), anyObject(), anyDouble(), anyDouble())
 
         mockMvc.perform(
             put("/photos/1")
-                .with(user("test").roles("USER"))
+                .with(authentication(userAuth()))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(UpdatePhotoRequest(description = "수정됨"))),
+                .content(objectMapper.writeValueAsString(createUpdatePhotoRequest(1L, 0.0, 0.0, description = "수정됨"))),
         )
             .andExpect(status().isOk)
     }

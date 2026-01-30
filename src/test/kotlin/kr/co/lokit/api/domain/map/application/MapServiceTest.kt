@@ -1,22 +1,20 @@
 package kr.co.lokit.api.domain.map.application
 
-import kr.co.lokit.api.domain.map.domain.AlbumBounds
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsRepository
 import kr.co.lokit.api.domain.map.infrastructure.ClusterProjection
 import kr.co.lokit.api.domain.map.infrastructure.MapRepository
 import kr.co.lokit.api.domain.map.infrastructure.PhotoProjection
 import kr.co.lokit.api.domain.map.infrastructure.geocoding.MapClient
+import kr.co.lokit.api.fixture.createAlbumBounds
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.anyDouble
-import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.ArgumentMatchers.isNull
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import java.time.LocalDateTime
@@ -35,6 +33,9 @@ class MapServiceTest {
 
     @Mock
     lateinit var albumBoundsRepository: AlbumBoundsRepository
+
+    @Mock
+    lateinit var albumRepository: AlbumRepository
 
     @Mock
     lateinit var mapClient: MapClient
@@ -89,12 +90,12 @@ class MapServiceTest {
 
     @Test
     fun `앨범 지도 정보를 조회할 수 있다`() {
-        val bounds = AlbumBounds(
-            id = 1L, albumId = 1L,
+        val bounds = createAlbumBounds(
+            id = 1L,
             minLongitude = 126.0, maxLongitude = 128.0,
             minLatitude = 37.0, maxLatitude = 38.0,
         )
-        `when`(albumBoundsRepository.findByAlbumId(1L)).thenReturn(bounds)
+        `when`(albumBoundsRepository.findByAlbumIdOrNull(1L)).thenReturn(bounds)
 
         val result = mapService.getAlbumMapInfo(1L)
 
@@ -106,7 +107,7 @@ class MapServiceTest {
 
     @Test
     fun `사진이 없는 앨범의 지도 정보는 null을 반환한다`() {
-        `when`(albumBoundsRepository.findByAlbumId(1L)).thenReturn(null)
+        `when`(albumBoundsRepository.findByAlbumIdOrNull(1L)).thenReturn(null)
 
         val result = mapService.getAlbumMapInfo(1L)
 

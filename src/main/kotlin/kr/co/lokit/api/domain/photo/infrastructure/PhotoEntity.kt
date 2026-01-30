@@ -18,7 +18,6 @@ import java.time.LocalDateTime
 @Entity(name = "Photo")
 @Table(
     indexes = [
-        Index(columnList = "location"),
         Index(columnList = "album_id"),
         Index(columnList = "uploaded_by"),
     ],
@@ -26,6 +25,8 @@ import java.time.LocalDateTime
 class PhotoEntity(
     @Column(nullable = false, length = 2100)
     var url: String,
+    @Column(name = "taken_at", nullable = false)
+    var takenAt: LocalDateTime = LocalDateTime.now(),
     @JoinColumn(name = "album_id", nullable = false)
     @ManyToOne
     var album: AlbumEntity,
@@ -48,16 +49,9 @@ class PhotoEntity(
     @Column(length = 1000)
     var description: String? = null
 
-    fun updateDescription(description: String?) {
-        this.description = description
-    }
-
     fun updateLocation(longitude: Double, latitude: Double) {
         this.location = createPoint(longitude, latitude)
     }
-
-    @Column(name = "taken_at", nullable = false)
-    var takenAt: LocalDateTime? = LocalDateTime.now()
 
     companion object {
         private val geometryFactory = GeometryFactory(PrecisionModel(), 4326)

@@ -24,11 +24,16 @@ class AuthService(
     fun refresh(refreshToken: String): JwtTokenResponse {
         val refreshTokenEntity =
             refreshTokenJpaRepository.findByToken(refreshToken)
-                ?: throw BusinessException.InvalidRefreshTokenException()
+                ?: throw BusinessException.InvalidRefreshTokenException(
+                    errors = mapOf("refreshToken" to refreshToken),
+                )
 
         if (refreshTokenEntity.expiresAt.isBefore(LocalDateTime.now())) {
             refreshTokenJpaRepository.delete(refreshTokenEntity)
-            throw BusinessException.InvalidRefreshTokenException("만료된 리프레시 토큰입니다")
+            throw BusinessException.InvalidRefreshTokenException(
+                "만료된 리프레시 토큰입니다",
+                errors = mapOf("refreshToken" to refreshToken),
+            )
         }
 
         val user = refreshTokenEntity.user.toDomain()
@@ -41,11 +46,24 @@ class AuthService(
     }
 
     private fun generateTokensAndSave(user: User): JwtTokenResponse {
-        val accessToken = jwtTokenProvider.generateAccessToken(user)
-        val refreshToken = jwtTokenProvider.generateRefreshToken()
+        val accessToken: String
+        val refreshToken: String
+        val userEntity: kr.co.lokit.api.domain.user.infrastructure.UserEntity
 
-        val userEntity =
-            userJpaRepository.findByIdOrNull(user.id) ?: throw BusinessException.UserNotFoundException()
+        java.util.concurrent.StructuredTaskScope.ShutdownOnFailure().use { scope ->
+            val accessTokenFuture = scope.fork { jwtTokenProvider.generateAccessToken(user) }
+            val refreshTokenFuture = scope.fork { jwtTokenProvider.generateRefreshToken() }
+            val userEntityFuture = scope.fork {
+                userJpaRepository.findByIdOrNull(user.id)
+                    ?: throw BusinessException.UserNotFoundException(
+                        errors = mapOf("userId" to user.id.toString()),
+                    )
+            }
+            scope.join().throwIfFailed()
+            accessToken = accessTokenFuture.get()
+            refreshToken = refreshTokenFuture.get()
+            userEntity = userEntityFuture.get()
+        }
 
         refreshTokenJpaRepository.deleteByUser(userEntity)
 

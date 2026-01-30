@@ -8,11 +8,11 @@ import kr.co.lokit.api.common.entity.BaseEntity
 
 @Entity(name = "album_bounds")
 @Table(
-    indexes = [Index(columnList = "album_id")],
+    indexes = [Index(columnList = "album_id"), Index(columnList = "standard_id")],
 )
 class AlbumBoundsEntity(
-    @Column(name = "album_id", nullable = false)
-    val albumId: Long,
+    @Column(name = "standard_id")
+    val standardId: Long,
     @Column(name = "min_longitude", nullable = false)
     var minLongitude: Double,
     @Column(name = "max_longitude", nullable = false)

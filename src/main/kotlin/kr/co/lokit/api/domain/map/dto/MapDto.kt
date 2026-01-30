@@ -1,6 +1,10 @@
 package kr.co.lokit.api.domain.map.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import kr.co.lokit.api.domain.album.domain.Album
+import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.mapping.toResponse
+
 @Schema(description = "클러스터 응답")
 data class ClusterResponse(
     @Schema(description = "클러스터 ID (줌 레벨 + 그리드 셀 인덱스)", example = "z14_130234_38456")
@@ -122,3 +126,44 @@ data class PlaceSearchResponse(
     @Schema(description = "검색된 장소 목록")
     val places: List<PlaceResponse>,
 )
+
+@Schema(description = "홈 응답")
+data class HomeResponse(
+    @Schema(description = "위치 정보")
+    val location: LocationInfoResponse,
+    @Schema(description = "바운딩 박스 (사진이 없으면 null)")
+    val boundingBox: BoundingBoxResponse,
+    @Schema(description = "앨범 하이라이트 사진들 (최대 4장)")
+    val albums: List<AlbumThumbnails>,
+
+    ) {
+    companion object {
+        @Schema(description = "앨범 썸네일 정보")
+        data class AlbumThumbnails(
+            @Schema(description = "앨범 ID", example = "1")
+            val id: Long,
+            @Schema(description = "앨범 ID", example = "1")
+            val title: String,
+            @Schema(description = "앨범 ID", example = "1")
+            val photoCount: Int,
+            @Schema(description = "앨범 썸네일 사진들 (최대 4장)")
+            val thumbnailUrls: List<String>,
+        )
+
+        fun of(location: LocationInfoResponse, albums: List<Album>, bBox: BBox): HomeResponse = HomeResponse(
+            location = location,
+            albums = albums.toAlbumThumbnails(),
+            boundingBox = bBox.toResponse(),
+        )
+
+        fun List<Album>.toAlbumThumbnails(): List<AlbumThumbnails> =
+            this.map {
+                AlbumThumbnails(
+                    id = it.id,
+                    title = it.title,
+                    photoCount = it.photoCount,
+                    thumbnailUrls = it.thumbnails.map { thumbnail -> thumbnail.url }
+                )
+            }
+    }
+}
