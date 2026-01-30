@@ -28,6 +28,9 @@ enum class ErrorCode(
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_001", "요청한 리소스를 찾을 수 없습니다"),
     RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "RESOURCE_002", "이미 존재하는 리소스입니다"),
 
+    // Concurrency
+    CONFLICT(HttpStatus.CONFLICT, "COMMON_007", "동시 수정 충돌이 발생했습니다. 다시 시도해주세요"),
+
     // Business
     BUSINESS_RULE_VIOLATION(HttpStatus.BAD_REQUEST, "BUSINESS_001", "비즈니스 규칙 위반입니다"),
 }

@@ -11,6 +11,7 @@ import kr.co.lokit.api.domain.user.mapping.toDomain
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 
 @Service
@@ -19,6 +20,7 @@ class AuthService(
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
 
     private val jwtTokenProvider: JwtTokenProvider,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     @Transactional
     fun refresh(refreshToken: String): JwtTokenResponse {
@@ -54,10 +56,12 @@ class AuthService(
             val accessTokenFuture = scope.fork { jwtTokenProvider.generateAccessToken(user) }
             val refreshTokenFuture = scope.fork { jwtTokenProvider.generateRefreshToken() }
             val userEntityFuture = scope.fork {
-                userJpaRepository.findByIdOrNull(user.id)
-                    ?: throw BusinessException.UserNotFoundException(
-                        errors = mapOf("userId" to user.id.toString()),
-                    )
+                transactionTemplate.execute {
+                    userJpaRepository.findByIdOrNull(user.id)
+                        ?: throw BusinessException.UserNotFoundException(
+                            errors = mapOf("userId" to user.id.toString()),
+                        )
+                }!!
             }
             scope.join().throwIfFailed()
             accessToken = accessTokenFuture.get()

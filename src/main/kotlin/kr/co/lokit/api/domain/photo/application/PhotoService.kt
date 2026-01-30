@@ -10,6 +10,9 @@ import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
 import kr.co.lokit.api.domain.photo.infrastructure.file.S3PresignedUrlGenerator
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -34,6 +37,11 @@ class PhotoService(
             ?: throw UnsupportedOperationException("S3 is not enabled")
     }
 
+    @Retryable(
+        retryFor = [ObjectOptimisticLockingFailureException::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 50, multiplier = 2.0),
+    )
     @Transactional
     fun create(photo: Photo): Photo {
         val saved = photoRepository.save(photo)
@@ -65,6 +73,11 @@ class PhotoService(
         )
     }
 
+    @Retryable(
+        retryFor = [ObjectOptimisticLockingFailureException::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 50, multiplier = 2.0),
+    )
     @Transactional
     fun update(
         id: Long,

@@ -4,6 +4,7 @@ import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -20,6 +21,11 @@ class KakaoMapClient(
         .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK $apiKey")
         .build()
 
+    @Cacheable(
+        cacheNames = ["reverseGeocode"],
+        key = "T(java.lang.Math).round(#longitude * 10000) + ',' + T(java.lang.Math).round(#latitude * 10000)",
+        unless = "#result.address == null && #result.placeName == null",
+    )
     override fun reverseGeocode(longitude: Double, latitude: Double): LocationInfoResponse {
         val response = restClient.get()
             .uri { uriBuilder ->
@@ -43,6 +49,7 @@ class KakaoMapClient(
         )
     }
 
+    @Cacheable(cacheNames = ["searchPlaces"], key = "#query", unless = "#result.isEmpty()")
     override fun searchPlaces(query: String): List<PlaceResponse> {
         val response = restClient.get()
             .uri { uriBuilder ->

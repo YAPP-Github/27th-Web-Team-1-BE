@@ -30,7 +30,7 @@ class AlbumRepositoryImpl(
         albumJpaRepository.findAllByUserId(userId).map { it.toDomain() }
 
     override fun updateTitle(id: Long, title: String): Album {
-        val albumEntity = albumJpaRepository.findByIdOrNull(id)
+        val albumEntity = albumJpaRepository.findByIdFetchPhotos(id)
             ?: throw entityNotFound<Album>(id)
         albumEntity.updateTitle(title)
         return albumEntity.toDomain()
