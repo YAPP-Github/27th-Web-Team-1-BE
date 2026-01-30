@@ -20,6 +20,7 @@ class WorkspaceRepositoryImpl(
         return workspaceJpaRepository.save(entity).toDomain()
     }
 
+    @Transactional(readOnly = true)
     override fun findById(id: Long): Workspace? =
         workspaceJpaRepository.findByIdFetchUsers(id)?.toDomain()
 
@@ -40,6 +41,7 @@ class WorkspaceRepositoryImpl(
         return savedWorkspace.toDomain()
     }
 
+    @Transactional(readOnly = true)
     override fun findByInviteCode(inviteCode: String): Workspace? =
         workspaceJpaRepository.findByInviteCode(inviteCode)?.toDomain()
 

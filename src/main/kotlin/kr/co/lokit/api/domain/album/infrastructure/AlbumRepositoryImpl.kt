@@ -25,14 +25,16 @@ class AlbumRepositoryImpl(
         return savedEntity.toDomain()
     }
 
+    @Transactional(readOnly = true)
     override fun findById(id: Long): Album? =
         albumJpaRepository.findByIdOrNull(id)?.toDomain()
 
+    @Transactional(readOnly = true)
     override fun findAllByUserId(userId: Long): List<Album> =
         albumJpaRepository.findAllByUserId(userId).map { it.toDomain() }
 
-    override fun updateTitle(id: Long, title: String): Album {
-        val albumEntity = albumJpaRepository.findByIdFetchPhotos(id)
+    override fun applyTitle(id: Long, title: String): Album {
+        val albumEntity = albumJpaRepository.findByIdOrNull(id)
             ?: throw entityNotFound<Album>(id)
         albumEntity.updateTitle(title)
         return albumEntity.toDomain()
@@ -43,10 +45,12 @@ class AlbumRepositoryImpl(
         albumJpaRepository.deleteById(id)
     }
 
+    @Transactional(readOnly = true)
     override fun findAllWithPhotos(): List<Album> {
         return albumJpaRepository.findAllWithPhotos().map { it.toDomain() }
     }
 
+    @Transactional(readOnly = true)
     override fun findByIdWithPhotos(id: Long): List<Album> {
         return albumJpaRepository.findByIdWithPhotos(id).map { it.toDomain() }
     }
