@@ -50,7 +50,7 @@ class AlbumServiceTest {
     @Test
     fun `앨범 제목을 수정할 수 있다`() {
         val updatedAlbum = createAlbum(id = 1L, title = "새 제목")
-        `when`(albumRepository.updateTitle(1L, "새 제목")).thenReturn(updatedAlbum)
+        `when`(albumRepository.applyTitle(1L, "새 제목")).thenReturn(updatedAlbum)
 
         val result = albumService.updateTitle(1L, "새 제목")
 

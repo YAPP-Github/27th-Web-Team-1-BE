@@ -16,6 +16,10 @@ private fun setEntityId(entity: BaseEntity, id: Long) {
     idField.isAccessible = true
     idField.set(entity, id)
 
+    val isNewField = BaseEntity::class.java.getDeclaredField("_isNew")
+    isNewField.isAccessible = true
+    isNewField.set(entity, false)
+
     val versionField = BaseEntity::class.java.getDeclaredField("version")
     versionField.isAccessible = true
     versionField.set(entity, 0L)

@@ -20,6 +20,7 @@ class PhotoRepositoryImpl(
     private val albumJpaRepository: AlbumJpaRepository,
     private val userJpaRepository: UserJpaRepository,
 ) : PhotoRepository {
+    @Transactional
     override fun save(photo: Photo): Photo {
         val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId)
             ?: throw entityNotFound<Album>(photo.albumId)
@@ -42,13 +43,11 @@ class PhotoRepositoryImpl(
         photoJpaRepository.deleteById(id)
     }
 
-    @Transactional
     override fun findAllByUserId(userId: Long): List<Photo> {
         return photoJpaRepository.findAllByUploadedById(userId)
             .map { it.toDomain() }
     }
 
-    @Transactional
     override fun findById(id: Long): Photo {
         return photoJpaRepository.findByIdWithRelations(id)?.toDomain()
             ?: throw entityNotFound<Photo>(id)

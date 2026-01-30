@@ -19,7 +19,7 @@ class AlbumService(
 
     @Transactional
     fun updateTitle(id: Long, title: String): Album =
-        albumRepository.updateTitle(id, title)
+        albumRepository.applyTitle(id, title)
 
     @Transactional
     fun delete(id: Long) =

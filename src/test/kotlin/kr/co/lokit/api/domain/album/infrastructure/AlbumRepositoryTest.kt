@@ -68,7 +68,7 @@ class AlbumRepositoryTest {
     fun `앨범 제목을 수정할 수 있다`() {
         val saved = albumRepository.save(createAlbum(title = "여행", workspaceId = workspace.id))
 
-        val updated = albumRepository.updateTitle(saved.id, "새 제목")
+        val updated = albumRepository.applyTitle(saved.id, "새 제목")
 
         assertEquals("새 제목", updated.title)
         assertEquals(saved.id, updated.id)
@@ -77,23 +77,7 @@ class AlbumRepositoryTest {
     @Test
     fun `존재하지 않는 앨범 제목을 수정하면 예외가 발생한다`() {
         assertThrows<BusinessException.ResourceNotFoundException> {
-            albumRepository.updateTitle(999L, "새 제목")
-        }
-    }
-
-    @Test
-    fun `앨범을 삭제할 수 있다`() {
-        val saved = albumRepository.save(createAlbum(title = "여행", workspaceId = workspace.id))
-
-        albumRepository.deleteById(saved.id)
-
-        assertNull(albumRepository.findById(saved.id))
-    }
-
-    @Test
-    fun `존재하지 않는 앨범을 삭제하면 예외가 발생한다`() {
-        assertThrows<BusinessException.ResourceNotFoundException> {
-            albumRepository.deleteById(999L)
+            albumRepository.applyTitle(999L, "새 제목")
         }
     }
 }

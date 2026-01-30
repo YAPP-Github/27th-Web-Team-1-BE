@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.workspace.mapping.toDomain
 import kr.co.lokit.api.domain.workspace.mapping.toEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 
 @Repository
 class WorkspaceRepositoryImpl(
@@ -19,9 +20,11 @@ class WorkspaceRepositoryImpl(
         return workspaceJpaRepository.save(entity).toDomain()
     }
 
+    @Transactional(readOnly = true)
     override fun findById(id: Long): Workspace? =
         workspaceJpaRepository.findByIdFetchUsers(id)?.toDomain()
 
+    @Transactional
     override fun saveWithUser(workspace: Workspace, userId: Long): Workspace {
         val userEntity = userJpaRepository.findByIdOrNull(userId)
             ?: throw entityNotFound<User>(userId)
@@ -38,9 +41,11 @@ class WorkspaceRepositoryImpl(
         return savedWorkspace.toDomain()
     }
 
+    @Transactional(readOnly = true)
     override fun findByInviteCode(inviteCode: String): Workspace? =
         workspaceJpaRepository.findByInviteCode(inviteCode)?.toDomain()
 
+    @Transactional
     override fun addUser(workspaceId: Long, userId: Long): Workspace {
         val workspaceEntity = workspaceJpaRepository.findByIdFetchUsers(workspaceId)
             ?: throw entityNotFound<Workspace>(workspaceId)
