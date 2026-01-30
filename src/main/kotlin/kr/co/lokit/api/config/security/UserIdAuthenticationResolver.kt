@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 
 @Component
 @Profile("local", "dev")
-@Order(2)
+@Order(1)
 class UserIdAuthenticationResolver(
     private val userDetailsService: CustomUserDetailsService,
 ) : AuthenticationResolver {
@@ -16,7 +16,6 @@ class UserIdAuthenticationResolver(
             && credentials.substringAfter(" ").trim().toLongOrNull() != null
 
     override fun authenticate(credentials: String): UsernamePasswordAuthenticationToken {
-        require(credentials.startsWith("bearer") || credentials.startsWith("Bearer"))
         val userId = credentials.substringAfter(" ").trim().toLong()
 
         val userDetails = userDetailsService.loadUserById(userId)
