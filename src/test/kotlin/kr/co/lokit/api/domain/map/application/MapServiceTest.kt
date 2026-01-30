@@ -17,6 +17,7 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -39,6 +40,9 @@ class MapServiceTest {
 
     @Mock
     lateinit var mapClient: MapClient
+
+    @Mock
+    lateinit var transactionTemplate: TransactionTemplate
 
     @InjectMocks
     lateinit var mapService: MapService

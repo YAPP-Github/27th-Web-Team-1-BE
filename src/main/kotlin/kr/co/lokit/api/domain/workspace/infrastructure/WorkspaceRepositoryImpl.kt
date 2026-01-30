@@ -1,7 +1,6 @@
 package kr.co.lokit.api.domain.workspace.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
-import kr.co.lokit.api.common.util.ParallelQuery
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.workspace.domain.Workspace
@@ -21,7 +20,7 @@ class WorkspaceRepositoryImpl(
     }
 
     override fun findById(id: Long): Workspace? =
-        workspaceJpaRepository.findByIdOrNull(id)?.toDomain()
+        workspaceJpaRepository.findByIdFetchUsers(id)?.toDomain()
 
     override fun saveWithUser(workspace: Workspace, userId: Long): Workspace {
         val userEntity = userJpaRepository.findByIdOrNull(userId)
@@ -43,10 +42,10 @@ class WorkspaceRepositoryImpl(
         workspaceJpaRepository.findByInviteCode(inviteCode)?.toDomain()
 
     override fun addUser(workspaceId: Long, userId: Long): Workspace {
-        val (workspaceEntity, userEntity) = ParallelQuery.execute(
-            { workspaceJpaRepository.findByIdOrNull(workspaceId) ?: throw entityNotFound<Workspace>(workspaceId) },
-            { userJpaRepository.findByIdOrNull(userId) ?: throw entityNotFound<User>(userId) },
-        )
+        val workspaceEntity = workspaceJpaRepository.findByIdFetchUsers(workspaceId)
+            ?: throw entityNotFound<Workspace>(workspaceId)
+        val userEntity = userJpaRepository.findByIdOrNull(userId)
+            ?: throw entityNotFound<User>(userId)
 
         val workspaceUser = WorkspaceUserEntity(
             workspace = workspaceEntity,

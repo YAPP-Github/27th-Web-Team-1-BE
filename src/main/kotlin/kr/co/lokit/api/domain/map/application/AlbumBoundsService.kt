@@ -2,6 +2,9 @@ package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
 import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsRepository
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -27,6 +30,11 @@ class AlbumBoundsService(
         }
     }
 
+    @Retryable(
+        retryFor = [ObjectOptimisticLockingFailureException::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 50, multiplier = 2.0),
+    )
     @Transactional
     fun updateBoundsFromLocations(
         albumId: Long,

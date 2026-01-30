@@ -15,6 +15,7 @@ import kr.co.lokit.api.domain.user.infrastructure.UserRepository
 import kr.co.lokit.api.domain.workspace.application.WorkspaceService
 import kr.co.lokit.api.domain.workspace.domain.Workspace
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -35,7 +36,7 @@ class TempLoginService(
     // 임시 회원가입/로그인 기능
     @Transactional
     fun login(user: User): LoginResponse {
-        val userId = (userRepository.findByEmail(user.email) ?: userRepository.save(user)).id
+        val userId = (userRepository.findByEmail(user.email) ?: saveUserOrFindOnConflict(user)).id
 
         val workspace =
             workSpaceService.create(Workspace(name = "ws" + ThreadLocalRandom.current().nextInt(10000, 100000)), userId)
@@ -80,6 +81,14 @@ class TempLoginService(
             albumLocation = albumMapInfo
         )
     }
+
+    private fun saveUserOrFindOnConflict(user: User): User =
+        try {
+            userRepository.save(user)
+        } catch (e: DataIntegrityViolationException) {
+            userRepository.findByEmail(user.email)
+                ?: throw e
+        }
 
     companion object {
         private val TEMP_PHOTOS =

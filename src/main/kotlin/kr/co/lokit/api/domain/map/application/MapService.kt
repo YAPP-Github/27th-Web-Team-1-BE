@@ -20,6 +20,7 @@ import kr.co.lokit.api.domain.map.mapping.toResponse
 import java.util.concurrent.StructuredTaskScope
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 
 @Service
 class MapService(
@@ -27,13 +28,16 @@ class MapService(
     private val albumBoundsRepository: AlbumBoundsRepository,
     private val albumRepository: AlbumRepository,
     private val mapClient: MapClient,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse {
         val bBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
 
         StructuredTaskScope.ShutdownOnFailure().use { scope ->
             val location = scope.fork { mapClient.reverseGeocode(longitude, latitude) }
-            val albums = scope.fork { albumRepository.findAllByUserId(userId) }
+            val albums = scope.fork {
+                transactionTemplate.execute { albumRepository.findAllByUserId(userId) }!!
+            }
             scope.join().throwIfFailed()
             return HomeResponse.of(location.get(), albums.get(), bBox)
         }

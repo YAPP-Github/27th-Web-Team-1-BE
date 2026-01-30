@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.Version
 import kr.co.lokit.api.common.exception.entityIdNotInitialized
 import org.hibernate.annotations.SoftDelete
 import org.hibernate.proxy.HibernateProxy
@@ -33,6 +34,10 @@ abstract class BaseEntity {
 
     @LastModifiedDate
     var updatedAt: LocalDateTime = LocalDateTime.now()
+
+    @Version
+    var version: Long = 0
+        protected set
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
