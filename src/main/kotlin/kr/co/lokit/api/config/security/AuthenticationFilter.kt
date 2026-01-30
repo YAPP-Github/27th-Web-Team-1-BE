@@ -39,7 +39,6 @@ class AuthenticationFilter(
             logger.error("Cannot set user authentication: ${e.message}")
         }
 
-        // SecurityContext 정리는 Spring Security의 SecurityContextHolderFilter 담당
         filterChain.doFilter(request, response)
     }
 }

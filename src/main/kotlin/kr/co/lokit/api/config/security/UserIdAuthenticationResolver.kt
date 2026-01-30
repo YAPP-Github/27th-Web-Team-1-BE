@@ -11,7 +11,9 @@ import org.springframework.stereotype.Component
 class UserIdAuthenticationResolver(
     private val userDetailsService: CustomUserDetailsService,
 ) : AuthenticationResolver {
-    override fun support(credentials: String): Boolean = credentials.toLongOrNull() != null
+    override fun support(credentials: String): Boolean =
+        (credentials.startsWith("bearer") || credentials.startsWith("Bearer"))
+            && credentials.substringAfter(" ").trim().toLongOrNull() != null
 
     override fun authenticate(credentials: String): UsernamePasswordAuthenticationToken {
         val userId = if (credentials.startsWith("bearer") || credentials.startsWith("Bearer")) {
