@@ -22,7 +22,7 @@ interface MapApi {
         summary = "홈 조회(홈 화면 초기 진입 시 1회 호출)",
         description = ""
     )
-    fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse
+    fun home(@Parameter(hidden = true) userId: Long, longitude: Double, latitude: Double): HomeResponse
 
     @Operation(
         summary = "지도 사진 조회",

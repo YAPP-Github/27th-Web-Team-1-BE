@@ -13,9 +13,13 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class OpenApiConfig {
+class OpenApiConfig(
+    @Value("\${spring.profiles.active:local}")
+    private val activeProfile: String,
+
     @Value("\${server.servlet.context-path:/}")
-    private lateinit var contextPath: String
+    private val contextPath: String,
+) {
 
     @Bean
     fun openApi(): OpenAPI =
@@ -25,11 +29,13 @@ class OpenApiConfig {
                     .title("Lokit API")
                     .version("1.0.0")
                     .description("Lokit API 문서"),
-            ).servers(
+            )
+            .servers(
                 listOf(
                     Server().url(contextPath).description("API Server"),
                 ),
-            ).tags(
+            )
+            .tags(
                 listOf(
                     Tag().name("Auth").description("인증 API"),
                     Tag().name("Workspace").description("워크스페이스 API"),
@@ -37,17 +43,35 @@ class OpenApiConfig {
                     Tag().name("Photo").description("사진 API"),
                     Tag().name("Map").description("지도 API"),
                 ),
-            ).components(
+            )
+            .components(
                 Components()
                     .addSecuritySchemes(
                         SECURITY_SCHEME_NAME,
                         SecurityScheme()
-                            .type(SecurityScheme.Type.APIKEY)
-                            .`in`(SecurityScheme.In.HEADER)
+                            .type(SecurityScheme.Type.HTTP)
+                            .scheme("bearer")
+                            .bearerFormat("JWT")
                             .name("Authorization")
-                            .description("JWT 토큰 또는 사용자 ID (dev/local 환경)"),
+                            .description(securityDescription()),
                     ),
-            ).addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+            )
+            .addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+
+    private fun securityDescription(): String =
+        if (activeProfile in listOf("local", "dev")) {
+            """
+            Authorization 헤더 형식:
+            - Bearer {userId}
+            - userId는 숫자
+            예) Bearer 123
+            """.trimIndent()
+        } else {
+            """
+            Authorization 헤더 형식:
+            - Bearer {JWT}
+            """.trimIndent()
+        }
 
     companion object {
         const val SECURITY_SCHEME_NAME = "Authorization"
@@ -55,8 +79,7 @@ class OpenApiConfig {
 
     @Bean
     fun apiGroup(): GroupedOpenApi =
-        GroupedOpenApi
-            .builder()
+        GroupedOpenApi.builder()
             .group("api")
             .packagesToScan("kr.co.lokit.api")
             .build()

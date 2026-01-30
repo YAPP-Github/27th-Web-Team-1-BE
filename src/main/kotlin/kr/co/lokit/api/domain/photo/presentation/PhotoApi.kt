@@ -60,7 +60,7 @@ interface PhotoApi {
     )
     fun create(
         request: CreatePhotoRequest,
-        userId: Long,
+        @Parameter(hidden = true) userId: Long,
     ): IdResponse
 
     @Operation(
@@ -114,7 +114,7 @@ interface PhotoApi {
         @Parameter(description = "사진 ID", example = "1", required = true)
         id: Long,
         request: UpdatePhotoRequest,
-        userId: Long,
+        @Parameter(hidden = true) userId: Long,
     ): IdResponse
 
     @Operation(

@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.workspace.presentation
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -20,7 +21,7 @@ interface WorkspaceApi {
             ApiResponse(responseCode = "400", description = "잘못된 입력값"),
         ],
     )
-    fun create(request: CreateWorkspaceRequest, userId: Long): IdResponse
+    fun create(request: CreateWorkspaceRequest, @Parameter(hidden = true) userId: Long): IdResponse
 
     @Operation(
         summary = "초대 코드로 워크스페이스 합류",
@@ -30,5 +31,5 @@ interface WorkspaceApi {
             ApiResponse(responseCode = "404", description = "유효하지 않은 초대 코드"),
         ],
     )
-    fun joinByInviteCode(request: JoinWorkspaceRequest, userId: Long): IdResponse
+    fun joinByInviteCode(request: JoinWorkspaceRequest, @Parameter(hidden = true) userId: Long): IdResponse
 }

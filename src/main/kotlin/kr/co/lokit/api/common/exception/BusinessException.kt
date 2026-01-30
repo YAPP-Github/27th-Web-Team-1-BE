@@ -25,6 +25,12 @@ sealed class BusinessException(
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.RESOURCE_ALREADY_EXISTS, message, cause, errors)
 
+    class AuthenticationException(
+        message: String = ErrorCode.UNAUTHORIZED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.UNAUTHORIZED, message, cause, errors)
+
     class UnauthorizedException(
         message: String = ErrorCode.UNAUTHORIZED.message,
         cause: Throwable? = null,
