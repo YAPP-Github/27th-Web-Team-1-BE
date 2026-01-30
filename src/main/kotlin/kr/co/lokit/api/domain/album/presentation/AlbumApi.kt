@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.album.presentation
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -30,7 +31,7 @@ interface AlbumApi {
             ApiResponse(responseCode = "200", description = "선택 가능한 앨범 조회 성공"),
         ],
     )
-    fun getSelectableAlbums(userId: Long): SelectableAlbumResponse
+    fun getSelectableAlbums(@Parameter(hidden = true) userId: Long): SelectableAlbumResponse
 
     @Operation(
         summary = "앨범 제목 수정",
