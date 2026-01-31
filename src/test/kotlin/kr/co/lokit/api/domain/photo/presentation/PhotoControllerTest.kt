@@ -103,7 +103,7 @@ class PhotoControllerTest {
     fun `사진 수정 성공`() {
         val updatedPhoto = createPhoto(id = 1L, description = "수정됨")
         doReturn(updatedPhoto).`when`(photoService)
-            .update(anyLong(), anyLong(), anyLong(), anyObject(), anyDouble(), anyDouble())
+            .update(anyLong(), anyLong(), anyObject(), anyDouble(), anyDouble())
 
         mockMvc.perform(
             put("/photos/1")

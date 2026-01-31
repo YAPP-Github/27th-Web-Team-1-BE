@@ -56,9 +56,8 @@ class PhotoController(
     override fun update(
         @PathVariable id: Long,
         @RequestBody @Valid request: UpdatePhotoRequest,
-        @CurrentUserId userId: Long,
     ): IdResponse =
-        photoService.update(id, userId, request.albumId, request.description, request.longitude, request.latitude)
+        photoService.update(id, request.albumId, request.description, request.longitude, request.latitude)
             .toIdResponse(Photo::id)
 
     @DeleteMapping("{id}")

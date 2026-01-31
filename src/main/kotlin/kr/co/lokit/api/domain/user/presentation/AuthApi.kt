@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.LoginRequest
-import kr.co.lokit.api.domain.user.dto.LoginResponse
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import org.springframework.web.bind.annotation.RequestBody
 
@@ -25,7 +24,7 @@ interface AuthApi {
             ApiResponse(
                 responseCode = "201",
                 description = "회원가입 성공",
-                content = [Content(schema = Schema(implementation = LoginResponse::class))],
+                content = [Content(schema = Schema(implementation = IdResponse::class))],
             ),
             ApiResponse(
                 responseCode = "400",
@@ -41,33 +40,6 @@ interface AuthApi {
     )
     @SecurityRequirements
     fun login(
-        @RequestBody request: LoginRequest,
-    ): LoginResponse
-
-    @Operation(
-        summary = "회원가입/로그인 (userId만 조회)",
-        description = "이메일과 이름으로 신규 사용자를 등록하고 개발환경 임시 인증용 헤더에 사용할 회원 ID를 발급합니다.",
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "201",
-                description = "회원가입 성공",
-                content = [Content(schema = Schema(implementation = LoginResponse::class))],
-            ),
-            ApiResponse(
-                responseCode = "400",
-                description = "잘못된 요청 (유효하지 않은 이메일 형식 등)",
-                content = [Content()],
-            ),
-            ApiResponse(
-                responseCode = "409",
-                description = "이미 존재하는 이메일",
-                content = [Content()],
-            ),
-        ],
-    )
-    fun simpleLogin(
         @RequestBody request: LoginRequest,
     ): IdResponse
 

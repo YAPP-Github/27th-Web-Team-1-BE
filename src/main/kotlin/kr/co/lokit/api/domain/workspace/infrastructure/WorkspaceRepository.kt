@@ -12,4 +12,6 @@ interface WorkspaceRepository {
     fun findByInviteCode(inviteCode: String): Workspace?
 
     fun addUser(workspaceId: Long, userId: Long): Workspace
+
+    fun findByUserId(userId: Long): Workspace?
 }

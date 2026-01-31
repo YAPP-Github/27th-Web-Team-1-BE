@@ -9,12 +9,14 @@ import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
+import kr.co.lokit.api.domain.photo.infrastructure.file.S3FileVerifier
 import kr.co.lokit.api.domain.photo.infrastructure.file.S3PresignedUrlGenerator
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 class PhotoService(
@@ -22,6 +24,7 @@ class PhotoService(
     private val albumRepository: AlbumRepository,
     private val albumBoundsService: AlbumBoundsService,
     private val s3PresignedUrlGenerator: S3PresignedUrlGenerator?,
+    private val s3FileVerifier: S3FileVerifier?,
     private val mapClient: MapClient,
 ) {
     @Transactional(readOnly = true)
@@ -32,7 +35,7 @@ class PhotoService(
         fileName: String,
         contentType: String,
     ): PresignedUrl {
-        val key = KEY_TEMPLATE.format(fileName, contentType)
+        val key = KEY_TEMPLATE.format(UUID.randomUUID(), fileName)
         return s3PresignedUrlGenerator?.generate(key, contentType)
             ?: throw UnsupportedOperationException("S3 is not enabled")
     }
@@ -44,6 +47,7 @@ class PhotoService(
     )
     @Transactional
     fun create(photo: Photo): Photo {
+        s3FileVerifier?.verify(photo.url)
         val saved = photoRepository.save(photo)
         albumBoundsService.updateBoundsOnPhotoAdd(
             photo.albumId,
@@ -81,7 +85,6 @@ class PhotoService(
     @Transactional
     fun update(
         id: Long,
-        userId: Long,
         albumId: Long,
         description: String?,
         longitude: Double,
@@ -113,6 +116,6 @@ class PhotoService(
         photoRepository.deleteById(photoId)
 
     companion object {
-        const val KEY_TEMPLATE = "photos/%d/%s_%s"
+        const val KEY_TEMPLATE = "photos/%s/%s"
     }
 }

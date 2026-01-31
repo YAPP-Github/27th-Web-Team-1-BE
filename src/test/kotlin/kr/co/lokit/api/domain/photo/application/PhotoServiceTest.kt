@@ -6,6 +6,7 @@ import kr.co.lokit.api.domain.map.application.AlbumBoundsService
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.infrastructure.geocoding.MapClient
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
+import kr.co.lokit.api.domain.photo.infrastructure.file.S3FileVerifier
 import kr.co.lokit.api.domain.photo.infrastructure.file.S3PresignedUrlGenerator
 import kr.co.lokit.api.fixture.createLocation
 import kr.co.lokit.api.fixture.createPhoto
@@ -36,6 +37,9 @@ class PhotoServiceTest {
 
     @Mock
     lateinit var s3PresignedUrlGenerator: S3PresignedUrlGenerator
+
+    @Mock
+    lateinit var s3FileVerifier: S3FileVerifier
 
     @Mock
     lateinit var mapClient: MapClient
@@ -94,9 +98,16 @@ class PhotoServiceTest {
         val originalPhoto = createPhoto()
         val updatedPhoto = createPhoto(id = 1L, description = "수정된 설명", location = createLocation(0.0, 0.0))
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
-        `when`(photoRepository.apply(createPhoto(description = "수정된 설명", location = createLocation(0.0, 0.0)))).thenReturn(updatedPhoto)
+        `when`(
+            photoRepository.apply(
+                createPhoto(
+                    description = "수정된 설명",
+                    location = createLocation(0.0, 0.0)
+                )
+            )
+        ).thenReturn(updatedPhoto)
 
-        val result = photoService.update(1L, 1L, 1L, request.description, request.longitude, request.latitude)
+        val result = photoService.update(1L, 1L, request.description, request.longitude, request.latitude)
 
         assertEquals("수정된 설명", result.description)
     }
@@ -110,7 +121,7 @@ class PhotoServiceTest {
         `when`(photoRepository.apply(createPhoto(location = createLocation(128.0, 38.0)))).thenReturn(updatedPhoto)
         doNothing().`when`(albumBoundsService).updateBoundsOnPhotoAdd(1L, 128.0, 38.0)
 
-        photoService.update(1L, 1L, 1L, request.description, request.longitude, request.latitude)
+        photoService.update(1L, 1L, request.description, request.longitude, request.latitude)
 
         verify(albumBoundsService).updateBoundsOnPhotoAdd(1L, 128.0, 38.0)
     }

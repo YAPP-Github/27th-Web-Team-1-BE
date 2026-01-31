@@ -114,7 +114,6 @@ interface PhotoApi {
         @Parameter(description = "사진 ID", example = "1", required = true)
         id: Long,
         request: UpdatePhotoRequest,
-        @Parameter(hidden = true) userId: Long,
     ): IdResponse
 
     @Operation(

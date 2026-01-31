@@ -60,4 +60,8 @@ class WorkspaceRepositoryImpl(
 
         return workspaceEntity.toDomain()
     }
+
+    @Transactional(readOnly = true)
+    override fun findByUserId(userId: Long): Workspace? =
+        workspaceJpaRepository.findByUserId(userId)?.toDomain()
 }
