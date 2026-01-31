@@ -26,7 +26,4 @@ class FileConfig(
         .region(Region.of(region))
         .credentialsProvider(DefaultCredentialsProvider.create())
         .build()
-
-    @Bean
-    fun bucketName(): String = bucket
 }

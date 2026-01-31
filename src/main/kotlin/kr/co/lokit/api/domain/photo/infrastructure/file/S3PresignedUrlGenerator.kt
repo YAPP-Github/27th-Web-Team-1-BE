@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.photo.infrastructure.file
 
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
-import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -14,7 +14,8 @@ import java.time.Duration
 @ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
 class S3PresignedUrlGenerator(
     private val s3Presigner: S3Presigner,
-    @Qualifier("bucketName") private val bucket: String,
+    @Value("\${aws.s3.region}") private val region: String,
+    @Value("\${aws.s3.bucket}") private val bucket: String
 ) {
     fun generate(key: String, contentType: String): PresignedUrl {
         val request = PutObjectRequest.builder()
@@ -30,7 +31,7 @@ class S3PresignedUrlGenerator(
             .build()
 
         val presignedUrl = s3Presigner.presignPutObject(presignRequest)
-        val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, key)
+        val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, region, key)
 
         return PresignedUrl(
             presignedUrl = presignedUrl.url().toString(),
@@ -39,7 +40,7 @@ class S3PresignedUrlGenerator(
     }
 
     companion object {
-        const val OBJECT_URL_TEMPLATE = "https://%s.s3.amazonaws.com/%s"
+        const val OBJECT_URL_TEMPLATE = "https://%s.s3.%s.amazonaws.com/%s"
         const val SIGNATURE_DURATION_MINUTES = 10L
     }
 }

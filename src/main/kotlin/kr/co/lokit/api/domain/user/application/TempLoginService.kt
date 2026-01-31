@@ -28,11 +28,10 @@ class TempLoginService(
     private val workSpaceService: WorkspaceService,
     private val albumBoundsService: AlbumBoundsService,
     private val userRepository: UserRepository,
-    private val mapService: MapService
+    private val mapService: MapService,
+    @Value("\${aws.s3.region}") private val region: String,
+    @Value("\${aws.s3.bucket}") private val bucket: String
 ) {
-    @Value("\${aws.s3.bucket}")
-    private lateinit var bucket: String
-
     // 임시 회원가입/로그인 기능
     @Transactional
     fun login(user: User): LoginResponse {
@@ -53,7 +52,7 @@ class TempLoginService(
                 albumId = album.id,
                 location = Location(longitude = longitude, latitude = latitude),
                 description = DESCRIPTIONS[ThreadLocalRandom.current().nextInt(DESCRIPTIONS.size)],
-                url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(bucket, tempPhoto),
+                url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(bucket, region, tempPhoto),
                 uploadedById = userId,
                 takenAt = LocalDateTime.now().minusDays(ThreadLocalRandom.current().nextInt(100).toLong())
             )
@@ -92,7 +91,17 @@ class TempLoginService(
 
     companion object {
         private val TEMP_PHOTOS =
-            listOf("두.jpg", "몰.jpeg", "센.png", "네.jpg", "카.png", "라.png", "배.png", "당.png", "토.jpg")
+            listOf(
+                "photos/dunamu.jpg",
+                "photos/moloco.jpeg",
+                "photos/sendbird.png",
+                "photos/naver.jpg",
+                "photos/kakao.png",
+                "photos/line.png",
+                "photos/woowahan.png",
+                "photos/daangn.png",
+                "photos/toss.jpg"
+            )
         private val DESCRIPTIONS = listOf(
             "매일 꿈꾸는 바로 한가지, 퇴사",
             "세상에서 가장 건설적인 활동은 이직",

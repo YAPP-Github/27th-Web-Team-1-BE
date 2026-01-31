@@ -13,7 +13,7 @@ env:
 jobs:
     deploy:
         runs-on: ubuntu-latest
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
 
         steps:
             -   name: Configure AWS credentials
@@ -47,24 +47,15 @@ jobs:
                     ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
                     CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
                     AWS_REGION: ${{ env.AWS_REGION }}
-                    POSTGRES_HOST: ${{ secrets.DEV_POSTGRES_HOST }}
-                    POSTGRES_PORT: ${{ secrets.DEV_POSTGRES_PORT }}
-                    POSTGRES_DB: ${{ secrets.DEV_POSTGRES_DB }}
-                    POSTGRES_USER: ${{ secrets.DEV_POSTGRES_USER }}
-                    POSTGRES_PASSWORD: ${{ secrets.DEV_POSTGRES_PASSWORD }}
-                    JWT_SECRET: ${{ secrets.DEV_JWT_SECRET }}
-                    JWT_EXPIRATION: ${{ secrets.DEV_JWT_EXPIRATION }}
-                    AWS_S3_BUCKET: ${{ secrets.DEV_AWS_S3_BUCKET }}
-                    CORS_ALLOWED_ORIGINS: ${{ secrets.DEV_CORS_ALLOWED_ORIGINS }}
-                    JWT_REFRESH_EXPIRATION: ${{ secrets.DEV_JWT_REFRESH_EXPIRATION }}
-                    KAKAO_API_KEY: ${{ secrets.DEV_KAKAO_API_KEY}}
                 with:
                     host: ${{ secrets.DEV_EC2_HOST }}
                     username: ${{ secrets.DEV_EC2_USERNAME }}
                     key: ${{ secrets.DEV_EC2_SSH_KEY }}
-                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION,POSTGRES_HOST,POSTGRES_PORT,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,JWT_SECRET,JWT_EXPIRATION,AWS_S3_BUCKET,CORS_ALLOWED_ORIGINS,JWT_REFRESH_EXPIRATION,KAKAO_API_KEY
+                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION
                     script: |
                         set -e
+
+                        SSM_PREFIX="/lokit/dev"
 
                         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
@@ -73,24 +64,26 @@ jobs:
                         docker stop $CONTAINER_NAME 2>/dev/null || true
                         docker rm $CONTAINER_NAME 2>/dev/null || true
 
+                        ENV_ARGS=""
+                        while IFS= read -r line; do
+                            key=$(echo "$line" | jq -r '.Name' | sed "s|${SSM_PREFIX}/||")
+                            value=$(echo "$line" | jq -r '.Value')
+                            ENV_ARGS="$ENV_ARGS -e $key=$value"
+                        done < <(aws ssm get-parameters-by-path \
+                            --path "$SSM_PREFIX" \
+                            --with-decryption \
+                            --region $AWS_REGION \
+                            --query "Parameters[]" \
+                            --output json | jq -c '.[]')
+
                         docker run -d \
                             --name $CONTAINER_NAME \
                             --restart unless-stopped \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
-                            -e POSTGRES_HOST=$POSTGRES_HOST \
-                            -e POSTGRES_PORT=$POSTGRES_PORT \
-                            -e POSTGRES_DB=$POSTGRES_DB \
-                            -e POSTGRES_USER=$POSTGRES_USER \
-                            -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
                             -e TZ=Asia/Seoul \
-                            -e JWT_SECRET=$JWT_SECRET \
-                            -e JWT_EXPIRATION=$JWT_EXPIRATION \
                             -e AWS_REGION=$AWS_REGION \
-                            -e AWS_S3_BUCKET=$AWS_S3_BUCKET \
-                            -e CORS_ALLOWED_ORIGINS=$CORS_ALLOWED_ORIGINS \
-                            -e JWT_REFRESH_EXPIRATION=$JWT_REFRESH_EXPIRATION \
-                            -e KAKAO_API_KEY=$KAKAO_API_KEY \
+                            $ENV_ARGS \
                             --log-driver=awslogs \
                             --log-opt awslogs-region=$AWS_REGION \
                             --log-opt awslogs-group=/docker/lokit-api-dev \
@@ -111,6 +104,12 @@ jobs:
                             sleep 2
                             timeout=$((timeout-2))
                         done
+
+                        if [ $timeout -le 0 ]; then
+                            echo "Health check timed out!"
+                            docker logs $CONTAINER_NAME --tail 50
+                            exit 1
+                        fi
 
                         docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
