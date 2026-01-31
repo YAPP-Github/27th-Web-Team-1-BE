@@ -19,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
 @Service
@@ -56,7 +57,11 @@ class TempLoginService(
                 albumId = album.id,
                 location = Location(longitude = longitude, latitude = latitude),
                 description = DESCRIPTIONS[ThreadLocalRandom.current().nextInt(DESCRIPTIONS.size)],
-                url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(bucket, region, tempPhoto),
+                url = S3PresignedUrlGenerator.OBJECT_URL_TEMPLATE.format(
+                    bucket,
+                    region,
+                    tempPhoto + UUID.randomUUID().toString()
+                ),
                 uploadedById = userId,
                 takenAt = LocalDateTime.now().minusDays(ThreadLocalRandom.current().nextInt(100).toLong())
             )

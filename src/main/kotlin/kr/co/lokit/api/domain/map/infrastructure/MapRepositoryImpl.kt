@@ -31,7 +31,16 @@ class MapRepositoryImpl(
         val albumFilter = if (albumId != null) "AND album_id = ?" else ""
         val sql =
             """
-            WITH clustered AS (
+            WITH unique_photos AS (
+                SELECT DISTINCT ON (url)
+                    id, url, location, created_at
+                FROM photo
+                WHERE location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
+                  AND is_deleted = false
+                  $albumFilter
+                ORDER BY url, created_at DESC
+            ),
+            clustered AS (
                 SELECT
                     floor(ST_X(location) / ?) AS cell_x,
                     floor(ST_Y(location) / ?) AS cell_y,
@@ -40,10 +49,7 @@ class MapRepositoryImpl(
                     ST_X(location) as longitude,
                     ST_Y(location) as latitude,
                     created_at
-                FROM photo
-                WHERE location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
-                  AND is_deleted = false
-                  $albumFilter
+                FROM unique_photos
             ),
             ranked AS (
                 SELECT
@@ -68,8 +74,10 @@ class MapRepositoryImpl(
             ORDER BY cluster_count DESC, cell_x, cell_y, rn
             """.trimIndent()
 
-        val params = mutableListOf<Any>(gridSize, gridSize, west, south, east, north)
+        val params = mutableListOf<Any>(west, south, east, north)
         if (albumId != null) params.add(albumId)
+        params.add(gridSize)
+        params.add(gridSize)
 
         return jdbcTemplate.query(
             sql,
