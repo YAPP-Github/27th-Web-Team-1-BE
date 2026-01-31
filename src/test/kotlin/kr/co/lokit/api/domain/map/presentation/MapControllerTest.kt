@@ -74,8 +74,8 @@ class MapControllerTest {
         mockMvc.perform(
             get("/map/location")
                 .with(user("test").roles("USER"))
-                .param("lng", "127.0")
-                .param("lat", "37.5"),
+                .param("longitude", "127.0")
+                .param("latitude", "37.5"),
         )
             .andExpect(status().isOk)
     }
