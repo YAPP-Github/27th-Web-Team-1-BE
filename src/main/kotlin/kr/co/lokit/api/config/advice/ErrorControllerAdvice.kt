@@ -13,6 +13,7 @@ import org.springframework.validation.BindException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
+import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -35,6 +36,7 @@ class ErrorControllerAdvice {
             exception = ex,
             request = request,
             errorCode = ex.errorCode,
+            errors = ex.errors.ifEmpty { null },
         )
     }
 
@@ -140,16 +142,33 @@ class ErrorControllerAdvice {
             errorCode = ErrorCode.RESOURCE_NOT_FOUND.code,
         )
 
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(ObjectOptimisticLockingFailureException::class)
+    fun handleOptimisticLockException(
+        ex: ObjectOptimisticLockingFailureException,
+        request: HttpServletRequest,
+    ): ApiResponse<ErrorDetail> {
+        log.warn("Optimistic lock conflict: ${ex.message}")
+        return ApiResponse.failure(
+            status = HttpStatus.CONFLICT,
+            detail = ErrorCode.CONFLICT.message,
+            request = request,
+            errorCode = ErrorCode.CONFLICT.code,
+        )
+    }
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception::class)
     fun handleException(
         ex: Exception,
         request: HttpServletRequest,
-    ): ApiResponse<ErrorDetail> =
-        ApiResponse.failure(
+    ): ApiResponse<ErrorDetail> {
+        log.error("Unhandled exception occurred: ${ex.message}", ex)
+        return ApiResponse.failure(
             status = HttpStatus.INTERNAL_SERVER_ERROR,
             detail = ErrorCode.INTERNAL_SERVER_ERROR.message,
             request = request,
             errorCode = ErrorCode.INTERNAL_SERVER_ERROR.code,
         )
+    }
 }

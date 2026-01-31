@@ -6,7 +6,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
-import kr.co.lokit.api.common.exception.BusinessException
+import jakarta.persistence.Version
+import kr.co.lokit.api.common.exception.entityIdNotInitialized
 import org.hibernate.annotations.SoftDelete
 import org.hibernate.proxy.HibernateProxy
 import org.springframework.data.annotation.CreatedDate
@@ -19,13 +20,13 @@ import java.time.LocalDateTime
 @EntityListeners(AuditingEntityListener::class)
 abstract class BaseEntity {
     @Id
+    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private var _id: Long? = null
+    var id: Long? = null
+        protected set
 
     protected val persistedId: Long?
-        get() = _id
-    val id: Long
-        get() = _id ?: throw BusinessException.NotInitializedException.entityId()
+        get() = id
 
     @CreatedDate
     @Column(updatable = false)
@@ -33,6 +34,12 @@ abstract class BaseEntity {
 
     @LastModifiedDate
     var updatedAt: LocalDateTime = LocalDateTime.now()
+
+    @Version
+    var version: Long = 0
+        protected set
+
+    fun nonNullId(): Long = id ?: throw entityIdNotInitialized(this::class.simpleName ?: "Unknown")
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
