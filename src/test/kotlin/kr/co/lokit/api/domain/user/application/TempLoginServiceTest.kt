@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.junit.jupiter.MockitoExtension
@@ -46,14 +45,20 @@ class TempLoginServiceTest {
     @Mock
     lateinit var mapService: MapService
 
-    @InjectMocks
     lateinit var tempLoginService: TempLoginService
 
     @BeforeEach
     fun setUp() {
-        val bucketField = TempLoginService::class.java.getDeclaredField("bucket")
-        bucketField.isAccessible = true
-        bucketField.set(tempLoginService, "test-bucket")
+        tempLoginService = TempLoginService(
+            photoRepository = photoRepository,
+            albumService = albumService,
+            workSpaceService = workSpaceService,
+            albumBoundsService = albumBoundsService,
+            userRepository = userRepository,
+            mapService = mapService,
+            region = "ap-northeast-2",
+            bucket = "test-bucket",
+        )
     }
 
     @Test

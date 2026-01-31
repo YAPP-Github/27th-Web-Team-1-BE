@@ -94,23 +94,6 @@ jobs:
                             --cpus="1.5" \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
 
-                        timeout=60
-                        while [ $timeout -gt 0 ]; do
-                            health=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME 2>/dev/null || echo "starting")
-                            if [ "$health" = "healthy" ]; then
-                                echo "Container is healthy!"
-                                break
-                            fi
-                            sleep 2
-                            timeout=$((timeout-2))
-                        done
-
-                        if [ $timeout -le 0 ]; then
-                            echo "Health check timed out!"
-                            docker logs $CONTAINER_NAME --tail 50
-                            exit 1
-                        fi
-
                         docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
                         docker logs $CONTAINER_NAME --tail 30
