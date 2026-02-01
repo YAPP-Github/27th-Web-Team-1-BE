@@ -137,6 +137,7 @@ out/**
 
 HELP.md
 
+.env
 .env.local
 .env.dev
 .env.prod
@@ -145,3 +146,4 @@ application-env.yaml
 .kotlin
 .claude
 .idea
+env.properties
