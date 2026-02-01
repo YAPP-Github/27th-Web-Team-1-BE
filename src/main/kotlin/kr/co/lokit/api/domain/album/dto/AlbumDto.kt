@@ -10,8 +10,6 @@ data class AlbumRequest(
     @field:Size(max = 10, message = "앨범 제목은 10자 이내여야 합니다.")
     @Schema(description = "앨범 제목", example = "여행 앨범")
     val title: String,
-    @Schema(description = "워크스페이스 ID", example = "1")
-    val workspaceId: Long,
 )
 
 @Schema(description = "앨범 제목 수정 요청")

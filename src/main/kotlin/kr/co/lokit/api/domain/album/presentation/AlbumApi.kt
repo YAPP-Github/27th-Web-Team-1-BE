@@ -22,7 +22,7 @@ interface AlbumApi {
             ApiResponse(responseCode = "404", description = "워크스페이스를 찾을 수 없음"),
         ],
     )
-    fun create(albumRequest: AlbumRequest): IdResponse
+    fun create(@Parameter(hidden = true) userId: Long, albumRequest: AlbumRequest): IdResponse
 
     @Operation(
         summary = "선택 가능한 앨범 조회",

@@ -10,8 +10,8 @@ class AlbumService(
     private val albumRepository: AlbumRepository,
 ) {
     @Transactional
-    fun create(album: Album): Album =
-        albumRepository.save(album)
+    fun create(album: Album, userId: Long): Album =
+        albumRepository.save(album, userId)
 
     @Transactional(readOnly = true)
     fun getSelectableAlbums(userId: Long): List<Album> =

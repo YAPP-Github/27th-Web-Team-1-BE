@@ -10,8 +10,7 @@ import java.time.LocalDateTime
 
 fun createAlbumRequest(
     title: String = "여행",
-    workspaceId: Long = 1L,
-) = AlbumRequest(title = title, workspaceId = workspaceId)
+) = AlbumRequest(title = title)
 
 fun createPhotoRequest(
     url: String = "https://example.com/photo.jpg",

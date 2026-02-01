@@ -27,7 +27,7 @@ class WorkspaceController(
         @RequestBody @Valid request: CreateWorkspaceRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
-        workspaceService.create(Workspace(name = request.name), userId)
+        workspaceService.createIfNone(Workspace(name = request.name), userId)
             .toIdResponse(Workspace::id)
 
     @PostMapping("join")

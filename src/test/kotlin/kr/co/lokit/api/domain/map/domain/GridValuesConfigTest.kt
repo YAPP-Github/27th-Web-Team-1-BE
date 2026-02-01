@@ -17,8 +17,8 @@ class GridValuesConfigTest {
 
     @Test
     fun `지원되지 않는 줌 레벨은 기본값을 반환한다`() {
-        assertEquals(0.001953125, GridValues.getGridSize(15))
-        assertEquals(0.001953125, GridValues.getGridSize(5))
+        assertEquals(0.001953125, GridValues.getGridSize(13))
+        assertEquals(0.001953125, GridValues.getGridSize(4))
     }
 
     @Test
@@ -27,6 +27,6 @@ class GridValuesConfigTest {
 
         assertTrue(levels.contains(10))
         assertTrue(levels.contains(14))
-        assertEquals(5, levels.size)
+        assertEquals(8, levels.size)
     }
 }

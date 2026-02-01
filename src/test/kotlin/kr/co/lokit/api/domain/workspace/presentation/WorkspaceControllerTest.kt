@@ -43,7 +43,7 @@ class WorkspaceControllerTest {
     @Test
     fun `워크스페이스 생성 성공`() {
         val savedWorkspace = createWorkspace(id = 1L, name = "우리 가족", inviteCode = "12345678")
-        doReturn(savedWorkspace).`when`(workspaceService).create(anyObject(), anyLong())
+        doReturn(savedWorkspace).`when`(workspaceService).createIfNone(anyObject(), anyLong())
 
         mockMvc.perform(
             post("/workspaces")

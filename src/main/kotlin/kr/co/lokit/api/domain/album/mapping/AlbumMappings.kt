@@ -23,10 +23,10 @@ fun Album.toEntity(workspace: WorkspaceEntity): AlbumEntity =
         workspace = workspace,
     )
 
-fun AlbumRequest.toDomain(workspaceId: Long): Album =
+fun AlbumRequest.toDomain(): Album =
     Album(
         title = this.title,
-        workspaceId = workspaceId,
+        workspaceId = 0,
     )
 
 fun List<Album>.toSelectableResponse(): SelectableAlbumResponse =

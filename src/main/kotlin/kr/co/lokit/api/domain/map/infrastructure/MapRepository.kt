@@ -28,6 +28,16 @@ data class ClusterPhotoProjection(
     val takenAt: LocalDateTime,
 )
 
+data class ClusterCandidate(
+    val cellX: Long,
+    val cellY: Long,
+    val count: Int,
+    val thumbnailUrl: String,
+    val centerLongitude: Double,
+    val centerLatitude: Double,
+    val rank: Int,
+)
+
 interface MapRepository {
     fun findClustersWithinBBox(
         west: Double,

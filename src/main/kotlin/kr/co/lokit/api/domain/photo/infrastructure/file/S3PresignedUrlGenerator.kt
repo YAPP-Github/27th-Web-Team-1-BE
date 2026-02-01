@@ -14,10 +14,13 @@ import java.time.Duration
 @ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
 class S3PresignedUrlGenerator(
     private val s3Presigner: S3Presigner,
+    private val s3FileVerifier: S3FileVerifier,
     @Value("\${aws.s3.region}") private val region: String,
     @Value("\${aws.s3.bucket}") private val bucket: String
 ) {
     fun generate(key: String, contentType: String): PresignedUrl {
+        s3FileVerifier.verifyNotExists(key)
+
         val request = PutObjectRequest.builder()
             .bucket(bucket)
             .key(key)
@@ -41,6 +44,6 @@ class S3PresignedUrlGenerator(
 
     companion object {
         const val OBJECT_URL_TEMPLATE = "https://%s.s3.%s.amazonaws.com/%s"
-        const val SIGNATURE_DURATION_MINUTES = 10L
+        const val SIGNATURE_DURATION_MINUTES = 30L
     }
 }

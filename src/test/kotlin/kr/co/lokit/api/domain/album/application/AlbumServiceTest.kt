@@ -24,9 +24,9 @@ class AlbumServiceTest {
     fun `앨범을 생성할 수 있다`() {
         val album = createAlbum(title = "여행")
         val savedAlbum = createAlbum(id = 1L, title = "여행")
-        `when`(albumRepository.save(album)).thenReturn(savedAlbum)
+        `when`(albumRepository.save(album, 1L)).thenReturn(savedAlbum)
 
-        val result = albumService.create(album)
+        val result = albumService.create(album, 1L)
 
         assertEquals(1L, result.id)
         assertEquals("여행", result.title)

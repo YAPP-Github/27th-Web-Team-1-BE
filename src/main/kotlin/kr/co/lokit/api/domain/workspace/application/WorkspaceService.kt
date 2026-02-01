@@ -11,8 +11,8 @@ class WorkspaceService(
     private val workspaceRepository: WorkspaceRepository,
 ) {
     @Transactional
-    fun create(workspace: Workspace, userId: Long): Workspace =
-        workspaceRepository.saveWithUser(workspace, userId)
+    fun createIfNone(workspace: Workspace, userId: Long): Workspace =
+        workspaceRepository.findByUserId(userId) ?: workspaceRepository.saveWithUser(workspace, userId)
 
     @Transactional
     fun joinByInviteCode(inviteCode: String, userId: Long): Workspace {

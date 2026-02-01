@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.dto.UpdateAlbumTitleRequest
 import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createAlbumRequest
+import kr.co.lokit.api.fixture.userAuth
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyString
@@ -17,6 +18,7 @@ import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -47,11 +49,11 @@ class AlbumControllerTest {
     @Test
     fun `앨범 생성 성공`() {
         val savedAlbum = createAlbum(id = 1L, title = "여행")
-        doReturn(savedAlbum).`when`(albumService).create(anyObject())
+        doReturn(savedAlbum).`when`(albumService).create(anyObject(), anyLong())
 
         mockMvc.perform(
             post("/albums")
-                .with(user("test").roles("USER"))
+                .with(authentication(userAuth()))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createAlbumRequest(title = "여행"))),
@@ -63,10 +65,10 @@ class AlbumControllerTest {
     fun `앨범 생성 실패 - 제목이 10자 초과`() {
         mockMvc.perform(
             post("/albums")
-                .with(user("test").roles("USER"))
+                .with(authentication(userAuth()))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(AlbumRequest(title = "12345678901", workspaceId = 1L))),
+                .content(objectMapper.writeValueAsString(AlbumRequest(title = "12345678901"))),
         )
             .andExpect(status().isBadRequest)
     }

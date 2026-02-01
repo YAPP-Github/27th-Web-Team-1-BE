@@ -29,7 +29,7 @@ interface MapApi {
         description = """
             줌 레벨과 바운딩 박스를 기반으로 지도에 표시할 사진 또는 클러스터를 조회합니다.
 
-            - **줌 레벨 < 15**: ST_SnapToGrid를 사용하여 사진을 클러스터링하여 반환
+            - **줌 레벨 < 16**: ST_SnapToGrid를 사용하여 사진을 클러스터링하여 반환
             - clusterId: 줌 레벨 + 그리드 셀 인덱스 (예: z14_130234_38456)
             - count: 클러스터 내 사진 개수
             - thumbnailUrl: 클러스터 내 가장 최근 생성된 사진의 URL
@@ -58,7 +58,7 @@ interface MapApi {
     )
     fun getPhotos(
         @Parameter(
-            description = "줌 레벨 (0-20). 15 미만이면 클러스터링, 15 이상이면 개별 사진 반환",
+            description = "줌 레벨 (0-20). 16 미만이면 클러스터링, 16 이상이면 개별 사진 반환",
             example = "12",
             required = true,
         )

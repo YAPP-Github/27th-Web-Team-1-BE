@@ -17,9 +17,9 @@ class AlbumRepositoryImpl(
 ) : AlbumRepository {
 
     @Transactional
-    override fun save(album: Album): Album {
-        val workspace = workspaceJpaRepository.findByIdOrNull(album.workspaceId)
-            ?: throw entityNotFound<Workspace>(album.workspaceId)
+    override fun save(album: Album, userId: Long): Album {
+        val workspace = workspaceJpaRepository.findByUserId(userId)
+            ?: throw entityNotFound<Workspace>(userId)
         val albumEntity = album.toEntity(workspace)
         val savedEntity = albumJpaRepository.save(albumEntity)
         return savedEntity.toDomain()
@@ -30,8 +30,14 @@ class AlbumRepositoryImpl(
         albumJpaRepository.findByIdOrNull(id)?.toDomain()
 
     @Transactional(readOnly = true)
-    override fun findAllByUserId(userId: Long): List<Album> =
-        albumJpaRepository.findAllByUserId(userId).map { it.toDomain() }
+    override fun findAllByUserId(userId: Long): List<Album> {
+        val ids = albumJpaRepository.findAlbumIdsByUserId(userId)
+        if (ids.isEmpty()) {
+            return emptyList()
+        }
+        val entityMap = albumJpaRepository.findAllWithPhotosByIds(ids).associateBy { it.nonNullId() }
+        return ids.mapNotNull { entityMap[it]?.toDomain() }
+    }
 
     override fun applyTitle(id: Long, title: String): Album {
         val albumEntity = albumJpaRepository.findByIdOrNull(id)
@@ -47,7 +53,10 @@ class AlbumRepositoryImpl(
 
     @Transactional(readOnly = true)
     override fun findAllWithPhotos(): List<Album> {
-        return albumJpaRepository.findAllWithPhotos().map { it.toDomain() }
+        val ids = albumJpaRepository.findAllAlbumIds()
+        if (ids.isEmpty()) return emptyList()
+        val entityMap = albumJpaRepository.findAllWithPhotosByIds(ids).associateBy { it.nonNullId() }
+        return ids.mapNotNull { entityMap[it]?.toDomain() }
     }
 
     @Transactional(readOnly = true)

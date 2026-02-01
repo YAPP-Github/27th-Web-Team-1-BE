@@ -1,8 +1,8 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsRepository
 import kr.co.lokit.api.domain.map.infrastructure.ClusterProjection
 import kr.co.lokit.api.domain.map.infrastructure.MapRepository
@@ -71,7 +71,7 @@ class MapServiceTest {
     }
 
     @Test
-    fun `줌 레벨이 15 이상이면 개별 사진을 반환한다`() {
+    fun `줌 레벨이 18 이상이면 개별 사진을 반환한다`() {
         val photos = listOf(
             PhotoProjection(
                 id = 1L, url = "https://example.com/photo.jpg",
@@ -86,7 +86,7 @@ class MapServiceTest {
             ),
         ).thenReturn(photos)
 
-        val result = mapService.getPhotos(15, BBox(126.9, 37.4, 127.1, 37.6))
+        val result = mapService.getPhotos(18, BBox(126.9, 37.4, 127.1, 37.6))
 
         assertNotNull(result.photos)
         assertEquals(1, result.photos!!.size)

@@ -23,4 +23,13 @@ interface WorkspaceJpaRepository : JpaRepository<WorkspaceEntity, Long> {
         """
     )
     fun findByIdFetchUsers(id: Long): WorkspaceEntity?
+
+    @Query(
+        """
+        select w from Workspace w
+        join w.workspaceUsers wu
+        where wu.user.id = :userId
+        """
+    )
+    fun findByUserId(userId: Long): WorkspaceEntity?
 }

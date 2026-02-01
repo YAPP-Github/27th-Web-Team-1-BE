@@ -27,7 +27,7 @@ class WorkspaceServiceTest {
         val savedWorkspace = createWorkspace(id = 1L, name = "우리 가족", inviteCode = "12345678", userIds = listOf(1L))
         `when`(workspaceRepository.saveWithUser(workspace, 1L)).thenReturn(savedWorkspace)
 
-        val result = workspaceService.create(workspace, 1L)
+        val result = workspaceService.createIfNone(workspace, 1L)
 
         assertEquals(1L, result.id)
         assertEquals("우리 가족", result.name)

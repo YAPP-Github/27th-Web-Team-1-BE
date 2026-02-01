@@ -23,7 +23,7 @@ import java.time.LocalDateTime
     ],
 )
 class PhotoEntity(
-    @Column(nullable = false, length = 2100)
+    @Column(nullable = false, unique = true, length = 2100)
     var url: String,
     @Column(name = "taken_at", nullable = false)
     var takenAt: LocalDateTime = LocalDateTime.now(),
