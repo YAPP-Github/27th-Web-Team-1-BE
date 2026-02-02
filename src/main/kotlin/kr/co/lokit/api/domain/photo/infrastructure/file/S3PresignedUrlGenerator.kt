@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.ServerSideEncryption
+
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
 import java.time.Duration
@@ -25,7 +25,6 @@ class S3PresignedUrlGenerator(
             .bucket(bucket)
             .key(key)
             .contentType(contentType)
-            .serverSideEncryption(ServerSideEncryption.AES256)
             .build()
 
         val presignRequest = PutObjectPresignRequest.builder()
