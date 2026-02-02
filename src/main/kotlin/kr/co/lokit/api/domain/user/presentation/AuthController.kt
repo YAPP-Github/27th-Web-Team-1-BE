@@ -1,12 +1,8 @@
 package kr.co.lokit.api.domain.user.presentation
 
-import io.swagger.v3.oas.annotations.Operation
-import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.user.application.KakaoLoginService
-import kr.co.lokit.api.domain.user.application.TempLoginService
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
-import kr.co.lokit.api.domain.user.dto.LoginRequest
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
 import kr.co.lokit.api.domain.user.mapping.toJwtTokenResponse
@@ -20,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
@@ -28,20 +23,12 @@ import java.net.URI
 @RequestMapping("auth")
 class AuthController(
     private val authService: AuthService,
-    private val tempLoginService: TempLoginService,
     private val kakaoLoginService: KakaoLoginService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
     @Value("\${cookie.secure:false}") private val cookieSecure: Boolean,
+    @Value("\${jwt.expiration}") private val accessTokenExpiration: Int,
+    @Value("\${jwt.refresh-expiration}") private val refreshTokenExpiration: Int,
 ) : AuthApi {
-    @PostMapping("login")
-    @ResponseStatus(HttpStatus.OK)
-    override fun login(
-        @RequestBody request: LoginRequest,
-    ): IdResponse =
-        IdResponse(
-            tempLoginService
-                .login(request.email),
-        )
 
     @PostMapping("refresh")
     override fun refresh(
@@ -51,7 +38,7 @@ class AuthController(
             .refresh(request.refreshToken)
             .toJwtTokenResponse()
 
-    @GetMapping("kakao/authorize")
+    @GetMapping("kakao")
     override fun kakaoAuthorize(): ResponseEntity<Unit> {
         val authUrl =
             KakaoOAuthProperties.AUTHORIZATION_URL +
@@ -65,7 +52,6 @@ class AuthController(
             .build()
     }
 
-    @Operation(hidden = true)
     @GetMapping("kakao/callback")
     fun kakaoCallback(
         @RequestParam code: String,
@@ -78,7 +64,7 @@ class AuthController(
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .maxAge(86400)
+                .maxAge(accessTokenExpiration.toLong())
                 .sameSite("Lax")
                 .build()
 
@@ -88,7 +74,7 @@ class AuthController(
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .maxAge(604800)
+                .maxAge(refreshTokenExpiration.toLong())
                 .sameSite("Lax")
                 .build()
 
