@@ -34,7 +34,7 @@ class SecurityConfig(
                         "/auth/register",
                         "/auth/login",
                         "/auth/refresh",
-                        "/auth/kakao/authorize",
+                        "/auth/kakao",
                         "/auth/kakao/callback",
                     ).permitAll()
                     .requestMatchers("/actuator/health")
