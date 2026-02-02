@@ -71,6 +71,24 @@ sealed class BusinessException(
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.USER_NOT_FOUND, message, cause, errors)
+
+    class KakaoApiException(
+        message: String = ErrorCode.KAKAO_API_ERROR.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.KAKAO_API_ERROR, message, cause, errors)
+
+    class InvalidKakaoTokenException(
+        message: String = ErrorCode.INVALID_KAKAO_TOKEN.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVALID_KAKAO_TOKEN, message, cause, errors)
+
+    class KakaoEmailNotProvidedException(
+        message: String = ErrorCode.KAKAO_EMAIL_NOT_PROVIDED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.KAKAO_EMAIL_NOT_PROVIDED, message, cause, errors)
 }
 
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =
