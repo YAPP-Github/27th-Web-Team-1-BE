@@ -30,6 +30,12 @@ jobs:
                 if: github.event_name == 'pull_request'
                 run: ./gradlew test --no-daemon
 
+            -   name: Set up Docker Buildx
+                if: github.event_name == 'push'
+                uses: docker/setup-buildx-action@v3
+                with:
+                    driver: docker-container
+
             -   name: Configure AWS credentials
                 if: github.event_name == 'push'
                 uses: aws-actions/configure-aws-credentials@v4
@@ -72,9 +78,9 @@ jobs:
                         docker rm $CONTAINER_NAME || true
 
                         docker run -d \
-                          --name $CONTAINER_NAME \
-                          --restart unless-stopped \
-                          -p 8080:8080 \
-                          -e SPRING_PROFILES_ACTIVE=dev \
-                          -e TZ=Asia/Seoul \
-                          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest
+                            --name $CONTAINER_NAME \
+                            --restart unless-stopped \
+                            -p 8080:8080 \
+                            -e SPRING_PROFILES_ACTIVE=dev \
+                            -e TZ=Asia/Seoul \
+                            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest

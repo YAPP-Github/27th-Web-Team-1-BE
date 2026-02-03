@@ -5,7 +5,6 @@ RUN apk add --no-cache tzdata \
     && echo "Asia/Seoul" > /etc/timezone \
     && apk del tzdata
 
-# non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
 
 WORKDIR /app
