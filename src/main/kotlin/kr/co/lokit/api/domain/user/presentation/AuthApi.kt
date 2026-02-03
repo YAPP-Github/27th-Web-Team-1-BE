@@ -1,12 +1,14 @@
 package kr.co.lokit.api.domain.user.presentation
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import org.springframework.http.ResponseEntity
@@ -36,6 +38,7 @@ interface AuthApi {
     @SecurityRequirements
     fun refresh(
         @RequestBody request: RefreshTokenRequest,
+        @Parameter(hidden = true) req: HttpServletRequest,
     ): ResponseEntity<JwtTokenResponse>
 
     @Operation(
@@ -56,5 +59,6 @@ interface AuthApi {
     @Operation(hidden = true)
     fun kakaoCallback(
         @RequestParam code: String,
+        @Parameter(hidden = true) req: HttpServletRequest,
     ): ResponseEntity<Unit>
 }

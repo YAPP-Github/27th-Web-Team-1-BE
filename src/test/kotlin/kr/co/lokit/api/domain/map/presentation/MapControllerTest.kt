@@ -3,6 +3,7 @@ package kr.co.lokit.api.domain.map.presentation
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.map.application.MapService
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
@@ -43,6 +44,9 @@ class MapControllerTest {
 
     @MockitoBean
     lateinit var cookieProperties: CookieProperties
+
+    @MockitoBean
+    lateinit var cookieUtil: CookieUtil
 
     @MockitoBean
     lateinit var mapService: MapService

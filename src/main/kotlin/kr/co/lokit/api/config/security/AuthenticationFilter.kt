@@ -3,10 +3,9 @@ package kr.co.lokit.api.config.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.user.application.AuthService
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.ResponseCookie
+import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
@@ -16,11 +15,11 @@ import org.springframework.web.filter.OncePerRequestFilter
 class AuthenticationFilter(
     private val compositeAuthenticationResolver: CompositeAuthenticationResolver,
     private val authService: AuthService,
-    private val jwtTokenProvider: JwtTokenProvider,
-    private val cookieProperties: CookieProperties,
-    @Value("\${jwt.expiration}") private val accessTokenExpiration: Long,
-    @Value("\${jwt.refresh-expiration}") private val refreshTokenExpiration: Long,
+    private val cookieUtil: CookieUtil,
 ) : OncePerRequestFilter() {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = false
 
     override fun doFilterInternal(
@@ -31,6 +30,14 @@ class AuthenticationFilter(
         try {
             val accessToken = getTokenFromCookie(request, "accessToken")
             val refreshToken = getTokenFromCookie(request, "refreshToken")
+
+            log.debug(
+                "Auth filter: uri={}, accessToken={}, refreshToken={}, cookies={}",
+                request.requestURI,
+                if (accessToken != null) "present(${accessToken.take(20)}...)" else "null",
+                if (refreshToken != null) "present(${refreshToken.take(20)}...)" else "null",
+                request.cookies?.map { "${it.name}=${it.value.take(10)}..." }?.joinToString(", ") ?: "none"
+            )
 
             if (SecurityContextHolder.getContext().authentication != null) {
                 filterChain.doFilter(request, response)
@@ -45,36 +52,35 @@ class AuthenticationFilter(
                     val securityContext = SecurityContextHolder.createEmptyContext()
                     securityContext.authentication = authentication
                     SecurityContextHolder.setContext(securityContext)
-                    logger.debug("Authentication successful for user: ${authentication.name}")
+                    log.debug("Authentication successful for user: ${authentication.name}")
                     filterChain.doFilter(request, response)
                     return
+                } else {
+                    log.debug("AccessToken validation failed")
                 }
             }
 
-            // accessToken 실패/없음 → refreshToken으로 갱신 시도
             if (refreshToken != null) {
                 val tokens = authService.refreshIfValid(refreshToken)
                 if (tokens != null) {
-                    // 새 토큰을 쿠키로 설정
-                    setTokenCookies(response, tokens.accessToken, tokens.refreshToken)
+                    setTokenCookies(request, response, tokens.accessToken, tokens.refreshToken)
 
-                    // 새 accessToken으로 인증
                     val authentication = compositeAuthenticationResolver.authenticate(tokens.accessToken)
                     if (authentication != null) {
                         authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
                         val securityContext = SecurityContextHolder.createEmptyContext()
                         securityContext.authentication = authentication
                         SecurityContextHolder.setContext(securityContext)
-                        logger.debug("Token refreshed and authentication successful for user: ${authentication.name}")
+                        log.debug("Token refreshed and authentication successful for user: ${authentication.name}")
                     }
                 } else {
-                    logger.debug("RefreshToken is invalid or expired")
+                    log.debug("RefreshToken is invalid or expired")
                 }
             } else {
-                logger.debug("No tokens found in cookies")
+                log.debug("No tokens found in cookies")
             }
         } catch (e: Exception) {
-            logger.error("Cannot set user authentication: ${e.message}", e)
+            log.error("Cannot set user authentication: ${e.message}", e)
         }
 
         filterChain.doFilter(request, response)
@@ -86,24 +92,13 @@ class AuthenticationFilter(
             ?.value
             ?.takeIf { it.isNotBlank() && !it.contains(" ") }
 
-    private fun setTokenCookies(response: HttpServletResponse, accessToken: String, refreshToken: String) {
-        response.addHeader("Set-Cookie", createCookie("accessToken", accessToken, accessTokenExpiration).toString())
-        response.addHeader("Set-Cookie", createCookie("refreshToken", refreshToken, refreshTokenExpiration).toString())
-    }
-
-    private fun createCookie(name: String, value: String, maxAge: Long): ResponseCookie {
-        val builder = ResponseCookie
-            .from(name, value)
-            .httpOnly(true)
-            .secure(cookieProperties.secure)
-            .path("/")
-            .maxAge(maxAge / 1000)
-            .sameSite(if (cookieProperties.secure) "None" else "Lax")
-
-        if (cookieProperties.domains.isNotBlank()) {
-            builder.domain(cookieProperties.domains)
-        }
-
-        return builder.build()
+    private fun setTokenCookies(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        accessToken: String,
+        refreshToken: String,
+    ) {
+        response.addHeader("Set-Cookie", cookieUtil.createAccessTokenCookie(request, accessToken).toString())
+        response.addHeader("Set-Cookie", cookieUtil.createRefreshTokenCookie(request, refreshToken).toString())
     }
 }

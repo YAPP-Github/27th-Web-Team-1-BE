@@ -6,6 +6,7 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.photo.application.PhotoService
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
@@ -56,6 +57,9 @@ class PhotoControllerTest {
 
     @MockitoBean
     lateinit var cookieProperties: CookieProperties
+
+    @MockitoBean
+    lateinit var cookieUtil: CookieUtil
 
     @MockitoBean
     lateinit var photoService: PhotoService

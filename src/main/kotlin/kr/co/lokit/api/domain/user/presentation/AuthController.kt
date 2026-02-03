@@ -1,17 +1,15 @@
 package kr.co.lokit.api.domain.user.presentation
 
-import kr.co.lokit.api.config.web.CookieProperties
+import jakarta.servlet.http.HttpServletRequest
+import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.user.application.KakaoLoginService
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.dto.RefreshTokenRequest
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
 import kr.co.lokit.api.domain.user.mapping.toJwtTokenResponse
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -23,24 +21,22 @@ import java.net.URI
 
 @RestController
 @RequestMapping("auth")
-@EnableConfigurationProperties(CookieProperties::class)
 class AuthController(
     private val authService: AuthService,
     private val kakaoLoginService: KakaoLoginService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
-    private val cookieProperties: CookieProperties,
-    @Value("\${jwt.expiration}") private val accessTokenExpiration: Long,
-    @Value("\${jwt.refresh-expiration}") private val refreshTokenExpiration: Long,
+    private val cookieUtil: CookieUtil,
 ) : AuthApi {
 
     @PostMapping("refresh")
     override fun refresh(
         @RequestBody request: RefreshTokenRequest,
+        req: HttpServletRequest,
     ): ResponseEntity<JwtTokenResponse> {
         val tokens = authService.refresh(request.refreshToken)
 
-        val accessTokenCookie = createCookie("accessToken", tokens.accessToken, accessTokenExpiration)
-        val refreshTokenCookie = createCookie("refreshToken", tokens.refreshToken, refreshTokenExpiration)
+        val accessTokenCookie = cookieUtil.createAccessTokenCookie(req, tokens.accessToken)
+        val refreshTokenCookie = cookieUtil.createRefreshTokenCookie(req, tokens.refreshToken)
 
         return ResponseEntity
             .ok()
@@ -66,11 +62,12 @@ class AuthController(
     @GetMapping("kakao/callback")
     override fun kakaoCallback(
         @RequestParam code: String,
+        req: HttpServletRequest,
     ): ResponseEntity<Unit> {
         val tokens = kakaoLoginService.login(code)
 
-        val accessTokenCookie = createCookie("accessToken", tokens.accessToken, accessTokenExpiration)
-        val refreshTokenCookie = createCookie("refreshToken", tokens.refreshToken, refreshTokenExpiration)
+        val accessTokenCookie = cookieUtil.createAccessTokenCookie(req, tokens.accessToken)
+        val refreshTokenCookie = cookieUtil.createRefreshTokenCookie(req, tokens.refreshToken)
 
         return ResponseEntity
             .status(HttpStatus.FOUND)
@@ -78,21 +75,5 @@ class AuthController(
             .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
             .location(URI.create(kakaoOAuthProperties.frontRedirectUri))
             .build()
-    }
-
-    private fun createCookie(name: String, value: String, maxAge: Long): ResponseCookie {
-        val builder = ResponseCookie
-            .from(name, value)
-            .httpOnly(true)
-            .secure(cookieProperties.secure)
-            .path("/")
-            .maxAge(maxAge)
-            .sameSite(if (cookieProperties.secure) "None" else "Lax")
-
-        if (cookieProperties.domains.isNotBlank()) {
-            builder.domain(cookieProperties.domains)
-        }
-
-        return builder.build()
     }
 }

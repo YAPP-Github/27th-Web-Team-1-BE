@@ -1,9 +1,12 @@
 package kr.co.lokit.api.config.web
 
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.stereotype.Component
 
+@Component
 @ConfigurationProperties(prefix = "cookie")
-data class CookieProperties(
-    val secure: Boolean = false,
-    val domains: String,
-)
+class CookieProperties(
+    var secure: Boolean = false,
+    var domains: String? = null
+) {
+}

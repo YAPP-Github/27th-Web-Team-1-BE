@@ -5,6 +5,7 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.album.application.AlbumService
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
@@ -54,6 +55,9 @@ class AlbumControllerTest {
 
     @MockitoBean
     lateinit var cookieProperties: CookieProperties
+
+    @MockitoBean
+    lateinit var cookieUtil: CookieUtil
 
     @MockitoBean
     lateinit var albumService: AlbumService

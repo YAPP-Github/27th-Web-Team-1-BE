@@ -1,19 +1,20 @@
 package kr.co.lokit.api.config.security
 
+import tools.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import kr.co.lokit.api.common.dto.ApiResponse
+import kr.co.lokit.api.common.exception.ErrorCode
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.stereotype.Component
-import org.springframework.web.servlet.HandlerExceptionResolver
 
 @Component
 class LoginAuthenticationEntryPoint(
-    @Qualifier("handlerExceptionResolver")
-    private val resolver: HandlerExceptionResolver,
+    private val objectMapper: ObjectMapper,
 ) : AuthenticationEntryPoint {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -30,7 +31,18 @@ class LoginAuthenticationEntryPoint(
             authException.message,
             authException
         )
+
+        val errorCode = ErrorCode.UNAUTHORIZED
+        val errorResponse = ApiResponse.failure(
+            status = HttpStatus.UNAUTHORIZED,
+            detail = authException.message ?: errorCode.message,
+            request = request,
+            errorCode = errorCode.code,
+        )
+
         response.status = HttpStatus.UNAUTHORIZED.value()
-        resolver.resolveException(request, response, null, authException)
+        response.contentType = MediaType.APPLICATION_JSON_VALUE
+        response.characterEncoding = "UTF-8"
+        response.writer.write(objectMapper.writeValueAsString(errorResponse))
     }
 }

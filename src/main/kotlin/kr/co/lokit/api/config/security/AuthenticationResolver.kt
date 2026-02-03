@@ -5,5 +5,5 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 interface AuthenticationResolver {
     fun support(credentials: String): Boolean
 
-    fun authenticate(credentials: String): UsernamePasswordAuthenticationToken
+    fun authenticate(credentials: String): UsernamePasswordAuthenticationToken?
 }
