@@ -49,29 +49,19 @@ class OpenApiConfig(
                     .addSecuritySchemes(
                         SECURITY_SCHEME_NAME,
                         SecurityScheme()
-                            .type(SecurityScheme.Type.HTTP)
-                            .scheme("bearer")
-                            .bearerFormat("JWT")
-                            .name("Authorization")
+                            .type(SecurityScheme.Type.APIKEY)
+                            .`in`(SecurityScheme.In.COOKIE)
+                            .name("accessToken")
                             .description(securityDescription()),
                     ),
             )
             .addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
 
     private fun securityDescription(): String =
-        if (activeProfile in listOf("local", "dev")) {
-            """
-            Authorization 헤더 형식:
-            - Bearer {userId}
-            - userId는 숫자
-            예) Bearer 123
-            """.trimIndent()
-        } else {
-            """
-            Authorization 헤더 형식:
-            - Bearer {JWT}
-            """.trimIndent()
-        }
+        """
+        쿠키 기반 인증:
+        - 카카오 로그인 후 accessToken 쿠키가 자동 설정됩니다
+        """.trimIndent()
 
     companion object {
         const val SECURITY_SCHEME_NAME = "Authorization"

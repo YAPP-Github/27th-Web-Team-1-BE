@@ -43,5 +43,4 @@ class AuthenticationFilter(
             ?.find { it.name == "accessToken" }
             ?.value
             ?.takeIf { it.isNotBlank() && !it.contains(" ") }
-            ?.let { "Bearer $it" }
 }

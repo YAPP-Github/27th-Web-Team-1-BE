@@ -68,6 +68,7 @@ aws:
 cors:
     allowed-origins:
         - http://localhost:3000
+        - https://localhost:3000
 
 kakao:
     api:
@@ -78,7 +79,7 @@ kakao:
     front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI_LOCAL:}
 
 cookie:
-    secure: false
+    secure: ${COOKIE_SECURE:false}
     domains: ""
 
 discord:

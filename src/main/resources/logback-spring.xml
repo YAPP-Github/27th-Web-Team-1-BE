@@ -18,8 +18,24 @@
             </encoder>
         </appender>
 
+        <appender name="JSON_ERROR" class="ch.qos.logback.core.ConsoleAppender">
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>ERROR</level>
+            </filter>
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
+                    <maskPattern>
+                        <![CDATA[
+                        ("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+
+                        ]]>
+                    </maskPattern>
+                </layout>
+            </encoder>
+        </appender>
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="JSON_ERROR"/>
         </root>
         <logger name="kr.co.lokit.api" level="DEBUG"/>
     </springProfile>
