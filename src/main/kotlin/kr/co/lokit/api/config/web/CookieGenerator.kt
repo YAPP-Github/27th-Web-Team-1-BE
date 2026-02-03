@@ -18,17 +18,26 @@ class CookieGenerator(
     fun createRefreshTokenCookie(request: HttpServletRequest, value: String): ResponseCookie =
         createCookie(request, "refreshToken", value, refreshTokenExpiration)
 
-    fun createCookie(request: HttpServletRequest, name: String, value: String, maxAgeMillis: Long): ResponseCookie {
+    fun createCookie(
+        request: HttpServletRequest,
+        name: String,
+        value: String,
+        maxAgeMillis: Long
+    ): ResponseCookie {
+
+        val serverName = request.serverName
+        val isLocal = isLocalhost(serverName)
+
         val builder = ResponseCookie
             .from(name, value)
             .httpOnly(true)
-            .secure(cookieProperties.secure)
             .path("/")
             .maxAge(maxAgeMillis / 1000)
-            .sameSite(if (cookieProperties.secure) "None" else "Lax")
+            .secure(!isLocal && cookieProperties.secure)
+            .sameSite(if (isLocal) "Lax" else "None")
 
-        val domain = getCookieDomain(request.serverName)
-        if (!domain.isNullOrBlank()) {
+        val domain = getCookieDomain(serverName)
+        if (!isLocal && !domain.isNullOrBlank()) {
             builder.domain(domain)
         }
 

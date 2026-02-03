@@ -9,6 +9,7 @@ on:
 
 env:
     AWS_REGION: ap-northeast-2
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
 
 jobs:
     build:
@@ -18,21 +19,21 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v4
 
-            -   name: Set up JDK 24 (Gradle cache)
+            -   name: Set up JDK 24
                 uses: actions/setup-java@v4
                 with:
                     java-version: '24'
                     distribution: 'temurin'
-                    cache: gradle
 
-            -   name: Build & Test (single Gradle run)
+            -   name: Setup Gradle
+                uses: gradle/actions/setup-gradle@v4
+                with:
+                    cache-read-only: ${{ github.ref != 'refs/heads/develop' }}
+
+            -   name: Build & Test
                 env:
                     SPRING_PROFILES_ACTIVE: test
-                run: |
-                    ./gradlew build \
-                        --parallel \
-                        --build-cache \
-                        --no-daemon
+                run: ./gradlew build --parallel --build-cache
 
             -   name: Test Report
                 uses: dorny/test-reporter@v1
@@ -42,8 +43,30 @@ jobs:
                     path: build/test-results/test/*.xml
                     reporter: java-junit
 
-            -   name: Configure AWS credentials
+            -   name: Upload JAR
                 if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+                uses: actions/upload-artifact@v4
+                with:
+                    name: app-jar
+                    path: build/libs/*.jar
+                    retention-days: 1
+
+    docker:
+        needs: build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Download JAR
+                uses: actions/download-artifact@v4
+                with:
+                    name: app-jar
+                    path: build/libs
+
+            -   name: Configure AWS credentials
                 uses: aws-actions/configure-aws-credentials@v4
                 with:
                     aws-access-key-id: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
@@ -51,26 +74,22 @@ jobs:
                     aws-region: ${{ env.AWS_REGION }}
 
             -   name: Login to Amazon ECR
-                if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
                 id: login-ecr
                 uses: aws-actions/amazon-ecr-login@v2
 
             -   name: Set up Docker Buildx
-                if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
                 uses: docker/setup-buildx-action@v3
 
             -   name: Build & Push Docker Image
-                if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-                env:
-                    ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                    ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
-                    IMAGE_TAG: ${{ github.sha }}
-                run: |
-                    docker buildx build \
-                        --platform linux/amd64 \
-                        --file infra/Dockerfile \
-                        --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-                        --tag $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest \
-                        --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-                        --push \
-                        .
+                uses: docker/build-push-action@v6
+                with:
+                    context: .
+                    file: infra/Dockerfile
+                    platforms: linux/amd64
+                    push: true
+                    tags: |
+                        ${{ steps.login-ecr.outputs.registry }}/${{ secrets.DEV_ECR_REPOSITORY }}:latest
+                        ${{ steps.login-ecr.outputs.registry }}/${{ secrets.DEV_ECR_REPOSITORY }}:dev-latest
+                        ${{ steps.login-ecr.outputs.registry }}/${{ secrets.DEV_ECR_REPOSITORY }}:${{ github.sha }}
+                    cache-from: type=gha
+                    cache-to: type=gha,mode=max

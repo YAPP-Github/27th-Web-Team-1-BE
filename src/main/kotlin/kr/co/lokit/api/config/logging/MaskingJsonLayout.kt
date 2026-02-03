@@ -11,6 +11,7 @@ import java.util.regex.Pattern
 
 class MaskingJsonLayout : LayoutBase<ILoggingEvent>() {
     private val objectMapper = JsonMapper.builder().build()
+    var prettyPrint: Boolean = false
     private val dateFormatter =
         DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
@@ -51,6 +52,11 @@ class MaskingJsonLayout : LayoutBase<ILoggingEvent>() {
             logMap["exception"] = ThrowableProxyUtil.asString(event.throwableProxy)
         }
 
-        return objectMapper.writeValueAsString(logMap) + "\n"
+        val json = if (prettyPrint) {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(logMap)
+        } else {
+            objectMapper.writeValueAsString(logMap)
+        }
+        return json + "\n"
     }
 }
