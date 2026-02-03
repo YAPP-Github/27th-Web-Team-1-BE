@@ -34,7 +34,7 @@ jobs:
                         --protocol tcp \
                         --port 22 \
                         --cidr ${{ steps.ip.outputs.runner_ip }}/32 \
-                        --region ${{ env.AWS_REGION }}
+                        --region ${{ env.AWS_REGION }} 2>/dev/null || true
 
             -   name: Login to Amazon ECR
                 id: login-ecr
@@ -52,18 +52,14 @@ jobs:
                     username: ${{ secrets.DEV_EC2_USERNAME }}
                     key: ${{ secrets.DEV_EC2_SSH_KEY }}
                     envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION
+                    command_timeout: 10m
                     script: |
                         set -e
 
-                        SSM_PREFIX="/lokit/dev"
-
                         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-                        docker pull $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
-
-                        docker stop $CONTAINER_NAME 2>/dev/null || true
-                        docker rm $CONTAINER_NAME 2>/dev/null || true
-
+                        docker pull $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest &
+                        SSM_PREFIX="/lokit/dev"
                         ENV_ARGS=""
                         while IFS= read -r line; do
                             key=$(echo "$line" | jq -r '.Name' | sed "s|${SSM_PREFIX}/||")
@@ -75,6 +71,10 @@ jobs:
                             --region $AWS_REGION \
                             --query "Parameters[]" \
                             --output json | jq -c '.[]')
+                        wait
+
+                        docker stop $CONTAINER_NAME 2>/dev/null || true
+                        docker rm $CONTAINER_NAME 2>/dev/null || true
 
                         docker run -d \
                             --name $CONTAINER_NAME \
@@ -94,11 +94,7 @@ jobs:
                             --cpus="1.5" \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
 
-                        docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-                        docker logs $CONTAINER_NAME --tail 30
-
-                        docker image prune -af --filter "until=24h"
+                        docker image prune -af --filter "until=24h" &
 
             -   name: Remove Runner IP from Security Group
                 if: always()
@@ -108,4 +104,4 @@ jobs:
                         --protocol tcp \
                         --port 22 \
                         --cidr ${{ steps.ip.outputs.runner_ip }}/32 \
-                        --region ${{ env.AWS_REGION }} || true
+                        --region ${{ env.AWS_REGION }} 2>/dev/null || true

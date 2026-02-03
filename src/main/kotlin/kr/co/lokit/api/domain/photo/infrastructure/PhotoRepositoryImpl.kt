@@ -22,7 +22,7 @@ class PhotoRepositoryImpl(
 ) : PhotoRepository {
     @Transactional
     override fun save(photo: Photo): Photo {
-        val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId)
+        val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId!!)
             ?: throw entityNotFound<Album>(photo.albumId)
         val userEntity = userJpaRepository.findByIdOrNull(photo.uploadedById)
             ?: throw entityNotFound<User>(photo.uploadedById)
@@ -56,7 +56,7 @@ class PhotoRepositoryImpl(
     override fun saveAll(photos: List<Photo>): List<Photo> {
         if (photos.isEmpty()) return emptyList()
         val first = photos.first()
-        val albumEntity = albumJpaRepository.findByIdOrNull(first.albumId)
+        val albumEntity = albumJpaRepository.findByIdOrNull(first.albumId!!)
             ?: throw entityNotFound<Album>(first.albumId)
         val userEntity = userJpaRepository.findByIdOrNull(first.uploadedById)
             ?: throw entityNotFound<User>(first.uploadedById)
@@ -66,7 +66,7 @@ class PhotoRepositoryImpl(
 
     @Transactional
     override fun apply(photo: Photo): Photo {
-        val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId)
+        val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId!!)
             ?: throw entityNotFound<Album>(photo.albumId)
         val userEntity = userJpaRepository.findByIdOrNull(photo.uploadedById)
             ?: throw entityNotFound<User>(photo.uploadedById)

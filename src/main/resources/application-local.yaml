@@ -67,15 +67,20 @@ aws:
 
 cors:
     allowed-origins:
-        - http://localhost:3000
+        - https://localhost:3000
 
 kakao:
     api:
         key: ${KAKAO_API_KEY:}
-    client-id: ${KAKAO_CLIENT_ID}
-    client-secret: ${KAKAO_CLIENT_SECRET}
-    redirect-uri: ${KAKAO_REDIRECT_URI}
-    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI_LOCAL}
+    client-id: ${KAKAO_CLIENT_ID:}
+    client-secret: ${KAKAO_CLIENT_SECRET:}
+    redirect-uri: ${KAKAO_REDIRECT_URI:}
+    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI_LOCAL:}
 
 cookie:
-    secure: false
+    secure: true
+    domain: ${COOKIE_DOMAIN:}
+
+discord:
+    webhook:
+        url: ${DISCORD_WEBHOOK_URL:}

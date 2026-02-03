@@ -13,6 +13,7 @@ fun AlbumEntity.toDomain(): Album =
         title = this.title,
         workspaceId = this.workspace.nonNullId(),
         photoCount = this.photoCount,
+        isDefault = this.isDefault,
     ).apply {
         this.photos = this@toDomain.photos.map { it.toDomain() }
     }
@@ -21,6 +22,7 @@ fun Album.toEntity(workspace: WorkspaceEntity): AlbumEntity =
     AlbumEntity(
         title = this.title,
         workspace = workspace,
+        isDefault = this.isDefault,
     )
 
 fun AlbumRequest.toDomain(): Album =

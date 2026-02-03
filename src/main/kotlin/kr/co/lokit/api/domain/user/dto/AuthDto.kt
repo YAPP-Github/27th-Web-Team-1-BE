@@ -15,12 +15,6 @@ data class LoginRequest(
         )
 }
 
-@Schema(description = "리프레시 토큰 요청")
-data class RefreshTokenRequest(
-    @Schema(description = "리프레시 토큰", example = "eyJhbGciOiJIUzI1NiJ9...", requiredMode = Schema.RequiredMode.REQUIRED)
-    val refreshToken: String,
-)
-
 @Schema(description = "JWT 토큰 응답")
 data class JwtTokenResponse(
     @Schema(description = "액세스 토큰", example = "eyJhbGciOiJIUzI1NiJ9...")

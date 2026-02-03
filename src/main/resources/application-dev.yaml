@@ -12,8 +12,8 @@ spring:
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
-                format_sql: true
-                show_sql: true
+                format_sql: false
+                show_sql: false
                 use_sql_comments: true
                 jdbc:
                     batch_size: 50
@@ -26,7 +26,6 @@ spring:
 
 logging:
     level:
-        org.hibernate.orm.jdbc.bind: trace
         root: INFO
         kr.co.lokit.api: DEBUG
 
@@ -76,4 +75,8 @@ kakao:
 
 cookie:
     secure: true
+    domain: ${COOKIE_DOMAIN:}
 
+discord:
+    webhook:
+        url: ${DISCORD_WEBHOOK_URL:}

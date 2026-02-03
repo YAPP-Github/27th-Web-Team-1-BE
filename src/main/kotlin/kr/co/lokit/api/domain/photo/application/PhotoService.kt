@@ -16,7 +16,7 @@ import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
+import java.util.*
 
 @Service
 class PhotoService(
@@ -48,11 +48,18 @@ class PhotoService(
     @Transactional
     fun create(photo: Photo): Photo {
         s3FileVerifier?.verify(photo.url)
-        val saved = photoRepository.save(photo)
+        val effectivePhoto = if (photo.albumId == null) {
+            val defaultAlbum = albumRepository.findDefaultByUserId(photo.uploadedById)
+                ?: throw IllegalStateException("기본 앨범을 찾을 수 없습니다.")
+            photo.copy(albumId = defaultAlbum.id)
+        } else {
+            photo
+        }
+        val saved = photoRepository.save(effectivePhoto)
         albumBoundsService.updateBoundsOnPhotoAdd(
-            photo.albumId,
-            photo.location.longitude,
-            photo.location.latitude,
+            effectivePhoto.albumId!!,
+            effectivePhoto.location.longitude,
+            effectivePhoto.location.latitude,
         )
         return saved
     }
@@ -103,7 +110,7 @@ class PhotoService(
 
         if (updated.hasLocation()) {
             albumBoundsService.updateBoundsOnPhotoAdd(
-                updated.albumId,
+                updated.albumId!!,
                 updated.location.longitude,
                 updated.location.latitude,
             )

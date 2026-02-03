@@ -20,8 +20,6 @@ class JwtTokenProvider(
         Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
-    fun generateAccessToken(userDetails: UserDetails): String = generateAccessToken(userDetails.username)
-
     fun generateAccessToken(user: User): String = generateAccessToken(user.email)
 
     private fun generateAccessToken(subject: String): String {
@@ -51,7 +49,7 @@ class JwtTokenProvider(
         return username == userDetails.username && !isTokenExpired(token)
     }
 
-    fun canParse(token: String): Boolean = (token.startsWith("bearer") || token.startsWith("Bearer"))
+    fun canParse(token: String): Boolean = token.split(".").size == 3
 
     private fun isTokenExpired(token: String): Boolean = getClaims(token).expiration.before(Date())
 

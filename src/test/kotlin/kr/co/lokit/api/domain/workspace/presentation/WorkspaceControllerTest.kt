@@ -3,6 +3,10 @@ package kr.co.lokit.api.domain.workspace.presentation
 import com.fasterxml.jackson.databind.ObjectMapper
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
+import kr.co.lokit.api.config.security.JwtTokenProvider
+import kr.co.lokit.api.config.web.CookieGenerator
+import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.workspace.application.WorkspaceService
 import kr.co.lokit.api.fixture.createJoinWorkspaceRequest
 import kr.co.lokit.api.fixture.createWorkspace
@@ -36,6 +40,18 @@ class WorkspaceControllerTest {
 
     @MockitoBean
     lateinit var compositeAuthenticationResolver: CompositeAuthenticationResolver
+
+    @MockitoBean
+    lateinit var authService: AuthService
+
+    @MockitoBean
+    lateinit var jwtTokenProvider: JwtTokenProvider
+
+    @MockitoBean
+    lateinit var cookieProperties: CookieProperties
+
+    @MockitoBean
+    lateinit var cookieGenerator: CookieGenerator
 
     @MockitoBean
     lateinit var workspaceService: WorkspaceService

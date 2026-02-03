@@ -6,6 +6,7 @@ import kr.co.lokit.api.common.dto.ApiResponse
 import kr.co.lokit.api.common.dto.ApiResponse.Companion.ErrorDetail
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorCode
+import kr.co.lokit.api.config.notification.DiscordNotifier
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -21,7 +22,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
-class ErrorControllerAdvice {
+class ErrorControllerAdvice(
+    private val discordNotifier: DiscordNotifier?,
+) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @ExceptionHandler(BusinessException::class)
@@ -164,6 +167,7 @@ class ErrorControllerAdvice {
         request: HttpServletRequest,
     ): ApiResponse<ErrorDetail> {
         log.error("Unhandled exception occurred: ${ex.message}", ex)
+        discordNotifier?.notify(ex, request)
         return ApiResponse.failure(
             status = HttpStatus.INTERNAL_SERVER_ERROR,
             detail = ErrorCode.INTERNAL_SERVER_ERROR.message,

@@ -27,6 +27,8 @@ class AlbumEntity(
     @ManyToOne
     @JoinColumn(name = "workspace_id", nullable = false)
     val workspace: WorkspaceEntity,
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    val isDefault: Boolean = false,
 ) : BaseEntity() {
 
     init {

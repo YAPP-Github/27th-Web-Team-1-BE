@@ -63,4 +63,10 @@ class AlbumRepositoryImpl(
     override fun findByIdWithPhotos(id: Long): List<Album> {
         return albumJpaRepository.findByIdWithPhotos(id).map { it.toDomain() }
     }
+
+    @Transactional(readOnly = true)
+    override fun findDefaultByUserId(userId: Long): Album? {
+        val workspace = workspaceJpaRepository.findByUserId(userId) ?: return null
+        return albumJpaRepository.findByWorkspaceIdAndIsDefaultTrue(workspace.nonNullId())?.toDomain()
+    }
 }

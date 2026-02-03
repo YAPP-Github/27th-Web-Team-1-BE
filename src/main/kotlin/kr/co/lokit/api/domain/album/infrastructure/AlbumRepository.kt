@@ -10,4 +10,5 @@ interface AlbumRepository {
     fun deleteById(id: Long)
     fun findAllWithPhotos(): List<Album>
     fun findByIdWithPhotos(id: Long): List<Album>
+    fun findDefaultByUserId(userId: Long): Album?
 }

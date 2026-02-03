@@ -1,8 +1,10 @@
 package kr.co.lokit.api.domain.album.application
 
+import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
 import kr.co.lokit.api.fixture.createAlbum
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
@@ -49,7 +51,9 @@ class AlbumServiceTest {
 
     @Test
     fun `앨범 제목을 수정할 수 있다`() {
+        val album = createAlbum(id = 1L, title = "기존 제목")
         val updatedAlbum = createAlbum(id = 1L, title = "새 제목")
+        `when`(albumRepository.findById(1L)).thenReturn(album)
         `when`(albumRepository.applyTitle(1L, "새 제목")).thenReturn(updatedAlbum)
 
         val result = albumService.updateTitle(1L, "새 제목")
@@ -58,9 +62,32 @@ class AlbumServiceTest {
     }
 
     @Test
+    fun `기본 앨범의 제목은 수정할 수 없다`() {
+        val defaultAlbum = createAlbum(id = 1L, title = "default", isDefault = true)
+        `when`(albumRepository.findById(1L)).thenReturn(defaultAlbum)
+
+        assertThrows<BusinessException.BusinessRuleViolationException> {
+            albumService.updateTitle(1L, "새 제목")
+        }
+    }
+
+    @Test
     fun `앨범을 삭제할 수 있다`() {
+        val album = createAlbum(id = 1L, title = "여행")
+        `when`(albumRepository.findById(1L)).thenReturn(album)
+
         albumService.delete(1L)
 
         verify(albumRepository).deleteById(1L)
+    }
+
+    @Test
+    fun `기본 앨범은 삭제할 수 없다`() {
+        val defaultAlbum = createAlbum(id = 1L, title = "default", isDefault = true)
+        `when`(albumRepository.findById(1L)).thenReturn(defaultAlbum)
+
+        assertThrows<BusinessException.BusinessRuleViolationException> {
+            albumService.delete(1L)
+        }
     }
 }

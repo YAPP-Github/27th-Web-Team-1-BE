@@ -29,7 +29,8 @@ fun createAlbum(
     title: String = "여행",
     workspaceId: Long = 1L,
     photoCount: Int = 0,
-) = Album(id = id, title = title, workspaceId = workspaceId, photoCount = photoCount)
+    isDefault: Boolean = false,
+) = Album(id = id, title = title, workspaceId = workspaceId, photoCount = photoCount, isDefault = isDefault)
 
 fun createPhoto(
     id: Long = 0L,

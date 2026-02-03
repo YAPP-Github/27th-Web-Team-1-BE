@@ -42,4 +42,6 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
         """
     )
     fun findByIdWithPhotos(id: Long): List<AlbumEntity>
+
+    fun findByWorkspaceIdAndIsDefaultTrue(workspaceId: Long): AlbumEntity?
 }

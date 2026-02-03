@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.workspace.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
+import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.workspace.domain.Workspace
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 class WorkspaceRepositoryImpl(
     private val workspaceJpaRepository: WorkspaceJpaRepository,
     private val userJpaRepository: UserJpaRepository,
+    private val albumJpaRepository: AlbumJpaRepository,
 ) : WorkspaceRepository {
     override fun save(workspace: Workspace): Workspace {
         val entity = workspace.toEntity()
@@ -37,6 +40,9 @@ class WorkspaceRepositoryImpl(
             user = userEntity,
         )
         savedWorkspace.addUser(workspaceUser)
+
+        val defaultAlbum = AlbumEntity(title = "default", workspace = savedWorkspace, isDefault = true)
+        albumJpaRepository.save(defaultAlbum)
 
         return savedWorkspace.toDomain()
     }

@@ -7,6 +7,7 @@ data class Album(
     val title: String,
     val workspaceId: Long,
     val photoCount: Int = 0,
+    val isDefault: Boolean = false,
 ) {
     var photos: List<Photo> = mutableListOf()
 

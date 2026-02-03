@@ -49,15 +49,23 @@ data class PhotoListResponse(
 @Schema(description = "사진 생성 요청")
 data class CreatePhotoRequest(
     @field:NotBlank(message = "사진 URL은 필수입니다.")
-    @Schema(description = "사진 URL", example = "https://bucket.s3.amazonaws.com/photos/1/image.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+        description = "사진 URL",
+        example = "https://bucket.s3.amazonaws.com/photos/1/image.jpg",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
     val url: String,
-    @Schema(description = "앨범 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    val albumId: Long,
+    @Schema(description = "앨범 ID", example = "1")
+    val albumId: Long?,
     @Schema(description = "경도", example = "127.0276", requiredMode = Schema.RequiredMode.REQUIRED)
     val longitude: Double,
     @Schema(description = "위도", example = "37.4979", requiredMode = Schema.RequiredMode.REQUIRED)
     val latitude: Double,
-    @Schema(description = "촬영일시 (EXIF 데이터)", example = "2026-01-06T14:30:00", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+        description = "촬영일시 (EXIF 데이터)",
+        example = "2026-01-06T14:30:00",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
     val takenAt: LocalDateTime,
     @Schema(description = "사진 설명", example = "가족 여행 사진")
     val description: String? = null,

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
+import java.util.concurrent.StructuredTaskScope
 
 @Service
 class AuthService(
@@ -23,28 +24,16 @@ class AuthService(
     private val transactionTemplate: TransactionTemplate,
 ) {
     @Transactional
-    fun refresh(refreshToken: String): JwtTokenResponse {
-        val refreshTokenEntity =
-            refreshTokenJpaRepository.findByToken(refreshToken)
-                ?: throw BusinessException.InvalidRefreshTokenException(
-                    errors = mapOf("refreshToken" to refreshToken),
-                )
+    fun refreshIfValid(refreshToken: String): JwtTokenResponse? {
+        val refreshTokenEntity = refreshTokenJpaRepository.findByToken(refreshToken) ?: return null
 
         if (refreshTokenEntity.expiresAt.isBefore(LocalDateTime.now())) {
             refreshTokenJpaRepository.delete(refreshTokenEntity)
-            throw BusinessException.InvalidRefreshTokenException(
-                "만료된 리프레시 토큰입니다",
-                errors = mapOf("refreshToken" to refreshToken),
-            )
+            return null
         }
 
         val user = refreshTokenEntity.user.toDomain()
-        val accessToken = jwtTokenProvider.generateAccessToken(user)
-
-        return JwtTokenResponse(
-            accessToken = accessToken,
-            refreshToken = refreshToken
-        )
+        return generateTokensAndSave(user)
     }
 
     private fun generateTokensAndSave(user: User): JwtTokenResponse {
@@ -52,7 +41,7 @@ class AuthService(
         val refreshToken: String
         val userEntity: kr.co.lokit.api.domain.user.infrastructure.UserEntity
 
-        java.util.concurrent.StructuredTaskScope.ShutdownOnFailure().use { scope ->
+        StructuredTaskScope.ShutdownOnFailure().use { scope ->
             val accessTokenFuture = scope.fork { jwtTokenProvider.generateAccessToken(user) }
             val refreshTokenFuture = scope.fork { jwtTokenProvider.generateRefreshToken() }
             val userEntityFuture = scope.fork {
