@@ -1,20 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-
     <springProfile name="local">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <filter class="ch.qos.logback.classic.filter.LevelFilter">
-                <level>ERROR</level>
-                <onMatch>DENY</onMatch>
-                <onMismatch>ACCEPT</onMismatch>
-            </filter>
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
                 <layout class="kr.co.lokit.api.config.logging.MaskingPatternLayout">
                     <maskPattern>
-                        <![CDATA[
-                        ("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+
-                        ]]>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
                     </maskPattern>
                     <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{clientIp}] [%X{requestMethod}
                         %X{requestUri}] %-5level %logger{36} - %msg%n
@@ -31,18 +23,11 @@
 
     <springProfile name="dev">
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <filter class="ch.qos.logback.classic.filter.LevelFilter">
-                <level>ERROR</level>
-                <onMatch>DENY</onMatch>
-                <onMismatch>ACCEPT</onMismatch>
-            </filter>
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
                 <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
                     <prettyPrint>true</prettyPrint>
                     <maskPattern>
-                        <![CDATA[
-                        ("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+
-                        ]]>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
                     </maskPattern>
                 </layout>
             </encoder>
@@ -60,9 +45,7 @@
                 <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
                     <prettyPrint>true</prettyPrint>
                     <maskPattern>
-                        <![CDATA[
-                        ("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+
-                        ]]>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
                     </maskPattern>
                 </layout>
             </encoder>
@@ -74,6 +57,7 @@
 
         <root level="INFO">
             <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="ERROR_FILE"/>
         </root>
     </springProfile>
 
@@ -81,10 +65,9 @@
         <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
                 <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
+                    <prettyPrint>false</prettyPrint>
                     <maskPattern>
-                        <![CDATA[
-                        ("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+
-                        ]]>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
                     </maskPattern>
                 </layout>
             </encoder>
