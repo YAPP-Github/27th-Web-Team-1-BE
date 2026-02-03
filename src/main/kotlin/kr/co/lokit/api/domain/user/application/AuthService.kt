@@ -40,12 +40,20 @@ class AuthService(
         }
 
         val user = refreshTokenEntity.user.toDomain()
-        val accessToken = jwtTokenProvider.generateAccessToken(user)
+        return generateTokensAndSave(user)
+    }
 
-        return JwtTokenResponse(
-            accessToken = accessToken,
-            refreshToken = refreshToken
-        )
+    @Transactional
+    fun refreshIfValid(refreshToken: String): JwtTokenResponse? {
+        val refreshTokenEntity = refreshTokenJpaRepository.findByToken(refreshToken) ?: return null
+
+        if (refreshTokenEntity.expiresAt.isBefore(LocalDateTime.now())) {
+            refreshTokenJpaRepository.delete(refreshTokenEntity)
+            return null
+        }
+
+        val user = refreshTokenEntity.user.toDomain()
+        return generateTokensAndSave(user)
     }
 
     private fun generateTokensAndSave(user: User): JwtTokenResponse {
