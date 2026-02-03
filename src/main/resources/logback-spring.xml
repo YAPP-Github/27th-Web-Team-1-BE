@@ -17,8 +17,6 @@
 
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="ERROR_FILE"/>
-            <appender-ref ref="ERROR_CONSOLE"/>
         </root>
         <logger name="kr.co.lokit.api" level="DEBUG"/>
     </springProfile>
@@ -27,39 +25,7 @@
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
                 <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
-                    <prettyPrint>true</prettyPrint>
-                    <maskPattern>
-                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
-                    </maskPattern>
-                </layout>
-            </encoder>
-        </appender>
-
-        <appender name="ERROR_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>ERROR</level>
-            </filter>
-            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
-                    <prettyPrint>true</prettyPrint>
-                    <maskPattern>
-                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
-                    </maskPattern>
-                </layout>
-            </encoder>
-        </appender>
-
-        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>ERROR</level>
-            </filter>
-            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-                <fileNamePattern>logs/error.%d{yyyy-MM-dd}.log</fileNamePattern>
-                <maxHistory>30</maxHistory>
-            </rollingPolicy>
-            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
-                    <prettyPrint>true</prettyPrint>
+                    <prettyPrint>false</prettyPrint>
                     <maskPattern>
                         <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
                     </maskPattern>
@@ -73,7 +39,6 @@
 
         <root level="INFO">
             <appender-ref ref="JSON_CONSOLE"/>
-            <appender-ref ref="ERROR_FILE"/>
         </root>
     </springProfile>
 

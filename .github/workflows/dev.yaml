@@ -32,7 +32,7 @@ jobs:
                     cache: gradle
 
             -   name: Test
-                run: ./gradlew test --no-daemon
+                run: ./gradlew test --no-daemon --parallel --build-cache
 
     cd:
         if: github.event_name == 'push'
@@ -49,14 +49,6 @@ jobs:
                     distribution: 'temurin'
                     cache: gradle
 
-            -   name: Build with Gradle
-                run: ./gradlew build -x test
-
-            -   name: Set up Docker Buildx
-                uses: docker/setup-buildx-action@v3
-                with:
-                    driver: docker-container
-
             -   name: Configure AWS credentials
                 uses: aws-actions/configure-aws-credentials@v4
                 with:
@@ -64,8 +56,11 @@ jobs:
                     aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
                     aws-region: ${{ env.AWS_REGION }}
 
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
             -   name: Get Runner IP
-                id: ip
+                id: setup
                 run: echo "runner_ip=$(curl -s https://checkip.amazonaws.com)" >> $GITHUB_OUTPUT
 
             -   name: Add Runner IP to Security Group
@@ -74,8 +69,11 @@ jobs:
                         --group-id ${{ secrets.DEV_SECURITY_GROUP_ID }} \
                         --protocol tcp \
                         --port 22 \
-                        --cidr ${{ steps.ip.outputs.runner_ip }}/32 \
+                        --cidr ${{ steps.setup.outputs.runner_ip }}/32 \
                         --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
+            -   name: Build with Gradle
+                run: ./gradlew build -x test --no-daemon --parallel --build-cache
 
             -   name: Login to Amazon ECR
                 id: login-ecr
@@ -92,20 +90,46 @@ jobs:
                         ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
                     cache-from: type=gha
                     cache-to: type=gha,mode=max
+                    provenance: false
 
             -   name: Deploy to EC2
-                uses: appleboy/ssh-action@v1.0.3
+                uses: appleboy/ssh-action@master
+                env:
+                    ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                    ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
+                    CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+                    AWS_REGION: ${{ env.AWS_REGION }}
                 with:
                     host: ${{ secrets.DEV_EC2_HOST }}
                     username: ${{ secrets.DEV_EC2_USERNAME }}
                     key: ${{ secrets.DEV_EC2_SSH_KEY }}
+                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION
                     script: |
                         set -e
 
-                        docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest
+                        SSM_PREFIX="/lokit/dev"
 
-                        docker stop $CONTAINER_NAME || true
-                        docker rm $CONTAINER_NAME || true
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+                        docker pull $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest &
+                        PULL_PID=$!
+
+                        ENV_ARGS=""
+                        while IFS= read -r line; do
+                            key=$(echo "$line" | jq -r '.Name' | sed "s|${SSM_PREFIX}/||")
+                            value=$(echo "$line" | jq -r '.Value')
+                            ENV_ARGS="$ENV_ARGS -e $key=$value"
+                        done < <(aws ssm get-parameters-by-path \
+                            --path "$SSM_PREFIX" \
+                            --with-decryption \
+                            --region $AWS_REGION \
+                            --query "Parameters[]" \
+                            --output json | jq -c '.[]')
+
+                        wait $PULL_PID
+
+                        docker stop $CONTAINER_NAME 2>/dev/null || true
+                        docker rm $CONTAINER_NAME 2>/dev/null || true
 
                         docker run -d \
                             --name $CONTAINER_NAME \
@@ -113,7 +137,21 @@ jobs:
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
                             -e TZ=Asia/Seoul \
-                            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest
+                            -e AWS_REGION=$AWS_REGION \
+                            $ENV_ARGS \
+                            --log-driver=awslogs \
+                            --log-opt awslogs-region=$AWS_REGION \
+                            --log-opt awslogs-group=/docker/lokit-api-dev \
+                            --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
+                            --log-opt awslogs-create-group=true \
+                            --memory="700m" \
+                            --memory-swap="1400m" \
+                            --cpus="1.5" \
+                            $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+
+                        docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"
+
+                        nohup docker image prune -af --filter "until=24h" > /dev/null 2>&1 &
 
             -   name: Remove Runner IP from Security Group
                 if: always()
@@ -122,5 +160,5 @@ jobs:
                         --group-id ${{ secrets.DEV_SECURITY_GROUP_ID }} \
                         --protocol tcp \
                         --port 22 \
-                        --cidr ${{ steps.ip.outputs.runner_ip }}/32 \
+                        --cidr ${{ steps.setup.outputs.runner_ip }}/32 \
                         --region ${{ env.AWS_REGION }} 2>/dev/null || true
