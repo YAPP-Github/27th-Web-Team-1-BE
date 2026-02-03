@@ -42,5 +42,6 @@ class AuthenticationFilter(
         request.cookies
             ?.find { it.name == "accessToken" }
             ?.value
+            ?.takeIf { it.isNotBlank() && !it.contains(" ") }
             ?.let { "Bearer $it" }
 }
