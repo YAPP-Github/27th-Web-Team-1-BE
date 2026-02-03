@@ -24,26 +24,6 @@ class AuthService(
     private val transactionTemplate: TransactionTemplate,
 ) {
     @Transactional
-    fun refresh(refreshToken: String): JwtTokenResponse {
-        val refreshTokenEntity =
-            refreshTokenJpaRepository.findByToken(refreshToken)
-                ?: throw BusinessException.InvalidRefreshTokenException(
-                    errors = mapOf("refreshToken" to refreshToken),
-                )
-
-        if (refreshTokenEntity.expiresAt.isBefore(LocalDateTime.now())) {
-            refreshTokenJpaRepository.delete(refreshTokenEntity)
-            throw BusinessException.InvalidRefreshTokenException(
-                "만료된 리프레시 토큰입니다",
-                errors = mapOf("refreshToken" to refreshToken),
-            )
-        }
-
-        val user = refreshTokenEntity.user.toDomain()
-        return generateTokensAndSave(user)
-    }
-
-    @Transactional
     fun refreshIfValid(refreshToken: String): JwtTokenResponse? {
         val refreshTokenEntity = refreshTokenJpaRepository.findByToken(refreshToken) ?: return null
 

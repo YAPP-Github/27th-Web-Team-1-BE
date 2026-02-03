@@ -3,7 +3,7 @@ package kr.co.lokit.api.config.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import kr.co.lokit.api.config.web.CookieUtil
+import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.domain.user.application.AuthService
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
@@ -15,7 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 class AuthenticationFilter(
     private val compositeAuthenticationResolver: CompositeAuthenticationResolver,
     private val authService: AuthService,
-    private val cookieUtil: CookieUtil,
+    private val cookieGenerator: CookieGenerator,
 ) : OncePerRequestFilter() {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -44,7 +44,6 @@ class AuthenticationFilter(
                 return
             }
 
-            // accessToken으로 인증 시도
             if (accessToken != null) {
                 val authentication = compositeAuthenticationResolver.authenticate(accessToken)
                 if (authentication != null) {
@@ -98,7 +97,7 @@ class AuthenticationFilter(
         accessToken: String,
         refreshToken: String,
     ) {
-        response.addHeader("Set-Cookie", cookieUtil.createAccessTokenCookie(request, accessToken).toString())
-        response.addHeader("Set-Cookie", cookieUtil.createRefreshTokenCookie(request, refreshToken).toString())
+        response.addHeader("Set-Cookie", cookieGenerator.createAccessTokenCookie(request, accessToken).toString())
+        response.addHeader("Set-Cookie", cookieGenerator.createRefreshTokenCookie(request, refreshToken).toString())
     }
 }

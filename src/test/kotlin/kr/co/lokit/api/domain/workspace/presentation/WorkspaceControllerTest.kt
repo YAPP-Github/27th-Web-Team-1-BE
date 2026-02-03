@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
+import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
-import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.workspace.application.WorkspaceService
 import kr.co.lokit.api.fixture.createJoinWorkspaceRequest
@@ -51,7 +51,7 @@ class WorkspaceControllerTest {
     lateinit var cookieProperties: CookieProperties
 
     @MockitoBean
-    lateinit var cookieUtil: CookieUtil
+    lateinit var cookieGenerator: CookieGenerator
 
     @MockitoBean
     lateinit var workspaceService: WorkspaceService

@@ -2,15 +2,15 @@ package kr.co.lokit.api.domain.map.presentation
 
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
+import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
-import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.map.application.MapService
-import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.BoundingBoxResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
+import kr.co.lokit.api.domain.user.application.AuthService
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.ArgumentMatchers.anyInt
@@ -46,7 +46,7 @@ class MapControllerTest {
     lateinit var cookieProperties: CookieProperties
 
     @MockitoBean
-    lateinit var cookieUtil: CookieUtil
+    lateinit var cookieGenerator: CookieGenerator
 
     @MockitoBean
     lateinit var mapService: MapService

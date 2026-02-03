@@ -6,7 +6,7 @@ import org.springframework.http.ResponseCookie
 import org.springframework.stereotype.Component
 
 @Component
-class CookieUtil(
+class CookieGenerator(
     private val cookieProperties: CookieProperties,
     @Value("\${jwt.expiration}") private val accessTokenExpiration: Long,
     @Value("\${jwt.refresh-expiration}") private val refreshTokenExpiration: Long,
@@ -27,25 +27,23 @@ class CookieUtil(
             .maxAge(maxAgeMillis / 1000)
             .sameSite(if (cookieProperties.secure) "None" else "Lax")
 
-        if (cookieProperties.domains != null
-            && cookieProperties.domains!!.isNotBlank()
-            && !isLocalhost(request.serverName)
-        ) {
-            builder.domain(cookieProperties.domains)
+        val domain = getCookieDomain(request.serverName)
+        if (!domain.isNullOrBlank()) {
+            builder.domain(domain)
         }
 
         return builder.build()
     }
 
-    private fun isLocalhost(host: String?): Boolean {
-        if (host.isNullOrBlank()) {
-            return false
+    private fun getCookieDomain(serverName: String?): String? {
+        if (serverName.isNullOrBlank() || isLocalhost(serverName)) {
+            return null
         }
+        return cookieProperties.domain
+    }
 
-        val normalizedHost = host
-            .lowercase()
-            .substringBefore(":")
-
+    private fun isLocalhost(host: String): Boolean {
+        val normalizedHost = host.lowercase().substringBefore(":")
         return normalizedHost == "localhost"
             || normalizedHost.endsWith(".localhost")
             || normalizedHost == "127.0.0.1"

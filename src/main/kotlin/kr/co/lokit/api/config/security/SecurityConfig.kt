@@ -35,7 +35,6 @@ class SecurityConfig(
                     .requestMatchers(
                         "/auth/register",
                         "/auth/login",
-                        "/auth/refresh",
                         "/auth/kakao",
                         "/auth/kakao/callback",
                     ).permitAll()

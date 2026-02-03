@@ -79,7 +79,7 @@ kakao:
 
 cookie:
     secure: true
-    domains: ""
+    domain: ${COOKIE_DOMAIN:}
 
 discord:
     webhook:

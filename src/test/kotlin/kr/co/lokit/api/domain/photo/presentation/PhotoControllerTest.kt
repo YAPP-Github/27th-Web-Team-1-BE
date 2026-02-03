@@ -5,11 +5,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
+import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
-import kr.co.lokit.api.config.web.CookieUtil
 import kr.co.lokit.api.domain.photo.application.PhotoService
-import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
+import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.createPhoto
 import kr.co.lokit.api.fixture.createPhotoRequest
 import kr.co.lokit.api.fixture.createUpdatePhotoRequest
@@ -59,7 +59,7 @@ class PhotoControllerTest {
     lateinit var cookieProperties: CookieProperties
 
     @MockitoBean
-    lateinit var cookieUtil: CookieUtil
+    lateinit var cookieGenerator: CookieGenerator
 
     @MockitoBean
     lateinit var photoService: PhotoService

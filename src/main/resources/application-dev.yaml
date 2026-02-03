@@ -75,7 +75,7 @@ kakao:
 
 cookie:
     secure: true
-    domains: ${COOKIE_DOMAIN:}
+    domain: ${COOKIE_DOMAIN:}
 
 discord:
     webhook:

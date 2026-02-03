@@ -7,6 +7,5 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "cookie")
 class CookieProperties(
     var secure: Boolean = false,
-    var domains: String? = null
-) {
-}
+    var domain: String? = null,
+)
