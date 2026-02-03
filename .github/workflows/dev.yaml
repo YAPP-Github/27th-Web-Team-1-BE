@@ -1,4 +1,4 @@
-name: CI/CD
+name: Lokit Dev CI/CD
 
 on:
     push:
@@ -48,6 +48,9 @@ jobs:
                 if: github.event_name == 'push'
                 id: login-ecr
                 uses: aws-actions/amazon-ecr-login@v2
+
+            -   name: Build with Gradle
+                run: ./gradlew build -x test
 
             -   name: Build & Push Docker Image
                 if: github.event_name == 'push'

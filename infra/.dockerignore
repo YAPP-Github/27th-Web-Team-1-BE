@@ -3,7 +3,6 @@
 .gradle
 .idea
 *.iml
-build
 src
 gradle
 *.md
