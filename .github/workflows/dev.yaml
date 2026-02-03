@@ -6,13 +6,18 @@ on:
     pull_request:
         branches: [ develop ]
 
+concurrency:
+    group: lokit-dev-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
     AWS_REGION: ap-northeast-2
     ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
     CONTAINER_NAME: dev-lokit-api
 
 jobs:
-    build-and-deploy:
+    ci:
+        if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
 
         steps:
@@ -26,18 +31,33 @@ jobs:
                     distribution: 'temurin'
                     cache: gradle
 
-            -   name: Test (PR only)
-                if: github.event_name == 'pull_request'
+            -   name: Test
                 run: ./gradlew test --no-daemon
 
+    cd:
+        if: github.event_name == 'push'
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Set up JDK 24
+                uses: actions/setup-java@v4
+                with:
+                    java-version: '24'
+                    distribution: 'temurin'
+                    cache: gradle
+
+            -   name: Build with Gradle
+                run: ./gradlew build -x test
+
             -   name: Set up Docker Buildx
-                if: github.event_name == 'push'
                 uses: docker/setup-buildx-action@v3
                 with:
                     driver: docker-container
 
             -   name: Configure AWS credentials
-                if: github.event_name == 'push'
                 uses: aws-actions/configure-aws-credentials@v4
                 with:
                     aws-access-key-id: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
@@ -45,15 +65,10 @@ jobs:
                     aws-region: ${{ env.AWS_REGION }}
 
             -   name: Login to Amazon ECR
-                if: github.event_name == 'push'
                 id: login-ecr
                 uses: aws-actions/amazon-ecr-login@v2
 
-            -   name: Build with Gradle
-                run: ./gradlew build -x test
-
             -   name: Build & Push Docker Image
-                if: github.event_name == 'push'
                 uses: docker/build-push-action@v6
                 with:
                     context: .
@@ -66,7 +81,6 @@ jobs:
                     cache-to: type=gha,mode=max
 
             -   name: Deploy to EC2
-                if: github.event_name == 'push'
                 uses: appleboy/ssh-action@v1.0.3
                 with:
                     host: ${{ secrets.DEV_EC2_HOST }}
@@ -81,9 +95,9 @@ jobs:
                         docker rm $CONTAINER_NAME || true
 
                         docker run -d \
-                            --name $CONTAINER_NAME \
-                            --restart unless-stopped \
-                            -p 8080:8080 \
-                            -e SPRING_PROFILES_ACTIVE=dev \
-                            -e TZ=Asia/Seoul \
-                            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest
+                          --name $CONTAINER_NAME \
+                          --restart unless-stopped \
+                          -p 8080:8080 \
+                          -e SPRING_PROFILES_ACTIVE=dev \
+                          -e TZ=Asia/Seoul \
+                          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest
