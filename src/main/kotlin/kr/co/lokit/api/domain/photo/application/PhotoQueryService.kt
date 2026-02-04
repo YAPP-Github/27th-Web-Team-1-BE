@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.photo.application
 
-import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.common.util.DateTimeUtils.toDateString
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
@@ -20,19 +19,7 @@ class PhotoQueryService(
 
     @Transactional(readOnly = true)
     override fun getPhotosByAlbum(albumId: Long, userId: Long): List<Album> {
-        val album = albumRepository.findById(albumId)
-            ?: throw entityNotFound<Album>(albumId)
-
-        return if (album.isDefault) {
-            val albumIds =
-                photoRepository.findAllByUserId(userId)
-                    .mapNotNull { it.albumId }
-                    .distinct()
-
-            albumRepository.findAllByIds(albumIds)
-        } else {
-            albumRepository.findByIdWithPhotos(albumId)
-        }
+        return albumRepository.findByIdWithPhotos(albumId, userId)
     }
 
     @Transactional(readOnly = true)

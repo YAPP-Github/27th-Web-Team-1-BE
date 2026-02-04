@@ -55,7 +55,7 @@ data class CreatePhotoRequest(
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     val url: String,
-    @Schema(description = "앨범 ID", example = "1")
+    @Schema(description = "앨범 ID", example = "1 or null(전체 앨범)")
     val albumId: Long?,
     @Schema(description = "경도", example = "127.0276", requiredMode = Schema.RequiredMode.REQUIRED)
     val longitude: Double,

@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.album.infrastructure
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleUserEntity
@@ -26,7 +27,7 @@ import kotlin.test.assertTrue
 class AlbumRepositoryTest {
 
     @Autowired
-    lateinit var albumRepository: JpaAlbumRepository
+    lateinit var albumRepository: AlbumRepositoryPort
 
     @Autowired
     lateinit var coupleJpaRepository: CoupleJpaRepository

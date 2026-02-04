@@ -38,9 +38,10 @@ class JpaPhotoRepository(
 
     @Transactional
     override fun deleteById(id: Long) {
-        if (!photoJpaRepository.existsById(id)) {
-            throw entityNotFound<Photo>(id)
-        }
+        val photoEntity = photoJpaRepository.findByIdWithRelations(id)
+            ?: throw entityNotFound<Photo>(id)
+
+        photoEntity.album.removePhoto(photoEntity)
         photoJpaRepository.deleteById(id)
     }
 
@@ -71,8 +72,15 @@ class JpaPhotoRepository(
             ?: throw entityNotFound<Album>(photo.albumId)
         val userEntity = userJpaRepository.findByIdOrNull(photo.uploadedById)
             ?: throw entityNotFound<User>(photo.uploadedById)
-        val photoEntity = photoJpaRepository.findByIdOrNull(photo.id)
+        val photoEntity = photoJpaRepository.findByIdWithRelations(photo.id)
             ?: throw entityNotFound<Photo>(photo.id)
+
+        val oldAlbum = photoEntity.album
+        if (oldAlbum.nonNullId() != albumEntity.nonNullId()) {
+            oldAlbum.removePhoto(photoEntity)
+            albumEntity.addPhoto(photoEntity)
+        }
+
         photoEntity.apply {
             this.album = albumEntity
             this.uploadedBy = userEntity

@@ -11,6 +11,7 @@ interface AlbumRepositoryPort {
     fun deleteById(id: Long)
     fun findAllWithPhotos(): List<Album>
     fun findByIdWithPhotos(id: Long): List<Album>
+    fun findByIdWithPhotos(id: Long, userId: Long?): List<Album>
     fun findDefaultByUserId(userId: Long): Album?
     fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean
 }

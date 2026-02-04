@@ -69,6 +69,14 @@ class AlbumEntity(
         photoCount++
     }
 
+    fun removePhoto(photo: PhotoEntity) {
+        if (photos.remove(photo)) {
+            if (photoCount > 0) {
+                photoCount--
+            }
+        }
+    }
+
     fun updateTitle(title: String) {
         this.title = title
     }
