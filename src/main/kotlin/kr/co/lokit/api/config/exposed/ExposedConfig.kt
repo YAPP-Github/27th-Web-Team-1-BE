@@ -5,14 +5,12 @@ import kr.co.lokit.api.domain.map.infrastructure.ExposedMapQueryAdapter
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.sql.Connection
 import javax.sql.DataSource
 
 @Configuration
-@ConditionalOnBean(DataSource::class)
 class ExposedConfig {
 
     @Bean
