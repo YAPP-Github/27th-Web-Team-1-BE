@@ -1,6 +1,9 @@
 package kr.co.lokit.api.domain.map.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.DecimalMax
+import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.NotNull
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.mapping.toResponse
@@ -13,10 +16,28 @@ data class ClusterResponse(
     val count: Int,
     @Schema(description = "대표 썸네일 URL (가장 최근 생성된 사진)", example = "https://example.com/photo.jpg")
     val thumbnailUrl: String,
-    @Schema(description = "클러스터 중심 경도", example = "127.0276")
-    val longitude: Double,
-    @Schema(description = "클러스터 중심 위도", example = "37.4979")
-    val latitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "124.0", inclusive = true)
+    @field:DecimalMax(value = "132.0", inclusive = true)
+    @Schema(
+        description = "클러스터 중심 경도",
+        example = "127.0276",
+        minimum = "124.0",
+        maximum = "132.0",
+        required = true
+    )
+    var longitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "33.0", inclusive = true)
+    @field:DecimalMax(value = "39.0", inclusive = true)
+    @Schema(
+        description = "클러스터 중심 위도",
+        example = "37.4979",
+        minimum = "33.0",
+        maximum = "39.0",
+        required = true
+    )
+    var latitude: Double,
 )
 
 @Schema(description = "개별 사진 응답 (줌 >= 15)")
@@ -25,10 +46,28 @@ data class MapPhotoResponse(
     val id: Long,
     @Schema(description = "썸네일 URL", example = "https://example.com/photo.jpg")
     val thumbnailUrl: String,
-    @Schema(description = "경도", example = "127.0276")
-    val longitude: Double,
-    @Schema(description = "위도", example = "37.4979")
-    val latitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "124.0", inclusive = true)
+    @field:DecimalMax(value = "132.0", inclusive = true)
+    @Schema(
+        description = "사진 경도",
+        example = "127.0276",
+        minimum = "124.0",
+        maximum = "132.0",
+        required = true
+    )
+    var longitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "33.0", inclusive = true)
+    @field:DecimalMax(value = "39.0", inclusive = true)
+    @Schema(
+        description = "사진 위도",
+        example = "37.4979",
+        minimum = "33.0",
+        maximum = "39.0",
+        required = true
+    )
+    var latitude: Double,
     @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
     val takenAt: java.time.LocalDateTime,
 )
@@ -47,10 +86,28 @@ data class ClusterPhotoResponse(
     val id: Long,
     @Schema(description = "사진 URL", example = "https://example.com/photo.jpg")
     val url: String,
-    @Schema(description = "경도", example = "127.0276")
-    val longitude: Double,
-    @Schema(description = "위도", example = "37.4979")
-    val latitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "124.0", inclusive = true)
+    @field:DecimalMax(value = "132.0", inclusive = true)
+    @Schema(
+        description = "사진 경도",
+        example = "127.0276",
+        minimum = "124.0",
+        maximum = "132.0",
+        required = true
+    )
+    var longitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "33.0", inclusive = true)
+    @field:DecimalMax(value = "39.0", inclusive = true)
+    @Schema(
+        description = "사진 위도",
+        example = "37.4979",
+        minimum = "33.0",
+        maximum = "39.0",
+        required = true
+    )
+    var latitude: Double,
     @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
     val takenAt: java.time.LocalDateTime,
 )
@@ -115,10 +172,28 @@ data class PlaceResponse(
     val address: String?,
     @Schema(description = "도로명 주소", example = "서울 강남구 강남대로 396")
     val roadAddress: String?,
-    @Schema(description = "경도", example = "127.0276")
-    val longitude: Double,
-    @Schema(description = "위도", example = "37.4979")
-    val latitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "124.0", inclusive = true)
+    @field:DecimalMax(value = "132.0", inclusive = true)
+    @Schema(
+        description = "클러스터 중심 경도",
+        example = "126.9780",
+        minimum = "124.0",
+        maximum = "132.0",
+        required = true
+    )
+    var longitude: Double,
+    @field:NotNull
+    @field:DecimalMin(value = "33.0", inclusive = true)
+    @field:DecimalMax(value = "39.0", inclusive = true)
+    @Schema(
+        description = "클러스터 중심 위도",
+        example = "37.5665",
+        minimum = "33.0",
+        maximum = "39.0",
+        required = true
+    )
+    var latitude: Double,
     @Schema(description = "카테고리", example = "카페")
     val category: String?,
 )
