@@ -37,7 +37,7 @@ class PhotoController(
         @CurrentUserId userId: Long,
         @PathVariable albumId: Long,
     ): PhotoListResponse =
-        photoService.getPhotosByAlbum(albumId).toPhotoListResponse()
+        photoService.getPhotosByAlbum(albumId, userId).toPhotoListResponse()
 
     @PostMapping("presigned-url")
     @ResponseStatus(HttpStatus.OK)

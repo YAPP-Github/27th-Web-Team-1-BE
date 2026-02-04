@@ -42,7 +42,7 @@ class CoupleRepositoryImpl(
         )
         savedCouple.addUser(coupleUser)
 
-        val defaultAlbum = AlbumEntity(title = "default", couple = savedCouple, createdBy = userEntity, isDefault = true)
+        val defaultAlbum = AlbumEntity(title = "전체 보기", couple = savedCouple, createdBy = userEntity, isDefault = true)
         albumJpaRepository.save(defaultAlbum)
 
         return savedCouple.toDomain()

@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.photo.application
 
+import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.common.util.DateTimeUtils.toDateString
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
@@ -28,8 +29,20 @@ class PhotoService(
     private val mapClient: MapClient,
 ) {
     @Transactional(readOnly = true)
-    fun getPhotosByAlbum(albumId: Long): List<Album> =
-        albumRepository.findByIdWithPhotos(albumId)
+    fun getPhotosByAlbum(albumId: Long, userId: Long): List<Album> {
+        val album = albumRepository.findById(albumId)
+            ?: throw entityNotFound<Album>(albumId)
+
+        return if (album.isDefault) {
+            photoRepository.findAllByUserId(userId)
+                .groupBy { it.albumId }
+                .mapNotNull { (albumId) ->
+                    albumId?.let { albumRepository.findById(it) }
+                }
+        } else {
+            albumRepository.findByIdWithPhotos(albumId)
+        }
+    }
 
     fun generatePresignedUrl(
         fileName: String,
