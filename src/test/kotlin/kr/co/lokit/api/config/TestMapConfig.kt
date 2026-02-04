@@ -30,6 +30,7 @@ class TestMapConfig {
             south: Double,
             east: Double,
             north: Double,
+            userId: Long?,
             albumId: Long?,
         ): List<PhotoProjection> = emptyList()
 
@@ -38,6 +39,7 @@ class TestMapConfig {
             south: Double,
             east: Double,
             north: Double,
+            userId: Long?,
             page: Int,
             size: Int,
         ): PageResult<ClusterPhotoProjection> = PageResult(

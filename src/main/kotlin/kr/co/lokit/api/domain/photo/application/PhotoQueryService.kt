@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.photo.application
 
-import kr.co.lokit.api.common.util.DateTimeUtils.toDateString
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.map.application.AddressFormatter
@@ -35,7 +34,7 @@ class PhotoQueryService(
         return PhotoDetailResponse(
             id = photoDetail.id,
             url = photoDetail.url,
-            takenAt = photoDetail.takenAt?.toDateString()!!,
+            takenAt = photoDetail.takenAt,
             albumName = photoDetail.albumName,
             uploaderName = photoDetail.uploaderName,
             address = AddressFormatter.removeProvinceAndCity(locationInfo.address),

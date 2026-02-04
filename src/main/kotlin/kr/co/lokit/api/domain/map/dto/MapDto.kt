@@ -29,8 +29,8 @@ data class MapPhotoResponse(
     val longitude: Double,
     @Schema(description = "위도", example = "37.4979")
     val latitude: Double,
-    @Schema(description = "촬영일 (yyyy.MM.dd 형식)", example = "2026.01.06")
-    val date: String,
+    @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
+    val takenAt: java.time.LocalDateTime,
 )
 
 @Schema(description = "지도 사진 조회 응답")
@@ -51,8 +51,8 @@ data class ClusterPhotoResponse(
     val longitude: Double,
     @Schema(description = "위도", example = "37.4979")
     val latitude: Double,
-    @Schema(description = "촬영일 (yyyy.MM.dd 형식)", example = "2026.01.06")
-    val date: String,
+    @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
+    val takenAt: java.time.LocalDateTime,
 )
 
 @Schema(description = "클러스터 사진 목록 페이지네이션 응답")
@@ -181,6 +181,8 @@ data class MapMeResponse(
     val location: LocationInfoResponse,
     @Schema(description = "바운딩 박스")
     val boundingBox: BoundingBoxResponse,
+    @Schema(description = "기록 수(전체 보기 사진 개수)")
+    val totalHistoryCount: Int,
     @Schema(description = "앨범 하이라이트 사진들 (최대 4장)")
     val albums: List<HomeResponse.Companion.AlbumThumbnails>,
     @Schema(description = "클러스터 목록 (줌 < 15일 때)")

@@ -72,7 +72,6 @@ class MapQueryService(
         } else {
             albumId
         }
-
         val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, userId, effectiveAlbumId)
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
             mapPhotosCacheService.getClusteredPhotos(zoom, bbox, userId, effectiveAlbumId, cacheKey)
@@ -155,6 +154,7 @@ class MapQueryService(
             albums = albums.toAlbumThumbnails(),
             clusters = photosResponse.clusters,
             photos = photosResponse.photos,
+            totalHistoryCount = albumRepository.photoCountSumByUserId(userId)
         )
     }
 

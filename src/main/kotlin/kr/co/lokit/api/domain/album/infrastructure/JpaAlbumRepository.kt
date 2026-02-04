@@ -108,7 +108,6 @@ class JpaAlbumRepository(
     override fun findAllWithPhotos(): List<Album> {
         val ids = albumJpaRepository.findAllAlbumIds()
         if (ids.isEmpty()) return emptyList()
-        // findAllByIds에서 이미 default 앨범 처리가 됨
         return findAllByIds(ids)
     }
 
@@ -159,4 +158,8 @@ class JpaAlbumRepository(
     override fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean {
         return albumJpaRepository.existsByCoupleIdAndTitle(coupleId, title)
     }
+
+    @Transactional(readOnly = true)
+    override fun photoCountSumByUserId(userId: Long): Int =
+        albumJpaRepository.sumPhotoCountByUserId(userId) ?: 0
 }

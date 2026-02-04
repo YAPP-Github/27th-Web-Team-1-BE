@@ -107,8 +107,8 @@ data class PhotoDetailResponse(
     val id: Long,
     @Schema(description = "사진 URL", example = "https://bucket.s3.amazonaws.com/photos/1/image.jpg")
     val url: String,
-    @Schema(description = "촬영일 (yyyy.MM.dd 형식)", example = "2026.01.06")
-    val takenAt: String,
+    @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
+    val takenAt: LocalDateTime?,
     @Schema(description = "앨범명", example = "가족여행")
     val albumName: String,
     @Schema(description = "등록자 이름", example = "홍길동")

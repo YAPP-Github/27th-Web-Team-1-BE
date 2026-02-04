@@ -55,4 +55,18 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
     fun findByCoupleIdAndIsDefaultTrue(coupleId: Long): AlbumEntity?
 
     fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean
+
+    @Query(
+        """
+        select sum(a.photoCount)
+        from Album a
+        where a.id in
+            (select distinct a2.id
+            from Album a2
+            join a2.couple c
+            join c.coupleUsers cu
+            where cu.user.id = :userId)
+    """
+    )
+    fun sumPhotoCountByUserId(userId: Long): Int?
 }

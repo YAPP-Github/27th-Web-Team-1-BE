@@ -2,17 +2,16 @@ package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
-import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
-import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.map.dto.MapPhotoResponse
+import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.fixture.createAlbumBounds
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers.anyDouble
-import org.mockito.ArgumentMatchers.isNull
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
@@ -25,9 +24,6 @@ import kotlin.test.assertNull
 
 @ExtendWith(MockitoExtension::class)
 class MapServiceTest {
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> anyObject(): T = org.mockito.ArgumentMatchers.any<T>() as T
 
     @Mock
     lateinit var mapQueryPort: MapQueryPort
@@ -44,26 +40,40 @@ class MapServiceTest {
     @Mock
     lateinit var transactionTemplate: TransactionTemplate
 
+    @Mock
+    lateinit var mapPhotosCacheService: MapPhotosCacheService
+
     @InjectMocks
     lateinit var mapService: MapQueryService
 
     @Test
     fun `줌 레벨이 15 미만이면 클러스터링된 결과를 반환한다`() {
-        val clusters = listOf(
-            ClusterProjection(
-                cellX = 1L, cellY = 1L, count = 5,
-                thumbnailUrl = "https://example.com/photo.jpg",
-                centerLongitude = 127.0, centerLatitude = 37.5,
+        val bbox = BBox(126.9, 37.4, 127.1, 37.6)
+        val expectedResponse = MapPhotosResponse(
+            clusters = listOf(
+                ClusterResponse(
+                    clusterId = "1:1",
+                    count = 5,
+                    thumbnailUrl = "https://example.com/photo.jpg",
+                    longitude = 127.0,
+                    latitude = 37.5,
+                ),
             ),
         )
-        `when`(
-            mapQueryPort.findClustersWithinBBox(
-                west = anyDouble(), south = anyDouble(), east = anyDouble(), north = anyDouble(),
-                gridSize = anyDouble(), userId = isNull(), albumId = isNull(),
-            ),
-        ).thenReturn(clusters)
 
-        val result = mapService.getPhotos(12, BBox(126.9, 37.4, 127.1, 37.6), null)
+        `when`(mapPhotosCacheService.buildCacheKey(12, bbox, null, null))
+            .thenReturn("12:126900:37400")
+        `when`(
+            mapPhotosCacheService.getClusteredPhotos(
+                zoom = 12,
+                bbox = bbox,
+                userId = null,
+                albumId = null,
+                cacheKey = "12:126900:37400",
+            ),
+        ).thenReturn(expectedResponse)
+
+        val result = mapService.getPhotos(12, bbox, null, null)
 
         assertNotNull(result.clusters)
         assertEquals(1, result.clusters.size)
@@ -72,21 +82,31 @@ class MapServiceTest {
 
     @Test
     fun `줌 레벨이 18 이상이면 개별 사진을 반환한다`() {
-        val photos = listOf(
-            PhotoProjection(
-                id = 1L, url = "https://example.com/photo.jpg",
-                longitude = 127.0, latitude = 37.5,
-                takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),
+        val bbox = BBox(126.9, 37.4, 127.1, 37.6)
+        val expectedResponse = MapPhotosResponse(
+            photos = listOf(
+                MapPhotoResponse(
+                    id = 1L,
+                    thumbnailUrl = "https://example.com/photo.jpg",
+                    longitude = 127.0,
+                    latitude = 37.5,
+                    takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),
+                ),
             ),
         )
-        `when`(
-            mapQueryPort.findPhotosWithinBBox(
-                west = anyDouble(), south = anyDouble(), east = anyDouble(), north = anyDouble(),
-                userId = isNull(), albumId = isNull(),
-            ),
-        ).thenReturn(photos)
 
-        val result = mapService.getPhotos(18, BBox(126.9, 37.4, 127.1, 37.6), null)
+        `when`(mapPhotosCacheService.buildCacheKey(18, bbox, null, null))
+            .thenReturn("18:126900:37400")
+        `when`(
+            mapPhotosCacheService.getIndividualPhotos(
+                bbox = bbox,
+                userId = null,
+                albumId = null,
+                cacheKey = "18:126900:37400",
+            ),
+        ).thenReturn(expectedResponse)
+
+        val result = mapService.getPhotos(18, bbox, null, null)
 
         assertNotNull(result.photos)
         assertEquals(1, result.photos.size)

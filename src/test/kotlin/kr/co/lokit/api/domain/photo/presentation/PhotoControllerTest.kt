@@ -99,7 +99,7 @@ class PhotoControllerTest {
         val response = PhotoDetailResponse(
             id = 1L,
             url = "https://example.com/photo.jpg",
-            takenAt = "2026.01.01",
+            takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),
             albumName = "여행",
             uploaderName = "테스트",
             address = "서울 강남구",

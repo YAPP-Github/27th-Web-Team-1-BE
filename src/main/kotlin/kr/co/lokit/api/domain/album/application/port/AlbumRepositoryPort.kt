@@ -14,4 +14,5 @@ interface AlbumRepositoryPort {
     fun findByIdWithPhotos(id: Long, userId: Long?): List<Album>
     fun findDefaultByUserId(userId: Long): Album?
     fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean
+    fun photoCountSumByUserId(userId: Long): Int
 }
