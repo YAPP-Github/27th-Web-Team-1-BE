@@ -16,17 +16,17 @@ class GridValuesConfigTest {
     }
 
     @Test
-    fun `지원되지 않는 줌 레벨은 기본값을 반환한다`() {
-        assertEquals(0.001953125, GridValues.getGridSize(13))
-        assertEquals(0.001953125, GridValues.getGridSize(4))
+    fun `줌 레벨이 범위를 벗어나면 최소 또는 최대값을 반환한다`() {
+        assertEquals(GridValues.getGridSize(0), GridValues.getGridSize(-1))
+        assertEquals(GridValues.getGridSize(22), GridValues.getGridSize(25))
     }
 
     @Test
     fun `지원되는 줌 레벨 목록을 반환한다`() {
         val levels = GridValues.getSupportedZoomLevels()
 
-        assertTrue(levels.contains(10))
-        assertTrue(levels.contains(14))
-        assertEquals(8, levels.size)
+        assertTrue(levels.contains(0))
+        assertTrue(levels.contains(22))
+        assertEquals(23, levels.size)
     }
 }

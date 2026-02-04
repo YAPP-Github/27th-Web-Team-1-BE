@@ -2,6 +2,7 @@ package kr.co.lokit.api.fixture
 
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.entity.BaseEntity
+import kr.co.lokit.api.config.security.UserPrincipal
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity
 import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsEntity
@@ -9,7 +10,6 @@ import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import org.locationtech.jts.geom.Point
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.time.LocalDateTime
 
 private fun setEntityId(entity: BaseEntity, id: Long) {
@@ -97,6 +97,6 @@ fun userAuth(
     name: String = "테스트",
     role: UserRole = UserRole.USER,
 ): UsernamePasswordAuthenticationToken {
-    val userEntity = createUserEntity(id = id, email = email, name = name, role = role)
-    return UsernamePasswordAuthenticationToken(userEntity, null, listOf(SimpleGrantedAuthority(userEntity.role.name)))
+    val userPrincipal = UserPrincipal(id = id, email = email, name = name, role = role)
+    return UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
 }

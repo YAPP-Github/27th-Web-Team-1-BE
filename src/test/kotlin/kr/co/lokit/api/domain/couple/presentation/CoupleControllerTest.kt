@@ -6,11 +6,12 @@ import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.user.application.AuthService
-import kr.co.lokit.api.domain.couple.application.CoupleService
-import kr.co.lokit.api.fixture.createJoinCoupleRequest
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createCoupleRequest
+import kr.co.lokit.api.fixture.createJoinCoupleRequest
 import kr.co.lokit.api.fixture.userAuth
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyLong
@@ -54,12 +55,15 @@ class CoupleControllerTest {
     lateinit var cookieGenerator: CookieGenerator
 
     @MockitoBean
-    lateinit var coupleService: CoupleService
+    lateinit var createCoupleUseCase: CreateCoupleUseCase
+
+    @MockitoBean
+    lateinit var joinCoupleUseCase: JoinCoupleUseCase
 
     @Test
     fun `커플 생성 성공`() {
         val savedCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678")
-        doReturn(savedCouple).`when`(coupleService).createIfNone(anyObject(), anyLong())
+        doReturn(savedCouple).`when`(createCoupleUseCase).createIfNone(anyObject(), anyLong())
 
         mockMvc.perform(
             post("/couples")
@@ -86,7 +90,7 @@ class CoupleControllerTest {
     @Test
     fun `초대 코드로 커플 합류 성공`() {
         val couple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L, 2L))
-        doReturn(couple).`when`(coupleService).joinByInviteCode(anyString(), anyLong())
+        doReturn(couple).`when`(joinCoupleUseCase).joinByInviteCode(anyString(), anyLong())
 
         mockMvc.perform(
             post("/couples/join")
@@ -101,7 +105,7 @@ class CoupleControllerTest {
     @Test
     fun `초대 코드로 커플 합류 실패 - 잘못된 초대 코드`() {
         doThrow(BusinessException.ResourceNotFoundException("유효하지 않은 초대 코드입니다"))
-            .`when`(coupleService).joinByInviteCode(anyString(), anyLong())
+            .`when`(joinCoupleUseCase).joinByInviteCode(anyString(), anyLong())
 
         mockMvc.perform(
             post("/couples/join")

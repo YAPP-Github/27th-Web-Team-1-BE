@@ -1,10 +1,10 @@
 package kr.co.lokit.api.common.permission
 
 import kr.co.lokit.api.common.constant.UserRole
-import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
-import kr.co.lokit.api.domain.couple.infrastructure.CoupleRepository
-import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
-import kr.co.lokit.api.domain.user.infrastructure.UserRepository
+import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
+import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createPhoto
@@ -20,16 +20,16 @@ import org.mockito.junit.jupiter.MockitoExtension
 class PermissionServiceTest {
 
     @Mock
-    lateinit var coupleRepository: CoupleRepository
+    lateinit var coupleRepository: CoupleRepositoryPort
 
     @Mock
-    lateinit var albumRepository: AlbumRepository
+    lateinit var albumRepository: AlbumRepositoryPort
 
     @Mock
-    lateinit var photoRepository: PhotoRepository
+    lateinit var photoRepository: PhotoRepositoryPort
 
     @Mock
-    lateinit var userRepository: UserRepository
+    lateinit var userRepository: UserRepositoryPort
 
     @InjectMocks
     lateinit var permissionService: PermissionService
@@ -84,7 +84,9 @@ class PermissionServiceTest {
 
     @Test
     fun `앨범 생성자는 앨범을 수정할 수 있다`() {
+        val user = createUser(id = 1L, role = UserRole.USER)
         val album = createAlbum(id = 1L, createdById = 1L)
+        `when`(userRepository.findById(1L)).thenReturn(user)
         `when`(albumRepository.findById(1L)).thenReturn(album)
 
         assert(permissionService.canModifyAlbum(1L, 1L))
@@ -92,7 +94,9 @@ class PermissionServiceTest {
 
     @Test
     fun `앨범 생성자가 아니면 앨범을 수정할 수 없다`() {
+        val user = createUser(id = 2L, role = UserRole.USER)
         val album = createAlbum(id = 1L, createdById = 1L)
+        `when`(userRepository.findById(2L)).thenReturn(user)
         `when`(albumRepository.findById(1L)).thenReturn(album)
 
         assert(!permissionService.canModifyAlbum(2L, 1L))
@@ -100,7 +104,9 @@ class PermissionServiceTest {
 
     @Test
     fun `앨범 생성자는 앨범을 삭제할 수 있다`() {
+        val user = createUser(id = 1L, role = UserRole.USER)
         val album = createAlbum(id = 1L, createdById = 1L)
+        `when`(userRepository.findById(1L)).thenReturn(user)
         `when`(albumRepository.findById(1L)).thenReturn(album)
 
         assert(permissionService.canDeleteAlbum(1L, 1L))
@@ -108,7 +114,9 @@ class PermissionServiceTest {
 
     @Test
     fun `앨범 생성자가 아니면 앨범을 삭제할 수 없다`() {
+        val user = createUser(id = 2L, role = UserRole.USER)
         val album = createAlbum(id = 1L, createdById = 1L)
+        `when`(userRepository.findById(2L)).thenReturn(user)
         `when`(albumRepository.findById(1L)).thenReturn(album)
 
         assert(!permissionService.canDeleteAlbum(2L, 1L))
@@ -116,7 +124,9 @@ class PermissionServiceTest {
 
     @Test
     fun `사진 업로더는 사진을 수정할 수 있다`() {
+        val user = createUser(id = 1L, role = UserRole.USER)
         val photo = createPhoto(id = 1L, uploadedById = 1L)
+        `when`(userRepository.findById(1L)).thenReturn(user)
         `when`(photoRepository.findById(1L)).thenReturn(photo)
 
         assert(permissionService.canModifyPhoto(1L, 1L))
@@ -124,7 +134,9 @@ class PermissionServiceTest {
 
     @Test
     fun `사진 업로더가 아니면 사진을 수정할 수 없다`() {
+        val user = createUser(id = 2L, role = UserRole.USER)
         val photo = createPhoto(id = 1L, uploadedById = 1L)
+        `when`(userRepository.findById(2L)).thenReturn(user)
         `when`(photoRepository.findById(1L)).thenReturn(photo)
 
         assert(!permissionService.canModifyPhoto(2L, 1L))
@@ -132,7 +144,9 @@ class PermissionServiceTest {
 
     @Test
     fun `사진 업로더는 사진을 삭제할 수 있다`() {
+        val user = createUser(id = 1L, role = UserRole.USER)
         val photo = createPhoto(id = 1L, uploadedById = 1L)
+        `when`(userRepository.findById(1L)).thenReturn(user)
         `when`(photoRepository.findById(1L)).thenReturn(photo)
 
         assert(permissionService.canDeletePhoto(1L, 1L))
@@ -140,7 +154,9 @@ class PermissionServiceTest {
 
     @Test
     fun `사진 업로더가 아니면 사진을 삭제할 수 없다`() {
+        val user = createUser(id = 2L, role = UserRole.USER)
         val photo = createPhoto(id = 1L, uploadedById = 1L)
+        `when`(userRepository.findById(2L)).thenReturn(user)
         `when`(photoRepository.findById(1L)).thenReturn(photo)
 
         assert(!permissionService.canDeletePhoto(2L, 1L))

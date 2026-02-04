@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
-import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsRepository
 import kr.co.lokit.api.fixture.createAlbumBounds
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -19,7 +19,7 @@ class AlbumBoundsServiceTest {
     private fun <T> anyObject(): T = org.mockito.ArgumentMatchers.any<T>() as T
 
     @Mock
-    lateinit var albumBoundsRepository: AlbumBoundsRepository
+    lateinit var albumBoundsRepository: AlbumBoundsRepositoryPort
 
     @InjectMocks
     lateinit var albumBoundsService: AlbumBoundsService

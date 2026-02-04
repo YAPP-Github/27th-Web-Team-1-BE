@@ -4,7 +4,8 @@ import jakarta.validation.Valid
 import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
-import kr.co.lokit.api.domain.couple.application.CoupleService
+import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.dto.CreateCoupleRequest
 import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("couples")
 class CoupleController(
-    private val coupleService: CoupleService,
+    private val createCoupleUseCase: CreateCoupleUseCase,
+    private val joinCoupleUseCase: JoinCoupleUseCase,
 ) : CoupleApi {
 
     @PostMapping
@@ -27,7 +29,7 @@ class CoupleController(
         @RequestBody @Valid request: CreateCoupleRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
-        coupleService.createIfNone(Couple(name = request.name), userId)
+        createCoupleUseCase.createIfNone(Couple(name = request.name), userId)
             .toIdResponse(Couple::id)
 
     @PostMapping("join")
@@ -36,6 +38,6 @@ class CoupleController(
         @RequestBody @Valid request: JoinCoupleRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
-        coupleService.joinByInviteCode(request.inviteCode, userId)
+        joinCoupleUseCase.joinByInviteCode(request.inviteCode, userId)
             .toIdResponse(Couple::id)
 }

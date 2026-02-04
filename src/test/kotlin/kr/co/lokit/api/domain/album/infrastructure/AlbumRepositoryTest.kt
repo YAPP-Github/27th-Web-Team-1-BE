@@ -22,11 +22,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @DataJpaTest
-@Import(AlbumRepositoryImpl::class)
+@Import(JpaAlbumRepository::class)
 class AlbumRepositoryTest {
 
     @Autowired
-    lateinit var albumRepository: AlbumRepository
+    lateinit var albumRepository: JpaAlbumRepository
 
     @Autowired
     lateinit var coupleJpaRepository: CoupleJpaRepository

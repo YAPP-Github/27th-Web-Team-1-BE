@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
-import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsRepository
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AlbumBoundsService(
-    private val albumBoundsRepository: AlbumBoundsRepository,
+    private val albumBoundsRepository: AlbumBoundsRepositoryPort,
 ) {
     @Transactional
     fun updateBoundsOnPhotoAdd(

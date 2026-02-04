@@ -99,6 +99,8 @@ data class AlbumMapInfoResponse(
 data class LocationInfoResponse(
     @Schema(description = "주소", example = "서울특별시 강남구 역삼동 123-45")
     val address: String?,
+    @Schema(description = "도로명", example = "테헤란로")
+    val roadName: String? = null,
     @Schema(description = "장소명", example = "역삼역 3번출구")
     val placeName: String?,
     @Schema(description = "지역명", example = "강남구")

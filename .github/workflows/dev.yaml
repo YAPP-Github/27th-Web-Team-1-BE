@@ -110,6 +110,7 @@ jobs:
                         SSM_PREFIX="/lokit/dev"
 
                         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+                        docker stop $(docker ps -qa) 2>/dev/null || true
                         docker rm -f $(docker ps -qa) 2>/dev/null || true
 
                         for i in {1..10}; do

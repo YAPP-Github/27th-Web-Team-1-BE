@@ -1,7 +1,8 @@
 package kr.co.lokit.api.domain.map.presentation
 
 import kr.co.lokit.api.common.annotation.CurrentUserId
-import kr.co.lokit.api.domain.map.application.MapService
+import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
+import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
@@ -19,11 +20,12 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("map")
 class MapController(
-    private val mapService: MapService,
+    private val getMapUseCase: GetMapUseCase,
+    private val searchLocationUseCase: SearchLocationUseCase,
 ) : MapApi {
     @GetMapping("home")
     override fun home(@CurrentUserId userId: Long, longitude: Double, latitude: Double): HomeResponse =
-        mapService.home(userId, longitude, latitude)
+        getMapUseCase.home(userId, longitude, latitude)
 
     @GetMapping("photos")
     override fun getPhotos(
@@ -32,7 +34,7 @@ class MapController(
         @RequestParam bbox: String,
         @RequestParam(required = false) albumId: Long?,
     ): MapPhotosResponse {
-        return mapService.getPhotos(zoom, BBox.fromString(bbox), albumId)
+        return getMapUseCase.getPhotos(zoom, BBox.fromString(bbox), albumId)
     }
 
     @GetMapping("clusters/{clusterId}/photos")
@@ -41,23 +43,23 @@ class MapController(
         @PathVariable clusterId: String,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
-    ): ClusterPhotosPageResponse = mapService.getClusterPhotos(clusterId, page, size)
+    ): ClusterPhotosPageResponse = getMapUseCase.getClusterPhotos(clusterId, page, size)
 
     @GetMapping("albums/{albumId}")
     @PreAuthorize("@permissionService.canAccessAlbum(#userId, #albumId)")
     override fun getAlbumMapInfo(
         @CurrentUserId userId: Long,
         @PathVariable albumId: Long,
-    ): AlbumMapInfoResponse = mapService.getAlbumMapInfo(albumId)
+    ): AlbumMapInfoResponse = getMapUseCase.getAlbumMapInfo(albumId)
 
     @GetMapping("location")
     override fun getLocationInfo(
         @RequestParam longitude: Double,
         @RequestParam latitude: Double,
-    ): LocationInfoResponse = mapService.getLocationInfo(longitude, latitude)
+    ): LocationInfoResponse = searchLocationUseCase.getLocationInfo(longitude, latitude)
 
     @GetMapping("places/search")
     override fun searchPlaces(
         @RequestParam query: String,
-    ): PlaceSearchResponse = mapService.searchPlaces(query)
+    ): PlaceSearchResponse = searchLocationUseCase.searchPlaces(query)
 }

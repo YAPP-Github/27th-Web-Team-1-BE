@@ -25,42 +25,43 @@ abstract class BaseEntity {
     var id: Long? = null
         protected set
 
-    protected val persistedId: Long?
-        get() = id
-
     @CreatedDate
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false, nullable = false)
     var createdAt: LocalDateTime = LocalDateTime.now()
+        protected set
 
     @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now()
+        protected set
 
     @Version
+    @Column(name = "version", nullable = false)
     var version: Long = 0
         protected set
 
     fun nonNullId(): Long = id ?: throw entityIdNotInitialized(this::class.simpleName ?: "Unknown")
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) {
-            return true
-        }
-        if (other == null) {
-            return false
-        }
+        if (this === other) return true
+        if (other == null) return false
+
+        val thisClass = if (this is HibernateProxy) this.hibernateLazyInitializer.persistentClass else this.javaClass
+        val otherClass =
+            if (other is HibernateProxy) other.hibernateLazyInitializer.persistentClass else other.javaClass
+
+        if (thisClass != otherClass) return false
 
         val otherId: Long? =
             when (other) {
                 is HibernateProxy -> other.hibernateLazyInitializer.identifier as? Long
-                is BaseEntity -> other.persistedId
+                is BaseEntity -> other.id
                 else -> null
             }
 
-        if (persistedId == null || otherId == null) {
-            return false
-        }
-        return persistedId == otherId
+        if (id == null || otherId == null) return false
+        return id == otherId
     }
 
-    override fun hashCode(): Int = persistedId?.hashCode() ?: 0
+    override fun hashCode(): Int = id?.hashCode() ?: 0
 }

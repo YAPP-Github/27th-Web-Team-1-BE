@@ -1,13 +1,13 @@
 package kr.co.lokit.api.domain.map.application
 
-import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
+import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
+import kr.co.lokit.api.domain.map.application.port.ClusterProjection
+import kr.co.lokit.api.domain.map.application.port.MapClientPort
+import kr.co.lokit.api.domain.map.application.port.MapQueryPort
+import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsRepository
-import kr.co.lokit.api.domain.map.infrastructure.ClusterProjection
-import kr.co.lokit.api.domain.map.infrastructure.MapRepository
-import kr.co.lokit.api.domain.map.infrastructure.PhotoProjection
-import kr.co.lokit.api.domain.map.infrastructure.geocoding.MapClient
 import kr.co.lokit.api.fixture.createAlbumBounds
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -30,22 +30,22 @@ class MapServiceTest {
     private fun <T> anyObject(): T = org.mockito.ArgumentMatchers.any<T>() as T
 
     @Mock
-    lateinit var mapRepository: MapRepository
+    lateinit var mapQueryPort: MapQueryPort
 
     @Mock
-    lateinit var albumBoundsRepository: AlbumBoundsRepository
+    lateinit var albumBoundsRepository: AlbumBoundsRepositoryPort
 
     @Mock
-    lateinit var albumRepository: AlbumRepository
+    lateinit var albumRepository: AlbumRepositoryPort
 
     @Mock
-    lateinit var mapClient: MapClient
+    lateinit var mapClientPort: MapClientPort
 
     @Mock
     lateinit var transactionTemplate: TransactionTemplate
 
     @InjectMocks
-    lateinit var mapService: MapService
+    lateinit var mapService: MapQueryService
 
     @Test
     fun `줌 레벨이 15 미만이면 클러스터링된 결과를 반환한다`() {
@@ -57,7 +57,7 @@ class MapServiceTest {
             ),
         )
         `when`(
-            mapRepository.findClustersWithinBBox(
+            mapQueryPort.findClustersWithinBBox(
                 west = anyDouble(), south = anyDouble(), east = anyDouble(), north = anyDouble(),
                 gridSize = anyDouble(), albumId = isNull(),
             ),
@@ -80,7 +80,7 @@ class MapServiceTest {
             ),
         )
         `when`(
-            mapRepository.findPhotosWithinBBox(
+            mapQueryPort.findPhotosWithinBBox(
                 west = anyDouble(), south = anyDouble(), east = anyDouble(), north = anyDouble(),
                 albumId = isNull(),
             ),
@@ -122,7 +122,7 @@ class MapServiceTest {
 
     @Test
     fun `위치 정보를 조회할 수 있다`() {
-        `when`(mapClient.reverseGeocode(127.0, 37.5)).thenReturn(
+        `when`(mapClientPort.reverseGeocode(127.0, 37.5)).thenReturn(
             LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
 

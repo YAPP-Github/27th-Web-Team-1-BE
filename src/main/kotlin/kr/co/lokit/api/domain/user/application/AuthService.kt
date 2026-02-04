@@ -1,12 +1,12 @@
 package kr.co.lokit.api.domain.user.application
 
+import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenEntity
 import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
-import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.mapping.toDomain
 import org.springframework.data.repository.findByIdOrNull
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
-import java.util.concurrent.StructuredTaskScope
 
 @Service
 class AuthService(
@@ -38,26 +37,25 @@ class AuthService(
     }
 
     private fun generateTokensAndSave(user: User): JwtTokenResponse {
-        val accessToken: String
-        val refreshToken: String
-        val userEntity: UserEntity
+        val (accessToken, refreshToken, userEntity) =
+            StructuredConcurrency.run { scope ->
+                val accessTokenFuture = scope.fork { jwtTokenProvider.generateAccessToken(user) }
+                val refreshTokenFuture = scope.fork { jwtTokenProvider.generateRefreshToken() }
+                val userEntityFuture = scope.fork {
+                    transactionTemplate.execute {
+                        userJpaRepository.findByIdOrNull(user.id)
+                            ?: throw BusinessException.UserNotFoundException(
+                                errors = mapOf("userId" to user.id.toString()),
+                            )
+                    }!!
+                }
 
-        StructuredTaskScope.ShutdownOnFailure().use { scope ->
-            val accessTokenFuture = scope.fork { jwtTokenProvider.generateAccessToken(user) }
-            val refreshTokenFuture = scope.fork { jwtTokenProvider.generateRefreshToken() }
-            val userEntityFuture = scope.fork {
-                transactionTemplate.execute {
-                    userJpaRepository.findByIdOrNull(user.id)
-                        ?: throw BusinessException.UserNotFoundException(
-                            errors = mapOf("userId" to user.id.toString()),
-                        )
-                }!!
+                Triple(
+                    accessTokenFuture.get(),
+                    refreshTokenFuture.get(),
+                    userEntityFuture.get(),
+                )
             }
-            scope.join().throwIfFailed()
-            accessToken = accessTokenFuture.get()
-            refreshToken = refreshTokenFuture.get()
-            userEntity = userEntityFuture.get()
-        }
 
         refreshTokenJpaRepository.deleteByUser(userEntity)
 

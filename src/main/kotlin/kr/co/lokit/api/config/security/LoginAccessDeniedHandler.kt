@@ -1,6 +1,5 @@
 package kr.co.lokit.api.config.security
 
-import tools.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import kr.co.lokit.api.common.dto.ApiResponse
@@ -11,6 +10,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
 
 @Component
 class LoginAccessDeniedHandler(
@@ -24,12 +24,11 @@ class LoginAccessDeniedHandler(
         response: HttpServletResponse,
         accessDeniedException: AccessDeniedException
     ) {
-        logger.error(
+        logger.warn(
             "Access denied: method={}, uri={}, message={}",
             request.method,
             request.requestURI,
-            accessDeniedException.message,
-            accessDeniedException
+            accessDeniedException.message
         )
 
         val errorCode = ErrorCode.FORBIDDEN

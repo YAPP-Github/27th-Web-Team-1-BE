@@ -2,13 +2,13 @@ package kr.co.lokit.api.common.permission
 
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
-import kr.co.lokit.api.domain.album.infrastructure.AlbumRepository
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.domain.Couple
-import kr.co.lokit.api.domain.couple.infrastructure.CoupleRepository
-import kr.co.lokit.api.domain.photo.infrastructure.PhotoRepository
+import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
+import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
-import kr.co.lokit.api.domain.user.infrastructure.UserRepository
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,107 +16,80 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class PermissionService(
-    private val coupleRepository: CoupleRepository,
-    private val albumRepository: AlbumRepository,
-    private val photoRepository: PhotoRepository,
-    private val userRepository: UserRepository,
+    private val coupleRepository: CoupleRepositoryPort,
+    private val albumRepository: AlbumRepositoryPort,
+    private val photoRepository: PhotoRepositoryPort,
+    private val userRepository: UserRepositoryPort,
 ) {
-    fun isAdmin(userId: Long): Boolean {
-        val user = userRepository.findById(userId)
-            ?: throw entityNotFound<User>(userId)
-        return user.role == UserRole.ADMIN
-    }
+    fun isAdmin(userId: Long): Boolean =
+        getUserRole(userId) == UserRole.ADMIN
 
     @Cacheable(cacheNames = ["coupleMembership"], key = "#userId + ':' + #coupleId")
     fun isCoupleMember(userId: Long, coupleId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
-        val couple =
-            coupleRepository.findById(coupleId)
-                ?: throw entityNotFound<Couple>(coupleId)
-
+        val couple = getCoupleOrThrow(coupleId)
         return userId in couple.userIds
     }
 
     @Cacheable(cacheNames = ["albumCouple"], key = "#albumId")
     fun getAlbumCoupleId(albumId: Long): Long {
-        val album =
-            albumRepository.findById(albumId)
-                ?: throw entityNotFound<Album>(albumId)
-        return album.coupleId
+        return getAlbumOrThrow(albumId).coupleId
     }
 
     @Cacheable(cacheNames = ["album"], key = "#userId + ':' + #albumId")
     fun canAccessAlbum(userId: Long, albumId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
         val coupleId = getAlbumCoupleId(albumId)
         return isCoupleMember(userId, coupleId)
     }
 
     fun canModifyAlbum(userId: Long, albumId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
-        val album =
-            albumRepository.findById(albumId)
-                ?: throw entityNotFound<Album>(albumId)
-
-        return album.createdById == userId
+        return getAlbumOrThrow(albumId).createdById == userId
     }
 
     fun canDeleteAlbum(userId: Long, albumId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
-        val album =
-            albumRepository.findById(albumId)
-                ?: throw entityNotFound<Album>(albumId)
-
-        return album.createdById == userId
+        return getAlbumOrThrow(albumId).createdById == userId
     }
 
     @Cacheable(cacheNames = ["photo"], key = "#userId + ':' + #photoId")
     fun canReadPhoto(userId: Long, photoId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
-        val photo =
-            photoRepository.findById(photoId)
-
-        val album =
-            albumRepository.findById(photo.albumId!!)
-                ?: throw entityNotFound<Album>(photo.albumId)
+        val photo = photoRepository.findById(photoId)
+        val album = getAlbumOrThrow(photo.albumId!!)
 
         return isCoupleMember(userId, album.coupleId)
     }
 
     fun canModifyPhoto(userId: Long, photoId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
-        val photo =
-            photoRepository.findById(photoId)
-
+        val photo = photoRepository.findById(photoId)
         return photo.uploadedById == userId
     }
 
     fun canDeletePhoto(userId: Long, photoId: Long): Boolean {
-        if (isAdmin(userId)) {
-            return true
-        }
+        if (isAdmin(userId)) return true
 
-        val photo =
-            photoRepository.findById(photoId)
-
+        val photo = photoRepository.findById(photoId)
         return photo.uploadedById == userId
     }
+
+    private fun getUserRole(userId: Long): UserRole =
+        userRepository.findById(userId)?.role
+            ?: throw entityNotFound<User>(userId)
+
+    private fun getCoupleOrThrow(coupleId: Long): Couple =
+        coupleRepository.findById(coupleId)
+            ?: throw entityNotFound<Couple>(coupleId)
+
+    private fun getAlbumOrThrow(albumId: Long): Album =
+        albumRepository.findById(albumId)
+            ?: throw entityNotFound<Album>(albumId)
 }

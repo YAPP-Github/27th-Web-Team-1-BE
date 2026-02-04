@@ -16,11 +16,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @DataJpaTest
-@Import(CoupleRepositoryImpl::class)
+@Import(JpaCoupleRepository::class)
 class CoupleRepositoryTest {
 
     @Autowired
-    lateinit var coupleRepository: CoupleRepository
+    lateinit var coupleRepository: JpaCoupleRepository
 
     @Autowired
     lateinit var userJpaRepository: UserJpaRepository
@@ -81,7 +81,7 @@ class CoupleRepositoryTest {
 
         coupleRepository.addUser(saved.id, user2.nonNullId())
 
-        assertThrows<BusinessException.BusinessRuleViolationException> {
+        assertThrows<BusinessException.CoupleMaxMembersExceededException> {
             coupleRepository.addUser(saved.id, user3.nonNullId())
         }
     }

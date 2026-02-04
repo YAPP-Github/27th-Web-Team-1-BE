@@ -38,4 +38,15 @@ enum class ErrorCode(
 
     // Business
     BUSINESS_RULE_VIOLATION(HttpStatus.BAD_REQUEST, "BUSINESS_001", "비즈니스 규칙 위반입니다"),
+
+    // Album
+    ALBUM_DEFAULT_TITLE_CANNOT_CHANGE(HttpStatus.BAD_REQUEST, "ALBUM_001", "기본 앨범의 이름은 변경할 수 없습니다"),
+    ALBUM_DEFAULT_CANNOT_DELETE(HttpStatus.BAD_REQUEST, "ALBUM_002", "기본 앨범은 삭제할 수 없습니다"),
+    ALBUM_ALREADY_EXISTS(HttpStatus.CONFLICT, "ALBUM_003", "동일한 이름의 앨범이 이미 존재합니다"),
+
+    // Photo
+    DEFAULT_ALBUM_NOT_FOUND_FOR_USER(HttpStatus.INTERNAL_SERVER_ERROR, "PHOTO_001", "사용자의 기본 앨범을 찾을 수 없습니다"),
+
+    // Couple
+    COUPLE_MAX_MEMBERS_EXCEEDED(HttpStatus.BAD_REQUEST, "COUPLE_001", "커플 최대 인원을 초과했습니다"),
 }

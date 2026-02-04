@@ -44,6 +44,7 @@ class KakaoMapClient(
 
         return LocationInfoResponse(
             address = roadAddress?.addressName ?: address?.addressName,
+            roadName = roadAddress?.roadName,
             placeName = roadAddress?.buildingName?.takeIf { it.isNotBlank() },
             regionName = address?.region2depthName ?: roadAddress?.region2depthName,
         )

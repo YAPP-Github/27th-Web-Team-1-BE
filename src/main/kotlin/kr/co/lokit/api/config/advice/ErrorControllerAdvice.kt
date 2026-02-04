@@ -10,11 +10,13 @@ import kr.co.lokit.api.config.notification.DiscordNotifier
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.core.AuthenticationException
 import org.springframework.validation.BindException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
-import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -159,6 +161,32 @@ class ErrorControllerAdvice(
             errorCode = ErrorCode.CONFLICT.code,
         )
     }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(
+        ex: AuthenticationException,
+        request: HttpServletRequest,
+    ): ApiResponse<ErrorDetail> =
+        ApiResponse.failure(
+            status = HttpStatus.UNAUTHORIZED,
+            detail = ex.message ?: ErrorCode.UNAUTHORIZED.message,
+            request = request,
+            errorCode = ErrorCode.UNAUTHORIZED.code,
+        )
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AccessDeniedException::class)
+    fun handleAccessDeniedException(
+        ex: AccessDeniedException,
+        request: HttpServletRequest,
+    ): ApiResponse<ErrorDetail> =
+        ApiResponse.failure(
+            status = HttpStatus.FORBIDDEN,
+            detail = ex.message ?: ErrorCode.FORBIDDEN.message,
+            request = request,
+            errorCode = ErrorCode.FORBIDDEN.code,
+        )
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception::class)

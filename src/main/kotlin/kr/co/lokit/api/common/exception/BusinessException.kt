@@ -49,6 +49,18 @@ sealed class BusinessException(
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.BUSINESS_RULE_VIOLATION, message, cause, errors)
 
+    class DefaultAlbumTitleChangeNotAllowedException(
+        message: String = ErrorCode.ALBUM_DEFAULT_TITLE_CANNOT_CHANGE.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.ALBUM_DEFAULT_TITLE_CANNOT_CHANGE, message, cause, errors)
+
+    class DefaultAlbumDeletionNotAllowedException(
+        message: String = ErrorCode.ALBUM_DEFAULT_CANNOT_DELETE.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.ALBUM_DEFAULT_CANNOT_DELETE, message, cause, errors)
+
     class UserAlreadyExistsException(
         message: String = ErrorCode.EMAIL_ALREADY_EXISTS.message,
         cause: Throwable? = null,
@@ -65,6 +77,12 @@ sealed class BusinessException(
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.INVALID_REFRESH_TOKEN, message, cause, errors)
+
+    class CoupleMaxMembersExceededException(
+        message: String = ErrorCode.COUPLE_MAX_MEMBERS_EXCEEDED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_MAX_MEMBERS_EXCEEDED, message, cause, errors)
 
     class UserNotFoundException(
         message: String = ErrorCode.USER_NOT_FOUND.message,
@@ -89,6 +107,19 @@ sealed class BusinessException(
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.KAKAO_EMAIL_NOT_PROVIDED, message, cause, errors)
+
+    // Photo
+    class DefaultAlbumNotFoundForUserException(
+        message: String = ErrorCode.DEFAULT_ALBUM_NOT_FOUND_FOR_USER.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.DEFAULT_ALBUM_NOT_FOUND_FOR_USER, message, cause, errors)
+
+    class AlbumAlreadyExistsException(
+        message: String = ErrorCode.ALBUM_ALREADY_EXISTS.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.ALBUM_ALREADY_EXISTS, message, cause, errors)
 }
 
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =

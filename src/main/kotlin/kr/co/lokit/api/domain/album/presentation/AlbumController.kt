@@ -4,7 +4,9 @@ import jakarta.validation.Valid
 import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
-import kr.co.lokit.api.domain.album.application.AlbumService
+import kr.co.lokit.api.domain.album.application.port.`in`.CreateAlbumUseCase
+import kr.co.lokit.api.domain.album.application.port.`in`.GetAlbumUseCase
+import kr.co.lokit.api.domain.album.application.port.`in`.UpdateAlbumUseCase
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.dto.SelectableAlbumResponse
@@ -26,18 +28,20 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("albums")
 class AlbumController(
-    private val albumService: AlbumService,
+    private val createAlbumUseCase: CreateAlbumUseCase,
+    private val getAlbumUseCase: GetAlbumUseCase,
+    private val updateAlbumUseCase: UpdateAlbumUseCase,
 ) : AlbumApi {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     override fun create(@CurrentUserId userId: Long, @RequestBody @Valid albumRequest: AlbumRequest): IdResponse =
-        albumService.create(albumRequest.toDomain(), userId).toIdResponse(Album::id)
+        createAlbumUseCase.create(albumRequest.toDomain(), userId).toIdResponse(Album::id)
 
     @GetMapping("selectable")
     @ResponseStatus(HttpStatus.OK)
     override fun getSelectableAlbums(@CurrentUserId userId: Long): SelectableAlbumResponse =
-        albumService.getSelectableAlbums(userId).toSelectableResponse()
+        getAlbumUseCase.getSelectableAlbums(userId).toSelectableResponse()
 
     @PatchMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
@@ -47,7 +51,7 @@ class AlbumController(
         @PathVariable id: Long,
         @RequestBody @Valid request: UpdateAlbumTitleRequest,
     ): IdResponse =
-        albumService.updateTitle(id, request.title).toIdResponse(Album::id)
+        updateAlbumUseCase.updateTitle(id, request.title).toIdResponse(Album::id)
 
     @DeleteMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -55,5 +59,5 @@ class AlbumController(
     override fun delete(
         @CurrentUserId userId: Long,
         @PathVariable id: Long,
-    ) = albumService.delete(id)
+    ) = updateAlbumUseCase.delete(id)
 }

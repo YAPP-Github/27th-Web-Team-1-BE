@@ -3,11 +3,14 @@ package kr.co.lokit.api.domain.photo.presentation
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.permission.PermissionService
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
-import kr.co.lokit.api.domain.photo.application.PhotoService
+import kr.co.lokit.api.domain.photo.application.port.`in`.CreatePhotoUseCase
+import kr.co.lokit.api.domain.photo.application.port.`in`.GetPhotoDetailUseCase
+import kr.co.lokit.api.domain.photo.application.port.`in`.UpdatePhotoUseCase
 import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.createPhoto
@@ -61,12 +64,21 @@ class PhotoControllerTest {
     lateinit var cookieGenerator: CookieGenerator
 
     @MockitoBean
-    lateinit var photoService: PhotoService
+    lateinit var createPhotoUseCase: CreatePhotoUseCase
+
+    @MockitoBean
+    lateinit var getPhotoDetailUseCase: GetPhotoDetailUseCase
+
+    @MockitoBean
+    lateinit var updatePhotoUseCase: UpdatePhotoUseCase
+
+    @MockitoBean
+    lateinit var permissionService: PermissionService
 
     @Test
     fun `사진 생성 성공`() {
         val savedPhoto = createPhoto(id = 1L)
-        doReturn(savedPhoto).`when`(photoService).create(anyObject())
+        doReturn(savedPhoto).`when`(createPhotoUseCase).create(anyObject())
 
         mockMvc.perform(
             post("/photos")
@@ -93,7 +105,7 @@ class PhotoControllerTest {
             address = "서울 강남구",
             description = "테스트",
         )
-        doReturn(response).`when`(photoService).getPhotoDetail(anyLong())
+        doReturn(response).`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong())
 
         mockMvc.perform(
             get("/photos/1")
@@ -105,7 +117,7 @@ class PhotoControllerTest {
     @Test
     fun `존재하지 않는 사진 상세 조회 실패`() {
         doThrow(BusinessException.ResourceNotFoundException("Photo(id=999)을(를) 찾을 수 없습니다"))
-            .`when`(photoService).getPhotoDetail(anyLong())
+            .`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong())
 
         mockMvc.perform(
             get("/photos/999")
@@ -117,7 +129,7 @@ class PhotoControllerTest {
     @Test
     fun `사진 수정 성공`() {
         val updatedPhoto = createPhoto(id = 1L, description = "수정됨")
-        doReturn(updatedPhoto).`when`(photoService)
+        doReturn(updatedPhoto).`when`(updatePhotoUseCase)
             .update(anyLong(), anyLong(), anyObject(), anyDouble(), anyDouble())
 
         mockMvc.perform(
@@ -132,7 +144,7 @@ class PhotoControllerTest {
 
     @Test
     fun `사진 삭제 성공`() {
-        doNothing().`when`(photoService).delete(anyLong())
+        doNothing().`when`(updatePhotoUseCase).delete(anyLong())
 
         mockMvc.perform(
             delete("/photos/1")

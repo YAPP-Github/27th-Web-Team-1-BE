@@ -44,4 +44,6 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
     fun findByIdWithPhotos(id: Long): List<AlbumEntity>
 
     fun findByCoupleIdAndIsDefaultTrue(coupleId: Long): AlbumEntity?
+
+    fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean
 }

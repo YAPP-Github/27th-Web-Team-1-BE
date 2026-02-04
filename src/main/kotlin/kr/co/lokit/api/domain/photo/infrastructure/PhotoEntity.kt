@@ -20,6 +20,7 @@ import java.time.LocalDateTime
     indexes = [
         Index(columnList = "album_id"),
         Index(columnList = "uploaded_by"),
+        Index(name = "idx_photo_location", columnList = "location"),
     ],
 )
 class PhotoEntity(

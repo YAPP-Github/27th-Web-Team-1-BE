@@ -2,6 +2,9 @@ package kr.co.lokit.api.domain.map.mapping
 
 import kr.co.lokit.api.common.dto.PageResult
 import kr.co.lokit.api.common.util.DateTimeUtils.toDateString
+import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
+import kr.co.lokit.api.domain.map.application.port.ClusterProjection
+import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.dto.BoundingBoxResponse
@@ -9,9 +12,6 @@ import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotoResponse
-import kr.co.lokit.api.domain.map.infrastructure.ClusterPhotoProjection
-import kr.co.lokit.api.domain.map.infrastructure.ClusterProjection
-import kr.co.lokit.api.domain.map.infrastructure.PhotoProjection
 
 fun ClusterProjection.toResponse(zoom: Int): ClusterResponse =
     ClusterResponse(

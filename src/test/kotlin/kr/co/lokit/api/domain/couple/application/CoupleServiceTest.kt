@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.exception.BusinessException
-import kr.co.lokit.api.domain.couple.infrastructure.CoupleRepository
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.fixture.createCouple
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -16,10 +16,10 @@ import kotlin.test.assertEquals
 class CoupleServiceTest {
 
     @Mock
-    lateinit var coupleRepository: CoupleRepository
+    lateinit var coupleRepository: CoupleRepositoryPort
 
     @InjectMocks
-    lateinit var coupleService: CoupleService
+    lateinit var coupleCommandService: CoupleCommandService
 
     @Test
     fun `커플을 생성할 수 있다`() {
@@ -27,7 +27,7 @@ class CoupleServiceTest {
         val savedCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L))
         `when`(coupleRepository.saveWithUser(couple, 1L)).thenReturn(savedCouple)
 
-        val result = coupleService.createIfNone(couple, 1L)
+        val result = coupleCommandService.createIfNone(couple, 1L)
 
         assertEquals(1L, result.id)
         assertEquals("우리 커플", result.name)
@@ -42,7 +42,7 @@ class CoupleServiceTest {
         `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(couple)
         `when`(coupleRepository.addUser(1L, 2L)).thenReturn(joinedCouple)
 
-        val result = coupleService.joinByInviteCode("12345678", 2L)
+        val result = coupleCommandService.joinByInviteCode("12345678", 2L)
 
         assertEquals(1L, result.id)
         assertEquals(listOf(1L, 2L), result.userIds)
@@ -53,7 +53,7 @@ class CoupleServiceTest {
         `when`(coupleRepository.findByInviteCode("invalid1")).thenReturn(null)
 
         val exception = assertThrows<BusinessException.ResourceNotFoundException> {
-            coupleService.joinByInviteCode("invalid1", 1L)
+            coupleCommandService.joinByInviteCode("invalid1", 1L)
         }
 
         assertEquals("Couple을(를) (invalid1)로 찾을 수 없습니다", exception.message)
