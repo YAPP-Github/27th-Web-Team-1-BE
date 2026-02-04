@@ -45,11 +45,15 @@ class AuthController(
         val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, tokens.accessToken)
         val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, tokens.refreshToken)
 
+        val redirectUri = req.getHeader("Origin")
+            ?: req.getHeader("Referer")?.let { URI(it).scheme + "://" + URI(it).authority }
+            ?: kakaoOAuthProperties.frontRedirectUri
+
         return ResponseEntity
             .status(HttpStatus.FOUND)
             .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
             .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-            .location(URI.create(kakaoOAuthProperties.frontRedirectUri))
+            .location(URI.create(redirectUri))
             .build()
     }
 }

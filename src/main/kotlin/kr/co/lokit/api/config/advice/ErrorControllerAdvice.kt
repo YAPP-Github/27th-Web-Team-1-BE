@@ -194,7 +194,7 @@ class ErrorControllerAdvice(
         ex: Exception,
         request: HttpServletRequest,
     ): ApiResponse<ErrorDetail> {
-        log.error("Unhandled exception occurred: ${ex.message}", ex)
+        log.error("Unhandled exception occurred: {}", ex.message)
         discordNotifier?.notify(ex, request)
         return ApiResponse.failure(
             status = HttpStatus.INTERNAL_SERVER_ERROR,

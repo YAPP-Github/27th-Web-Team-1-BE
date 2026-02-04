@@ -75,7 +75,7 @@ kakao:
     client-id: ${KAKAO_CLIENT_ID:}
     client-secret: ${KAKAO_CLIENT_SECRET:}
     redirect-uri: ${KAKAO_REDIRECT_URI:}
-    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI_LOCAL:}
+    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI:}
 
 cookie:
     secure: true
