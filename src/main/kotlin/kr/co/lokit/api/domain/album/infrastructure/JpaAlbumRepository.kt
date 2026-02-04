@@ -9,6 +9,7 @@ import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -77,6 +78,7 @@ class JpaAlbumRepository(
     override fun findById(id: Long): Album? =
         albumJpaRepository.findByIdOrNull(id)?.toDomain()
 
+    @Cacheable(cacheNames = ["userAlbums"], key = "#userId")
     @Transactional(readOnly = true)
     override fun findAllByUserId(userId: Long): List<Album> {
         val albums = findAllByUserIdInternal(userId)

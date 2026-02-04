@@ -56,7 +56,7 @@ class CacheConfig {
                 CaffeineCache(
                     "albumCouple",
                     Caffeine.newBuilder()
-                        .expireAfterWrite(24, TimeUnit.HOURS)
+                        .expireAfterWrite(3, TimeUnit.HOURS)
                         .maximumSize(10_000)
                         .build(),
                 ),
@@ -64,6 +64,20 @@ class CacheConfig {
                     "coupleMembership",
                     Caffeine.newBuilder()
                         .expireAfterWrite(1, TimeUnit.HOURS)
+                        .maximumSize(50_000)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "userAlbums",
+                    Caffeine.newBuilder()
+                        .expireAfterWrite(1, TimeUnit.MINUTES)
+                        .maximumSize(10_000)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "mapPhotos",
+                    Caffeine.newBuilder()
+                        .expireAfterWrite(1, TimeUnit.MINUTES)
                         .maximumSize(50_000)
                         .build(),
                 ),

@@ -13,7 +13,9 @@ import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse
+import kr.co.lokit.api.domain.map.dto.HomeResponse.Companion.toAlbumThumbnails
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.map.dto.MapMeResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
 import kr.co.lokit.api.domain.map.mapping.toAlbumMapInfoResponse
@@ -31,6 +33,7 @@ class MapQueryService(
     private val albumRepository: AlbumRepositoryPort,
     private val mapClientPort: MapClientPort,
     private val transactionTemplate: TransactionTemplate,
+    private val mapPhotosCacheService: MapPhotosCacheService,
 ) : GetMapUseCase, SearchLocationUseCase {
     override fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse {
         val bBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
@@ -63,50 +66,12 @@ class MapQueryService(
         userId: Long?,
         albumId: Long?
     ): MapPhotosResponse {
+        val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, userId, albumId)
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
-            getClusteredPhotos(zoom, bbox, userId, albumId)
+            mapPhotosCacheService.getClusteredPhotos(zoom, bbox, userId, albumId, cacheKey)
         } else {
-            getIndividualPhotos(bbox, userId, albumId)
+            mapPhotosCacheService.getIndividualPhotos(bbox, userId, albumId, cacheKey)
         }
-    }
-
-    private fun getClusteredPhotos(
-        zoom: Int,
-        bbox: BBox,
-        userId: Long? = null,
-        albumId: Long? = null,
-    ): MapPhotosResponse {
-        val gridSize = GridValues.getGridSize(zoom)
-
-        val clusters =
-            mapQueryPort.findClustersWithinBBox(
-                west = bbox.west,
-                south = bbox.south,
-                east = bbox.east,
-                north = bbox.north,
-                gridSize = gridSize,
-                userId = userId,
-                albumId = albumId,
-            )
-
-        return MapPhotosResponse(
-            clusters = clusters.map { it.toResponse(zoom) },
-        )
-    }
-
-    private fun getIndividualPhotos(bbox: BBox, userId: Long? = null, albumId: Long? = null): MapPhotosResponse {
-        val photos = mapQueryPort.findPhotosWithinBBox(
-            west = bbox.west,
-            south = bbox.south,
-            east = bbox.east,
-            north = bbox.north,
-            userId = userId,
-            albumId = albumId,
-        )
-
-        return MapPhotosResponse(
-            photos = photos.map { it.toMapPhotoResponse() },
-        )
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +100,55 @@ class MapQueryService(
     override fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse {
         val bounds = albumBoundsRepository.findByAlbumIdOrNull(albumId)
         return bounds.toAlbumMapInfoResponse(albumId)
+    }
+
+    override fun getMe(
+        userId: Long,
+        longitude: Double,
+        latitude: Double,
+        zoom: Int,
+        bbox: BBox,
+        albumId: Long?,
+    ): MapMeResponse {
+        val homeBBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+
+        val (locationFuture, albumsFuture, photosFuture) =
+            StructuredConcurrency.run { scope ->
+                Triple(
+                    scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
+                    scope.fork {
+                        transactionTemplate.execute {
+                            albumRepository
+                                .findAllByUserId(userId)
+                                .sortedByDescending { it.isDefault }
+                        }!!
+                    },
+                    scope.fork {
+                        getPhotos(zoom, bbox, userId, albumId)
+                    },
+                )
+            }
+
+        val location = locationFuture.get()
+        val formattedLocation = LocationInfoResponse(
+            address = AddressFormatter.removeProvinceAndCity(
+                AddressFormatter.toRoadHeader(location.address, location.roadName)
+            ),
+            roadName = location.roadName,
+            placeName = location.placeName,
+            regionName = AddressFormatter.removeProvinceAndCity(location.regionName),
+        )
+
+        val photosResponse = photosFuture.get()
+        val albums = albumsFuture.get()
+
+        return MapMeResponse(
+            location = formattedLocation,
+            boundingBox = homeBBox.toResponse(),
+            albums = albums.toAlbumThumbnails(),
+            clusters = photosResponse.clusters,
+            photos = photosResponse.photos,
+        )
     }
 
     override fun getLocationInfo(longitude: Double, latitude: Double): LocationInfoResponse {
