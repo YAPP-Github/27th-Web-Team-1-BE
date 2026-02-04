@@ -44,7 +44,7 @@ class PhotoCommandService(
     override fun create(photo: Photo): Photo {
         photoStoragePort?.verifyFileExists(photo.url)
         val effectivePhoto =
-            if (photo.albumId == null) {
+            if (photo.albumId == null || photo.albumId == 0L) {
                 val defaultAlbum =
                     albumRepository.findDefaultByUserId(photo.uploadedById)
                         ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
