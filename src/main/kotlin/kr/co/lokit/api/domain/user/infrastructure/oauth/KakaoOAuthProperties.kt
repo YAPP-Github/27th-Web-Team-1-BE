@@ -8,7 +8,6 @@ data class KakaoOAuthProperties(
     val clientSecret: String,
     val redirectUri: String,
     val frontRedirectUri: String,
-    val frontRedirectLocalUri: String,
 ) {
     companion object {
         const val AUTHORIZATION_URL = "https://kauth.kakao.com/oauth/authorize"
