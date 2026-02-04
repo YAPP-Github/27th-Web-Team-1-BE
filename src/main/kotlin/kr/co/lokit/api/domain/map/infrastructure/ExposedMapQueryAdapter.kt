@@ -87,8 +87,10 @@ class ExposedMapQueryAdapter(
         append("         FLOOR(ST_Y(p.location) / ?) as cell_y, ")
         append("         ROW_NUMBER() OVER (PARTITION BY p.url ORDER BY p.created_at DESC) as rn ")
         append("  FROM ${PhotoTable.tableName} p ")
-        append("  JOIN album a ON p.album_id = a.id ")
-        append("  JOIN couple_user cu ON a.couple_id = cu.couple_id ")
+        if (userId != null) {
+            append("  JOIN album a ON p.album_id = a.id ")
+            append("  JOIN couple_user cu ON a.couple_id = cu.couple_id ")
+        }
         append("  WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) ")
         append("    AND p.is_deleted = false ")
         if (userId != null) append("    AND cu.user_id = ? ")
