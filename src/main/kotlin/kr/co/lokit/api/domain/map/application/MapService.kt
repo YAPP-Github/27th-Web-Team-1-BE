@@ -36,7 +36,9 @@ class MapService(
         StructuredTaskScope.ShutdownOnFailure().use { scope ->
             val location = scope.fork { mapClient.reverseGeocode(longitude, latitude) }
             val albums = scope.fork {
-                transactionTemplate.execute { albumRepository.findAllByUserId(userId) }!!
+                transactionTemplate.execute {
+                    albumRepository.findAllByUserId(userId).sortedByDescending { it.isDefault }
+                }!!
             }
             scope.join().throwIfFailed()
             return HomeResponse.of(location.get(), albums.get(), bBox)

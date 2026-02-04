@@ -40,7 +40,8 @@ class AlbumRepositoryImpl(
         if (ids.isEmpty()) {
             return emptyList()
         }
-        val entityMap = albumJpaRepository.findAllWithPhotosByIds(ids).associateBy { it.nonNullId() }
+        val entityMap =
+            albumJpaRepository.findAllWithPhotosByIds(ids).associateBy { it.nonNullId() }
         return ids.mapNotNull { entityMap[it]?.toDomain() }
     }
 

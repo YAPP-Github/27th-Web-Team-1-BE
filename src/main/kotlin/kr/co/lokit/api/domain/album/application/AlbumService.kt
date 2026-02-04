@@ -17,7 +17,7 @@ class AlbumService(
 
     @Transactional(readOnly = true)
     fun getSelectableAlbums(userId: Long): List<Album> =
-        albumRepository.findAllByUserId(userId)
+        albumRepository.findAllByUserId(userId).filter { !it.isDefault }
 
     @Transactional
     fun updateTitle(id: Long, title: String): Album {
