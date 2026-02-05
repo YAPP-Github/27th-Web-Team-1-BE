@@ -21,8 +21,8 @@ ${domain} {
 
     # /actuator/health만 허용, 나머지 차단
      @actuator_blocked {
-          path api/actuator*
-          not path api/actuator/health*
+          path /api/actuator*
+          not path /api/actuator/health*
      }
      respond @actuator_blocked 404
 }
