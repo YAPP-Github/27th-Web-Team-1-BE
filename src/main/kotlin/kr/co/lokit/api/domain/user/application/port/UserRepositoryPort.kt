@@ -9,4 +9,3 @@ interface UserRepositoryPort {
 
     fun findByEmail(email: String): User?
 }
-

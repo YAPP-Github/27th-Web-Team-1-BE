@@ -12,6 +12,8 @@ import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
+import jakarta.persistence.EntityManager
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -24,6 +26,7 @@ class OAuthService(
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val createCoupleUseCase: CreateCoupleUseCase,
+    private val entityManager: EntityManager,
 ) {
     @Transactional
     fun login(provider: OAuthProvider, code: String): JwtTokenResponse {
@@ -46,14 +49,15 @@ class OAuthService(
     }
 
     private fun registerUser(email: String, name: String): User {
-        val existing = userRepository.findByEmail(email)
-        if (existing != null) {
-            return existing
+        return try {
+            val user = userRepository.save(User(email = email, name = name))
+            createCoupleUseCase.createIfNone(Couple(name = "default"), user.id)
+            user
+        } catch (e: DataIntegrityViolationException) {
+            entityManager.clear()
+            userRepository.findByEmail(email)
+                ?: throw e
         }
-
-        val user = userRepository.save(User(email = email, name = name))
-        createCoupleUseCase.createIfNone(Couple(name = "default"), user.id)
-        return user
     }
 
     private fun generateTokens(user: User): JwtTokenResponse {
