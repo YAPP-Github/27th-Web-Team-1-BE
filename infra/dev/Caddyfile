@@ -18,4 +18,11 @@ ${domain} {
     handle_path ${etc-path}* {
         reverse_proxy ${ip}
     }
+
+    # /actuator/health만 허용, 나머지 차단
+     @actuator_blocked {
+          path /actuator*
+          not path /actuator/health*
+     }
+     respond @actuator_blocked 404
 }
