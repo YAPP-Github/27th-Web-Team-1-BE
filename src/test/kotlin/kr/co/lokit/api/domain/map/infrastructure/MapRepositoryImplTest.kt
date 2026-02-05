@@ -35,7 +35,7 @@ class MapRepositoryImplTest {
         url: String,
         cellX: Long,
         cellY: Long,
-        createdAt: LocalDateTime = LocalDateTime.now(),
+        takenAt: LocalDateTime = LocalDateTime.now(),
     ) = UniquePhotoRecord(
         id = id,
         url = url,
@@ -43,7 +43,7 @@ class MapRepositoryImplTest {
         latitude = 37.5,
         cellX = cellX,
         cellY = cellY,
-        createdAt = createdAt,
+        takenAt = takenAt,
     )
 
     @Test
@@ -168,8 +168,8 @@ class MapRepositoryImplTest {
     fun `calculateClusterStats는 올바른 통계를 계산한다`() {
         val now = LocalDateTime.now()
         val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, createdAt = now),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, createdAt = now.minusDays(1)),
+            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
+            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
         )
 
         val grouped = ClusteringPipeline.groupByGridCell(photos)
@@ -186,9 +186,9 @@ class MapRepositoryImplTest {
     fun `toClusterProjections 확장함수가 전체 파이프라인을 실행한다`() {
         val now = LocalDateTime.now()
         val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, createdAt = now),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, createdAt = now.minusDays(1)),
-            uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2, createdAt = now),
+            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
+            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
+            uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2, takenAt = now),
         )
 
         val result = photos.toClusterProjections()

@@ -44,7 +44,7 @@ data class UniquePhotoRecord(
     val latitude: Double,
     val cellX: Long,
     val cellY: Long,
-    val createdAt: LocalDateTime,
+    val takenAt: LocalDateTime,
 )
 
 data class GridKey(val cellX: Long, val cellY: Long)

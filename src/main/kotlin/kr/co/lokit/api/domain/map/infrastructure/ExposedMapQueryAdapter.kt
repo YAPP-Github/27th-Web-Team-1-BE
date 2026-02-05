@@ -64,7 +64,7 @@ class ExposedMapQueryAdapter(
                         latitude = rs.getDouble("latitude"),
                         cellX = rs.getLong("cell_x"),
                         cellY = rs.getLong("cell_y"),
-                        createdAt = rs.getTimestamp("created_at").toLocalDateTime(),
+                        takenAt = rs.getTimestamp("taken_at").toLocalDateTime(),
                     )
                 )
             }
@@ -73,12 +73,12 @@ class ExposedMapQueryAdapter(
     }
 
     private fun buildDistinctOnQuery(userId: Long?, albumId: Long?): String = buildString {
-        append("SELECT id, url, longitude, latitude, cell_x, cell_y, created_at FROM ( ")
-        append("  SELECT p.id, p.url, p.location, p.created_at, ")
+        append("SELECT id, url, longitude, latitude, cell_x, cell_y, taken_at FROM ( ")
+        append("  SELECT p.id, p.url, p.location, p.taken_at, ")
         append("         ST_X(p.location) as longitude, ST_Y(p.location) as latitude, ")
         append("         FLOOR(ST_X(p.location) / ?) as cell_x, ")
         append("         FLOOR(ST_Y(p.location) / ?) as cell_y, ")
-        append("         ROW_NUMBER() OVER (PARTITION BY p.url ORDER BY p.created_at DESC) as rn ")
+        append("         ROW_NUMBER() OVER (PARTITION BY p.url ORDER BY p.taken_at DESC) as rn ")
         append("  FROM ${PhotoTable.tableName} p ")
         if (userId != null) {
             append("  JOIN album a ON p.album_id = a.id ")
@@ -90,7 +90,7 @@ class ExposedMapQueryAdapter(
         if (albumId != null) append("    AND p.album_id = ? ")
         append(") ranked ")
         append("WHERE rn = 1 ")
-        append("ORDER BY created_at DESC")
+        append("ORDER BY taken_at DESC")
     }
 
     override fun findPhotosWithinBBox(

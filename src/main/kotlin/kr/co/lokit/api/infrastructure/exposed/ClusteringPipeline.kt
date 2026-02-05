@@ -14,13 +14,13 @@ object ClusteringPipeline {
 
     fun calculateClusterStats(grouped: Map<GridKey, List<UniquePhotoRecord>>): List<ClusterData> =
         grouped.map { (key, photos) ->
-            val sortedByCreatedAt = photos.sortedByDescending { it.createdAt }
+            val sortedByTakenAt = photos.sortedByDescending { it.takenAt }
             ClusterData(
                 gridKey = key,
                 count = photos.size,
                 centerLongitude = photos.map { it.longitude }.average(),
                 centerLatitude = photos.map { it.latitude }.average(),
-                photosByRank = sortedByCreatedAt.mapIndexed { index, photo ->
+                photosByRank = sortedByTakenAt.mapIndexed { index, photo ->
                     RankedPhoto(url = photo.url, rank = index + 1)
                 },
             )

@@ -70,7 +70,7 @@ fun Album.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse {
         title = this.title,
         photoCount = actualPhotoCount,
         thumbnailUrl = this.thumbnail?.url,
-        photos = this.photos.map { it.toResponse() },
+        photos = this.photos.sortedByDescending { it.takenAt }.map { it.toResponse() },
     )
 }
 
