@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
+import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
@@ -29,7 +30,7 @@ interface MapApi {
         summary = "지도 ME 조회 (홈 + 사진 조회 통합)",
         description = """
             홈 정보와 지도 사진을 한 번에 조회합니다.
-            
+
             - 위치 정보, 앨범 목록, 바운딩 박스 (map/home 응답)
             - 줌 레벨과 바운딩 박스 기반 사진/클러스터 (map/photos 응답)
             - 두 API를 하나로 통합하여 네트워크 요청을 줄입니다.
@@ -163,7 +164,7 @@ interface MapApi {
             ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = [Content(schema = Schema(implementation = ClusterPhotosPageResponse::class))],
+                content = [Content(schema = Schema(implementation = ClusterPhotoResponse::class))],
             ),
             ApiResponse(
                 responseCode = "400",
@@ -190,16 +191,6 @@ interface MapApi {
             required = true,
         )
         clusterId: String,
-        @Parameter(
-            description = "페이지 번호 (0부터 시작)",
-            example = "0",
-        )
-        page: Int,
-        @Parameter(
-            description = "페이지 크기",
-            example = "20",
-        )
-        size: Int,
     ): ClusterPhotosPageResponse
 
     @Operation(

@@ -10,6 +10,7 @@ data class Photo(
     var url: String,
     var uploadedById: Long,
     var takenAt: LocalDateTime = LocalDateTime.now(),
+    val address: String? = null,
 ) {
     fun hasLocation(): Boolean =
         location.longitude != 0.0 && location.latitude != 0.0

@@ -48,6 +48,7 @@ fun createPhoto(
     url: String = "https://example.com/photo.jpg",
     uploadedById: Long = 1L,
     takenAt: LocalDateTime = LocalDateTime.of(2025, 1, 1, 12, 0),
+    address: String? = null,
 ) = Photo(
     id = id,
     albumId = albumId,
@@ -56,6 +57,7 @@ fun createPhoto(
     url = url,
     uploadedById = uploadedById,
     takenAt = takenAt,
+    address = address,
 )
 
 fun createLocation(

@@ -2,7 +2,7 @@ package kr.co.lokit.api.domain.map.application.port.`in`
 
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.MapMeResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
@@ -19,6 +19,6 @@ interface GetMapUseCase {
         albumId: Long? = null
     ): MapMeResponse
 
-    fun getClusterPhotos(clusterId: String, userId: Long?, page: Int, size: Int): ClusterPhotosPageResponse
+    fun getClusterPhotos(clusterId: String, userId: Long?): List<ClusterPhotoResponse>
     fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse
 }

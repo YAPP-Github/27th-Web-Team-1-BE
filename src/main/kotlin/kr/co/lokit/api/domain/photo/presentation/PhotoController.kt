@@ -56,7 +56,8 @@ class PhotoController(
     override fun create(
         @RequestBody @Valid request: CreatePhotoRequest,
         @CurrentUserId userId: Long,
-    ): IdResponse = createPhotoUseCase.create(request.toDomain(userId)).toIdResponse(Photo::id)
+    ): IdResponse = createPhotoUseCase.create(request.toDomain(userId))
+        .toIdResponse(Photo::id)
 
     @GetMapping("{id}")
     @PreAuthorize("@permissionService.canReadPhoto(#userId, #id)")

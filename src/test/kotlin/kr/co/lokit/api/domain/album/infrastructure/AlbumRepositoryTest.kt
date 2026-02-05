@@ -115,6 +115,7 @@ class AlbumRepositoryTest {
             url = "https://example.com/photo.jpg",
             album = albumWithPhotos,
             location = PhotoEntity.createPoint(127.0, 37.5),
+            address = "서울 강남구",
             uploadedBy = user,
         )
         albumJpaRepository.flush()

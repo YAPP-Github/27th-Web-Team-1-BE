@@ -25,6 +25,7 @@ data class ClusterPhotoProjection(
     val longitude: Double,
     val latitude: Double,
     val takenAt: LocalDateTime,
+    val address: String
 )
 
 data class ClusterCandidate(

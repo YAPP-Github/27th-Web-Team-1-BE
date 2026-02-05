@@ -59,6 +59,7 @@ fun createPhotoEntity(
     takenAt: LocalDateTime = LocalDateTime.of(2025, 1, 1, 12, 0),
     album: AlbumEntity = createAlbumEntity(),
     location: Point = PhotoEntity.createPoint(127.0, 37.5),
+    address: String = "서울 강남구",
     uploadedBy: UserEntity = createUserEntity(),
 ): PhotoEntity {
     val entity = PhotoEntity(
@@ -66,6 +67,7 @@ fun createPhotoEntity(
         takenAt = takenAt,
         album = album,
         location = location,
+        address = address,
         uploadedBy = uploadedBy,
     )
     id?.let { setEntityId(entity, it) }

@@ -6,9 +6,9 @@ object AddressFormatter {
     private val roadRegex = Regex(".*(대로|로)$")
     private val branchRoadRegex = Regex(".*(번길|길)$")
 
-    fun toRoadHeader(addressName: String?, roadName: String?): String? {
-        if (addressName.isNullOrBlank()) return addressName
-        if (roadName.isNullOrBlank()) return toRoadHeader(addressName)
+    fun toRoadHeader(addressName: String, roadName: String): String {
+        if (addressName.isBlank()) return addressName
+        if (roadName.isBlank()) return toRoadHeader(addressName)
 
         val tokens = addressName.split(Regex("\\s+"))
         val roadIndex = tokens.indexOfFirst { it.contains(roadName) }
@@ -26,8 +26,8 @@ object AddressFormatter {
         }
     }
 
-    fun toRoadHeader(address: String?): String? {
-        if (address.isNullOrBlank()) return address
+    fun toRoadHeader(address: String): String {
+        if (address.isBlank()) return address
 
         val tokens = address.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
         if (tokens.isEmpty()) return address

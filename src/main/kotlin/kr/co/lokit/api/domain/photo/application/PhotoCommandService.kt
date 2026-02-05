@@ -5,6 +5,7 @@ import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
+import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoStoragePort
 import kr.co.lokit.api.domain.photo.application.port.`in`.CreatePhotoUseCase
@@ -27,6 +28,7 @@ class PhotoCommandService(
     private val photoRepository: PhotoRepositoryPort,
     private val albumRepository: AlbumRepositoryPort,
     private val photoStoragePort: PhotoStoragePort?,
+    private val mapQueryService: SearchLocationUseCase,
     private val eventPublisher: ApplicationEventPublisher,
     private val mapPhotosCacheService: MapPhotosCacheService,
 ) : CreatePhotoUseCase, UpdatePhotoUseCase {
@@ -47,6 +49,7 @@ class PhotoCommandService(
     @CacheEvict(cacheNames = ["userAlbums"], key = "#photo.uploadedById")
     override fun create(photo: Photo): Photo {
         photoStoragePort?.verifyFileExists(photo.url)
+        val locationInfo = mapQueryService.getLocationInfo(photo.location.longitude, photo.location.latitude)
         val effectivePhoto =
             if (!isValidId(photo.albumId)) {
                 val defaultAlbum =
@@ -54,7 +57,7 @@ class PhotoCommandService(
                         ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
                             errors = mapOf("uploadedById" to photo.uploadedById.toString()),
                         )
-                photo.copy(albumId = defaultAlbum.id)
+                photo.copy(albumId = defaultAlbum.id, address = locationInfo.address)
             } else {
                 photo
             }

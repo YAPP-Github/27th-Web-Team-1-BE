@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.map.mapping
 
-import kr.co.lokit.api.common.dto.PageResult
 import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.PhotoProjection
@@ -8,7 +7,6 @@ import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.dto.BoundingBoxResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotoResponse
 
@@ -37,17 +35,11 @@ fun ClusterPhotoProjection.toClusterPhotoResponse(): ClusterPhotoResponse =
         longitude = longitude,
         latitude = latitude,
         takenAt = takenAt,
+        address = address,
     )
 
-fun PageResult<ClusterPhotoProjection>.toClusterPhotosPageResponse(): ClusterPhotosPageResponse =
-    ClusterPhotosPageResponse(
-        photos = content.map { it.toClusterPhotoResponse() },
-        page = page,
-        size = size,
-        totalElements = totalElements,
-        totalPages = totalPages,
-        last = isLast,
-    )
+fun List<ClusterPhotoProjection>.toClusterPhotosPageResponse(): List<ClusterPhotoResponse> =
+    map { it.toClusterPhotoResponse() }
 
 fun BBox.toResponse(): BoundingBoxResponse =
     BoundingBoxResponse(

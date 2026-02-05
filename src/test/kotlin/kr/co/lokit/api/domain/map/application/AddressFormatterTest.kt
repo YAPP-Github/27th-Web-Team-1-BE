@@ -29,7 +29,7 @@ class AddressFormatterTest {
     fun `도로명 정보가 없으면 기존 로직을 사용한다`() {
         val addressName = "부산광역시 강서구 녹산산단382로 14번길 214-31"
 
-        val result = AddressFormatter.toRoadHeader(addressName, null)
+        val result = AddressFormatter.toRoadHeader(addressName, "")
 
         assertEquals("녹산산단382로 14번길", result)
     }

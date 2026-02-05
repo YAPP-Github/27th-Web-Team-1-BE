@@ -12,7 +12,7 @@ import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse.Companion.toAlbumThumbnails
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
@@ -84,9 +84,7 @@ class MapQueryService(
     override fun getClusterPhotos(
         clusterId: String,
         userId: Long?,
-        page: Int,
-        size: Int,
-    ): ClusterPhotosPageResponse {
+    ): List<ClusterPhotoResponse> {
         val gridCell = ClusterId.parse(clusterId)
         val bbox = gridCell.toBBox()
 
@@ -97,8 +95,6 @@ class MapQueryService(
                 east = bbox.east,
                 north = bbox.north,
                 userId = userId,
-                page = page,
-                size = size,
             ).toClusterPhotosPageResponse()
     }
 
@@ -138,11 +134,11 @@ class MapQueryService(
         val location = locationFuture.get()
         val formattedLocation = LocationInfoResponse(
             address = AddressFormatter.removeProvinceAndCity(
-                AddressFormatter.toRoadHeader(location.address, location.roadName)
+                AddressFormatter.toRoadHeader(location.address ?: "", location.roadName ?: "")
             ),
             roadName = location.roadName,
             placeName = location.placeName,
-            regionName = AddressFormatter.removeProvinceAndCity(location.regionName),
+            regionName = AddressFormatter.removeProvinceAndCity(location.regionName ?: ""),
         )
 
         val photosResponse = photosFuture.get()
@@ -160,7 +156,7 @@ class MapQueryService(
 
     override fun getLocationInfo(longitude: Double, latitude: Double): LocationInfoResponse {
         val raw = mapClientPort.reverseGeocode(longitude, latitude)
-        val header = AddressFormatter.toRoadHeader(raw.address, raw.roadName)
+        val header = AddressFormatter.toRoadHeader(raw.address ?: "", raw.roadName ?: "")
         val formattedAddress = AddressFormatter.removeProvinceAndCity(header)
         return raw.copy(address = formattedAddress)
     }

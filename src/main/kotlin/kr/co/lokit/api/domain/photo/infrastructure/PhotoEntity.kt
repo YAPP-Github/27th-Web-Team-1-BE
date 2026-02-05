@@ -32,6 +32,8 @@ class PhotoEntity(
     var album: AlbumEntity,
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     var location: Point,
+    @Column(nullable = false)
+    var address: String,
     @ManyToOne
     @JoinColumn(name = "uploaded_by", nullable = false)
     var uploadedBy: UserEntity,

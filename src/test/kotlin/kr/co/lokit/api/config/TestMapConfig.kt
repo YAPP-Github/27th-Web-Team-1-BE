@@ -1,6 +1,5 @@
 package kr.co.lokit.api.config
 
-import kr.co.lokit.api.common.dto.PageResult
 import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
@@ -40,13 +39,6 @@ class TestMapConfig {
             east: Double,
             north: Double,
             userId: Long?,
-            page: Int,
-            size: Int,
-        ): PageResult<ClusterPhotoProjection> = PageResult(
-            content = emptyList(),
-            page = page,
-            size = size,
-            totalElements = 0,
-        )
+        ): List<ClusterPhotoProjection> = emptyList()
     }
 }

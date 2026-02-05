@@ -2,6 +2,8 @@ package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
+import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
+import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoStoragePort
 import kr.co.lokit.api.domain.photo.domain.PhotoCreatedEvent
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.doNothing
@@ -38,10 +41,16 @@ class PhotoCommandServiceTest {
     lateinit var eventPublisher: ApplicationEventPublisher
 
     @Mock
+    lateinit var mapQueryService: SearchLocationUseCase
+
+    @Mock
     lateinit var mapPhotosCacheService: MapPhotosCacheService
 
     @InjectMocks
     lateinit var photoCommandService: PhotoCommandService
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> anyObject(): T = any<T>() as T
 
     @Test
     fun `사진을 생성할 수 있다`() {
@@ -53,7 +62,10 @@ class PhotoCommandServiceTest {
             location = createLocation(127.0, 37.5)
         )
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
-        `when`(photoRepository.save(photo)).thenReturn(savedPhoto)
+        `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
+            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+        )
+        `when`(photoRepository.save(anyObject())).thenReturn(savedPhoto)
 
         val result = photoCommandService.create(photo)
 
@@ -71,9 +83,6 @@ class PhotoCommandServiceTest {
         verify(photoRepository).deleteById(1L)
         verify(eventPublisher).publishEvent(PhotoDeletedEvent(photoUrl = photo.url))
     }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> anyObject(): T = any<T>() as T
 
     @Test
     fun `사진을 수정할 수 있다`() {

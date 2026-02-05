@@ -1,7 +1,5 @@
 package kr.co.lokit.api.domain.map.application.port
 
-import kr.co.lokit.api.common.dto.PageResult
-
 interface MapQueryPort {
     fun findClustersWithinBBox(
         west: Double,
@@ -28,7 +26,5 @@ interface MapQueryPort {
         east: Double,
         north: Double,
         userId: Long? = null,
-        page: Int,
-        size: Int,
-    ): PageResult<ClusterPhotoProjection>
+    ): List<ClusterPhotoProjection>
 }

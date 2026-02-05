@@ -5,7 +5,7 @@ import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
+import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapMeResponse
@@ -56,9 +56,7 @@ class MapController(
     override fun getClusterPhotos(
         @CurrentUserId userId: Long,
         @PathVariable clusterId: String,
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int,
-    ): ClusterPhotosPageResponse = getMapUseCase.getClusterPhotos(clusterId, userId, page, size)
+    ): List<ClusterPhotoResponse> = getMapUseCase.getClusterPhotos(clusterId, userId)
 
     @GetMapping("albums/{albumId}")
     @PreAuthorize("@permissionService.canAccessAlbum(#userId, #albumId)")

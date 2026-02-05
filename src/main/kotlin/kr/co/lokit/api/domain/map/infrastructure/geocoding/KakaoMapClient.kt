@@ -87,7 +87,8 @@ class KakaoMapClient(
             PlaceResponse(
                 placeName = doc.placeName,
                 address = AddressFormatter.removeProvinceAndCity(doc.addressName),
-                roadAddress = AddressFormatter.removeProvinceAndCity(doc.roadAddressName.takeIf { it.isNotBlank() }),
+                roadAddress = doc.roadAddressName.takeIf { it.isNotBlank() }
+                    ?.let { AddressFormatter.removeProvinceAndCity(it) },
                 longitude = doc.x.toDoubleOrNull() ?: 0.0,
                 latitude = doc.y.toDoubleOrNull() ?: 0.0,
                 category = extractCategory(doc.categoryName),

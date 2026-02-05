@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.map.infrastructure
 
-import kr.co.lokit.api.common.dto.PageResult
 import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
@@ -131,7 +130,7 @@ class ExposedMapQueryAdapter(
     }
 
     private fun buildPhotosQuery(userId: Long?, albumId: Long?): String = buildString {
-        append("SELECT p.id, p.url, p.taken_at, ")
+        append("SELECT p.id, p.url, p.taken_at, p.address")
         append("       ST_X(p.location) as longitude, ST_Y(p.location) as latitude ")
         append("FROM ${PhotoTable.tableName} p ")
         if (userId != null) {
@@ -151,12 +150,9 @@ class ExposedMapQueryAdapter(
         east: Double,
         north: Double,
         userId: Long?,
-        page: Int,
-        size: Int,
-    ): PageResult<ClusterPhotoProjection> = transaction(database) {
+    ): List<ClusterPhotoProjection> = transaction(database) {
         val sql = buildGridCellQuery(userId)
         val countSql = buildGridCellCountQuery(userId)
-        val offset = PageResult.calculateOffset(page, size)
         val conn = TransactionManager.current().connection
 
         // Count query
@@ -180,8 +176,6 @@ class ExposedMapQueryAdapter(
         stmt.set(paramIndex++, east)
         stmt.set(paramIndex++, north)
         if (userId != null) stmt.set(paramIndex++, userId)
-        stmt.set(paramIndex++, size)
-        stmt.set(paramIndex, offset)
 
         val content = mutableListOf<ClusterPhotoProjection>()
         stmt.executeQuery().use { rs ->
@@ -193,17 +187,12 @@ class ExposedMapQueryAdapter(
                         longitude = rs.getDouble("longitude"),
                         latitude = rs.getDouble("latitude"),
                         takenAt = rs.getTimestamp("taken_at").toLocalDateTime(),
+                        address = rs.getString("address"),
                     )
                 )
             }
         }
-
-        PageResult(
-            content = content,
-            page = page,
-            size = size,
-            totalElements = totalElements.toLong(),
-        )
+        content
     }
 
     private fun buildGridCellQuery(userId: Long?): String = buildString {
