@@ -110,8 +110,8 @@ jobs:
                         SSM_PREFIX="/lokit/dev"
 
                         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-                        docker stop $(docker ps -qa) 2>/dev/null || true
-                        docker rm -f $(docker ps -qa) 2>/dev/null || true
+                        docker stop $CONTAINER_NAME 2>/dev/null || true
+                        docker rm -f $CONTAINER_NAME 2>/dev/null || true
 
                         for i in {1..10}; do
                             if ! netstat -tuln 2>/dev/null | grep -q ':8080 ' && ! ss -tuln 2>/dev/null | grep -q ':8080 '; then
@@ -150,9 +150,9 @@ jobs:
                             --log-opt awslogs-group=/docker/lokit-api-dev \
                             --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
                             --log-opt awslogs-create-group=true \
-                            --memory="700m" \
-                            --memory-swap="1400m" \
-                            --cpus="1.5" \
+                            --memory="550m" \
+                            --memory-swap="1100m" \
+                            --cpus="1" \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
 
                         docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"

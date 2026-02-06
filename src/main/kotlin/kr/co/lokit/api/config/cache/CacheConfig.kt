@@ -94,7 +94,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
-                        .maximumSize(1_000)
+                        .maximumSize(300)
                         .build(),
                 ),
                 CaffeineCache(

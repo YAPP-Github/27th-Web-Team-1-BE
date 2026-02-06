@@ -20,9 +20,9 @@ EXPOSE 8080
 
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:+UseG1GC \
-    -Xms256m \
-    -Xmx400m \
-    -XX:MaxMetaspaceSize=150m \
+    -Xms128m \
+    -Xmx300m \
+    -XX:MaxMetaspaceSize=100m \
     -XX:MaxGCPauseMillis=200 \
     -XX:+UseStringDeduplication \
     -XX:+ExitOnOutOfMemoryError \
