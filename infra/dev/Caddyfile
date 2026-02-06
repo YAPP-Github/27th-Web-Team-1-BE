@@ -1,33 +1,28 @@
 domain {
-    tls email
     encode zstd gzip
 
-    @allowed {
-                 path /api/actuator/health*
-                 path /api/swagger*
-                 path /api/docs*
-                 path /api/admin/*
-             }
+    @allowed_origins {
+        header Origin ^(http://localhost:3000|https://localhost:3000|https://develop\.lokit\.co\.kr|https://develop-api\.lokit\.co\.kr|https://local\.lokit\.co\.kr:3000|https://kauth\.kakao\.com|https://kapi\.kakao\.com)$
+    }
 
-    reverse_proxy @allowed localhost:8080 {
-                                              header_up Host {host}
-                                              header_up X-Real-IP {remote}
-                                          }
+    @cors_preflight {
+        method OPTIONS
+        path /api/*
+    }
 
-    @actuator_blocked {
-                          path /api/actuator*
-                      }
-    respond @actuator_blocked 404
+    handle @cors_preflight {
+        header Access-Control-Allow-Origin "{http.request.header.Origin}"
+        header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        header Access-Control-Allow-Headers "{http.request.header.Access-Control-Request-Headers}"
+        header Access-Control-Allow-Credentials "true"
+        header Access-Control-Max-Age "86400"
+        respond 204
+    }
 
-    reverse_proxy /api localhost:8080 {
-                                          header_up Host {host}
-                                          header_up X-Real-IP {remote}
+    header @allowed_origins {
+        Access-Control-Allow-Origin "{http.request.header.Origin}"
+        Access-Control-Allow-Credentials "true"
+    }
 
-                                          health_uri /api/actuator/health
-                                          health_interval 1m
-
-                                          transport http {
-                                                             read_timeout 60s
-                                                         }
-                                      }
+    reverse_proxy /api/* localhost:8080
 }
