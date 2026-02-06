@@ -38,7 +38,7 @@ class MapController(
         @RequestParam bbox: String,
         @RequestParam(required = false) albumId: Long?,
     ): MapMeResponse {
-        return getMapUseCase.getMe(userId, longitude, latitude, zoom, BBox.fromStringCenter(bbox), albumId)
+        return getMapUseCase.getMe(userId, longitude, latitude, zoom, BBox.fromStringCenter(bbox, zoom), albumId)
     }
 
     // 삭제 예정
@@ -49,7 +49,7 @@ class MapController(
         @RequestParam bbox: String,
         @RequestParam(required = false) albumId: Long?,
     ): MapPhotosResponse {
-        return getMapUseCase.getPhotos(zoom, BBox.fromStringCenter(bbox), userId, albumId)
+        return getMapUseCase.getPhotos(zoom, BBox.fromStringCenter(bbox, zoom), userId, albumId)
     }
 
     @GetMapping("clusters/{clusterId}/photos")
