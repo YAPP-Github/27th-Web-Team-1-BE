@@ -1,5 +1,5 @@
-develop-api.lokit.co.kr {
-    tls lokit1220@gmail.com
+domain {
+    tls email
     encode zstd gzip
 
     @allowed {
