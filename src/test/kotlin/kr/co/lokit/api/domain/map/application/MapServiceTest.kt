@@ -56,7 +56,6 @@ class MapServiceTest {
                 albumRepository,
                 coupleRepository,
                 mapClientPort,
-                transactionTemplate,
                 mapPhotosCacheService,
             )
     }

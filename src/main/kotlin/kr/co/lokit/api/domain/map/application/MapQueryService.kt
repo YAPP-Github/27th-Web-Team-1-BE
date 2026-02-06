@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
+import kr.co.lokit.api.common.concurrency.withPermit
 import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -26,7 +27,7 @@ import kr.co.lokit.api.domain.map.mapping.toClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.support.TransactionTemplate
+import java.util.concurrent.Semaphore
 
 @Service
 class MapQueryService(
@@ -35,10 +36,11 @@ class MapQueryService(
     private val albumRepository: AlbumRepositoryPort,
     private val coupleRepository: CoupleRepositoryPort,
     private val mapClientPort: MapClientPort,
-    private val transactionTemplate: TransactionTemplate,
     private val mapPhotosCacheService: MapPhotosCacheService,
 ) : GetMapUseCase,
     SearchLocationUseCase {
+    private val dbSemaphore = Semaphore(6)
+
     override fun home(
         userId: Long,
         longitude: Double,
@@ -52,7 +54,7 @@ class MapQueryService(
                 Pair(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
-                        transactionTemplate.execute {
+                        dbSemaphore.withPermit {
                             if (coupleId != null) {
                                 albumRepository
                                     .findAllByCoupleId(coupleId)
@@ -60,7 +62,7 @@ class MapQueryService(
                             } else {
                                 emptyList()
                             }
-                        }!!
+                        }
                     },
                 )
             }
@@ -145,7 +147,7 @@ class MapQueryService(
                 Triple(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
-                        transactionTemplate.execute {
+                        dbSemaphore.withPermit {
                             if (coupleId != null) {
                                 albumRepository
                                     .findAllByCoupleId(coupleId)
@@ -153,13 +155,13 @@ class MapQueryService(
                             } else {
                                 emptyList()
                             }
-                        }!!
+                        }
                     },
                     scope.fork {
                         if (versionUnchanged) {
                             null
                         } else {
-                            transactionTemplate.execute {
+                            dbSemaphore.withPermit {
                                 getPhotos(zoom, homeBBox, userId, albumId)
                             }
                         }

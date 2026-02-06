@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.map.infrastructure
 
+import kr.co.lokit.api.common.concurrency.withPermit
 import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
@@ -10,10 +11,15 @@ import kr.co.lokit.api.infrastructure.exposed.toClusterProjections
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.util.concurrent.Semaphore
 
 class ExposedMapQueryAdapter(
     private val database: Database,
 ) : MapQueryPort {
+    private val dbSemaphore = Semaphore(4)
+
     override fun findClustersWithinBBox(
         west: Double,
         south: Double,
@@ -23,99 +29,18 @@ class ExposedMapQueryAdapter(
         coupleId: Long?,
         albumId: Long?,
     ): List<ClusterProjection> =
-        transaction(database) {
-            val margin = gridSize * 0.5
-            val photos =
-                queryClusterPhotos(
-                    west - margin,
-                    south - margin,
-                    east + margin,
-                    north + margin,
-                    gridSize,
-                    coupleId,
-                    albumId,
-                )
-            photos.toClusterProjections()
-        }
-
-    private fun queryClusterPhotos(
-        west: Double,
-        south: Double,
-        east: Double,
-        north: Double,
-        gridSize: Double,
-        coupleId: Long?,
-        albumId: Long?,
-    ): List<UniquePhotoRecord> {
-        val sql = buildClusterQuery(coupleId, albumId)
-        val conn = TransactionManager.current().connection
-        val stmt = conn.prepareStatement(sql, true)
-
-        var i = 1
-        stmt.set(i++, gridSize) // ST_SnapToGrid용
-        stmt.set(i++, west)
-        stmt.set(i++, south)
-        stmt.set(i++, east)
-        stmt.set(i++, north)
-        if (coupleId != null) stmt.set(i++, coupleId)
-        if (albumId != null) stmt.set(i++, albumId)
-
-        val results = mutableListOf<UniquePhotoRecord>()
-        stmt.executeQuery().use { rs ->
-            while (rs.next()) {
-                results.add(
-                    UniquePhotoRecord(
-                        id = rs.getLong("id"),
-                        url = rs.getString("url"),
-                        longitude = rs.getDouble("longitude"),
-                        latitude = rs.getDouble("latitude"),
-                        cellX = rs.getLong("cell_x"), // 스냅된 좌표의 해시값 등으로 대체 가능
-                        cellY = rs.getLong("cell_y"),
-                        takenAt = rs.getTimestamp("taken_at").toLocalDateTime(),
-                        count = rs.getInt("photo_count"),
-                    ),
-                )
+        dbSemaphore.withPermit {
+            transaction(database) {
+                val margin = gridSize * 0.5
+                executeQuery(MapSqlTemplates.clusterQuery(coupleId, albumId), {
+                    setDouble(1, west - margin)
+                    setDouble(2, south - margin)
+                    setDouble(3, east + margin)
+                    setDouble(4, north + margin)
+                    for (idx in 5..10) setDouble(idx, gridSize) // repeat 6 times
+                    bindCommonParams(11, coupleId, albumId)
+                }) { it.toUniquePhotoRecord() }.toClusterProjections()
             }
-        }
-        return results
-    }
-
-    private fun buildClusterQuery(
-        coupleId: Long?,
-        albumId: Long?,
-    ): String =
-        buildString {
-            append(
-                """
-                WITH projected_photos AS (
-                    SELECT
-                        p.id, p.url, p.taken_at,
-                        ST_X(p.location) AS longitude,
-                        ST_Y(p.location) AS latitude,
-                        ST_Transform(p.location, 3857) as geom_3857
-                    FROM ${PhotoTable.tableName} p
-                    WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) AND p.is_deleted = false
-                """.trimIndent(),
-            )
-
-            if (coupleId != null) append(" AND p.couple_id = ? ")
-            if (albumId != null) append(" AND p.album_id = ? ")
-
-            append(
-                """
-                ),
-                ranked AS (
-                    SELECT *,
-                        FLOOR(ST_X(geom_3857) / ?) AS cell_x,
-                        FLOOR(ST_Y(geom_3857) / ?) AS cell_y,
-                        COUNT(*) OVER (PARTITION BY FLOOR(ST_X(geom_3857) / ?), FLOOR(ST_Y(geom_3857) / ?)) AS photo_count,
-                        ROW_NUMBER() OVER (PARTITION BY FLOOR(ST_X(geom_3857) / ?), FLOOR(ST_Y(geom_3857) / ?) ORDER BY taken_at DESC) AS rn
-                    FROM projected_photos
-                )
-                SELECT id, url, longitude, latitude, cell_x, cell_y, taken_at, photo_count
-                FROM ranked WHERE rn = 1
-                """.trimIndent(),
-            )
         }
 
     override fun findPhotosWithinBBox(
@@ -126,67 +51,16 @@ class ExposedMapQueryAdapter(
         coupleId: Long?,
         albumId: Long?,
     ): List<PhotoProjection> =
-        transaction(database) {
-            val sql = buildPhotosQuery(coupleId, albumId)
-            val conn = TransactionManager.current().connection
-            val stmt = conn.prepareStatement(sql, true)
-
-            var i = 1
-            stmt.set(i++, west)
-            stmt.set(i++, south)
-            stmt.set(i++, east)
-            stmt.set(i++, north)
-            if (coupleId != null) stmt.set(i++, coupleId)
-            if (albumId != null) stmt.set(i++, albumId)
-
-            val results = mutableListOf<PhotoProjection>()
-            stmt.executeQuery().use { rs ->
-                while (rs.next()) {
-                    results.add(
-                        PhotoProjection(
-                            id = rs.getLong("id"),
-                            url = rs.getString("url"),
-                            longitude = rs.getDouble("longitude"),
-                            latitude = rs.getDouble("latitude"),
-                            takenAt = rs.getTimestamp("taken_at").toLocalDateTime(),
-                        ),
-                    )
-                }
+        dbSemaphore.withPermit {
+            transaction(database) {
+                executeQuery(MapSqlTemplates.photosQuery(coupleId, albumId), {
+                    setDouble(1, west)
+                    setDouble(2, south)
+                    setDouble(3, east)
+                    setDouble(4, north)
+                    bindCommonParams(5, coupleId, albumId)
+                }) { it.toPhotoProjection() }
             }
-            results
-        }
-
-    private fun buildPhotosQuery(
-        coupleId: Long?,
-        albumId: Long?,
-    ): String =
-        buildString {
-            append(
-                """
-
-                SELECT
-                    p.id,
-                    p.url,
-                    p.taken_at,
-                    p.address,
-                    ST_X(p.location) AS longitude,
-                    ST_Y(p.location) AS latitude
-                FROM ${PhotoTable.tableName} p
-                WHERE
-                    p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
-                    AND p.is_deleted = false
-                """.trimIndent(),
-            )
-
-            if (coupleId != null) {
-                append(" AND p.couple_id = ? ")
-            }
-
-            if (albumId != null) {
-                append(" AND p.album_id = ? ")
-            }
-
-            append(" ORDER BY p.taken_at DESC ")
         }
 
     override fun findPhotosInGridCell(
@@ -196,59 +70,120 @@ class ExposedMapQueryAdapter(
         north: Double,
         coupleId: Long?,
     ): List<ClusterPhotoProjection> =
-        transaction(database) {
-            val sql = buildGridCellQuery(coupleId)
-            val conn = TransactionManager.current().connection
-            val stmt = conn.prepareStatement(sql, true)
+        dbSemaphore.withPermit {
+            transaction(database) {
+                executeQuery(MapSqlTemplates.gridCellQuery(coupleId), {
+                    setDouble(1, west)
+                    setDouble(2, south)
+                    setDouble(3, east)
+                    setDouble(4, north)
+                    coupleId?.let { setLong(5, it) }
+                }) { it.toClusterPhotoProjection() }
+            }
+        }
 
-            var i = 1
-            stmt.set(i++, west)
-            stmt.set(i++, south)
-            stmt.set(i++, east)
-            stmt.set(i++, north)
-            if (coupleId != null) stmt.set(i++, coupleId)
+    private fun <T> executeQuery(
+        sql: String,
+        setup: PreparedStatement.() -> Unit,
+        mapper: (ResultSet) -> T,
+    ): List<T> {
+        val conn = TransactionManager.current().connection.connection as java.sql.Connection
 
-            val results = mutableListOf<ClusterPhotoProjection>()
+        return conn.prepareStatement(sql).use { stmt ->
+            stmt.setup()
             stmt.executeQuery().use { rs ->
+                val results = mutableListOf<T>()
                 while (rs.next()) {
-                    results.add(
-                        ClusterPhotoProjection(
-                            id = rs.getLong("id"),
-                            url = rs.getString("url"),
-                            longitude = rs.getDouble("longitude"),
-                            latitude = rs.getDouble("latitude"),
-                            takenAt = rs.getTimestamp("taken_at").toLocalDateTime(),
-                            address = rs.getString("address"),
-                        ),
-                    )
+                    results.add(mapper(rs))
                 }
+                results
             }
-            results
         }
+    }
 
-    private fun buildGridCellQuery(coupleId: Long?): String =
-        buildString {
-            append(
-                """
+    private fun PreparedStatement.bindCommonParams(
+        startIndex: Int,
+        coupleId: Long?,
+        albumId: Long?,
+    ) {
+        var idx = startIndex
+        coupleId?.let { setLong(idx++, it) }
+        albumId?.let { setLong(idx++, it) }
+    }
 
-                SELECT
-                    p.id,
-                    p.url,
-                    p.taken_at,
-                    p.address,
-                    ST_X(p.location) AS longitude,
-                    ST_Y(p.location) AS latitude
-                FROM ${PhotoTable.tableName} p
-                WHERE
-                    p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
-                    AND p.is_deleted = false
-                """.trimIndent(),
-            )
+    private fun ResultSet.toUniquePhotoRecord() =
+        UniquePhotoRecord(
+            id = getLong("id"),
+            url = getString("url"),
+            longitude = getDouble("longitude"),
+            latitude = getDouble("latitude"),
+            cellX = getLong("cell_x"),
+            cellY = getLong("cell_y"),
+            takenAt = getTimestamp("taken_at").toLocalDateTime(),
+            count = getInt("photo_count"),
+        )
 
-            if (coupleId != null) {
-                append(" AND p.couple_id = ? ")
-            }
+    private fun ResultSet.toPhotoProjection() =
+        PhotoProjection(
+            id = getLong("id"),
+            url = getString("url"),
+            longitude = getDouble("longitude"),
+            latitude = getDouble("latitude"),
+            takenAt = getTimestamp("taken_at").toLocalDateTime(),
+        )
 
-            append(" ORDER BY p.taken_at DESC ")
-        }
+    private fun ResultSet.toClusterPhotoProjection() =
+        ClusterPhotoProjection(
+            id = getLong("id"),
+            url = getString("url"),
+            longitude = getDouble("longitude"),
+            latitude = getDouble("latitude"),
+            takenAt = getTimestamp("taken_at").toLocalDateTime(),
+            address = getString("address"),
+        )
+}
+
+private object MapSqlTemplates {
+    fun clusterQuery(
+        coupleId: Long?,
+        albumId: Long?,
+    ) = """
+        WITH projected_photos AS (
+            SELECT p.id, p.url, p.taken_at, ST_X(p.location) AS longitude, ST_Y(p.location) AS latitude,
+                    ST_Transform(p.location, 3857) as geom_3857
+            FROM ${PhotoTable.tableName} p
+            WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) AND p.is_deleted = false
+            ${if (coupleId != null) "AND p.couple_id = ?" else ""}
+            ${if (albumId != null) "AND p.album_id = ?" else ""}
+        ),
+        ranked AS (
+            SELECT *,
+                FLOOR(ST_X(geom_3857) / ?) AS cell_x, FLOOR(ST_Y(geom_3857) / ?) AS cell_y,
+                COUNT(*) OVER (PARTITION BY FLOOR(ST_X(geom_3857) / ?), FLOOR(ST_Y(geom_3857) / ?)) AS photo_count,
+                ROW_NUMBER() OVER (PARTITION BY FLOOR(ST_X(geom_3857) / ?), FLOOR(ST_Y(geom_3857) / ?) ORDER BY taken_at DESC) AS rn
+            FROM projected_photos
+        )
+        SELECT * FROM ranked WHERE rn = 1
+        """.trimIndent()
+
+    fun photosQuery(
+        coupleId: Long?,
+        albumId: Long?,
+    ) = """
+        SELECT p.id, p.url, p.taken_at, p.address, ST_X(p.location) AS longitude, ST_Y(p.location) AS latitude
+        FROM ${PhotoTable.tableName} p
+        WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) AND p.is_deleted = false
+        ${if (coupleId != null) "AND p.couple_id = ?" else ""}
+        ${if (albumId != null) "AND p.album_id = ?" else ""}
+        ORDER BY p.taken_at DESC
+        """.trimIndent()
+
+    fun gridCellQuery(coupleId: Long?) =
+        """
+        SELECT p.id, p.url, p.taken_at, p.address, ST_X(p.location) AS longitude, ST_Y(p.location) AS latitude
+        FROM ${PhotoTable.tableName} p
+        WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) AND p.is_deleted = false
+        ${if (coupleId != null) "AND p.couple_id = ?" else ""}
+        ORDER BY p.taken_at DESC
+        """.trimIndent()
 }
