@@ -94,12 +94,6 @@ interface MapApi {
             required = false,
         )
         @RequestParam lastDataVersion: Long?,
-        @Parameter(
-            description = "프론트에서 이미 로드한 클러스터 ID 목록 (선택). 해당 셀은 응답에서 제외하여 전송량 최적화",
-            example = "z12_8192_2400,z12_8193_2400",
-            required = false,
-        )
-        @RequestParam loadedCells: List<String>?,
     ): MapMeResponse
 
     @Operation(

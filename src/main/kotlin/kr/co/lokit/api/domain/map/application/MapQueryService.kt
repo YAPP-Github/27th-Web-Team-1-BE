@@ -78,7 +78,6 @@ class MapQueryService(
         bbox: BBox,
         userId: Long?,
         albumId: Long?,
-        loadedCells: Set<String>?,
     ): MapPhotosResponse {
         val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
 
@@ -90,7 +89,7 @@ class MapQueryService(
                 albumId
             }
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
-            mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId, loadedCells)
+            mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId)
         } else {
             val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, coupleId, effectiveAlbumId)
             mapPhotosCacheService.getIndividualPhotos(bbox, coupleId, effectiveAlbumId, cacheKey)
@@ -130,7 +129,6 @@ class MapQueryService(
         bbox: BBox,
         albumId: Long?,
         lastDataVersion: Long?,
-        loadedCells: Set<String>?,
     ): MapMeResponse {
         val homeBBox = BBox.fromCenter(zoom, longitude, latitude)
         val coupleId = coupleRepository.findByUserId(userId)?.id
@@ -157,7 +155,7 @@ class MapQueryService(
                             null
                         } else {
                             transactionTemplate.execute {
-                                getPhotos(zoom, homeBBox, userId, albumId, loadedCells)
+                                getPhotos(zoom, homeBBox, userId, albumId)
                             }
                         }
                     },

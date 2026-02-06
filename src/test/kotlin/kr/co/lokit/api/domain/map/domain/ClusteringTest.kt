@@ -80,10 +80,12 @@ class ClusteringTest {
         assertTrue(bbox.south <= latitude)
         assertTrue(bbox.north >= latitude)
 
-        // 그리드 정렬되어야 한다
+        // 그리드 정렬되어야 한다 (부동소수점 오차로 나머지가 0 또는 gridSize 근처일 수 있음)
         val gridSize = GridValues.getGridSize(zoom)
-        assertEquals(0.0, bbox.west % gridSize, 1e-10)
-        assertEquals(0.0, bbox.south % gridSize, 1e-10)
+        val westRemainder = bbox.west % gridSize
+        assertTrue(westRemainder < 1e-6 || (gridSize - westRemainder) < 1e-6, "west should be grid-aligned")
+        val southRemainder = bbox.south % gridSize
+        assertTrue(southRemainder < 1e-6 || (gridSize - southRemainder) < 1e-6, "south should be grid-aligned")
 
         // 모바일 세로 화면: 가로가 세로보다 좁아야 한다
         val width = bbox.east - bbox.west

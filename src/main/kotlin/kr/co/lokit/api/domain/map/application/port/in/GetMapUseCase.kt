@@ -9,7 +9,7 @@ import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 
 interface GetMapUseCase {
     fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse
-    fun getPhotos(zoom: Int, bbox: BBox, userId: Long? = null, albumId: Long? = null, loadedCells: Set<String>? = null): MapPhotosResponse
+    fun getPhotos(zoom: Int, bbox: BBox, userId: Long? = null, albumId: Long? = null): MapPhotosResponse
     fun getMe(
         userId: Long,
         longitude: Double,
@@ -18,7 +18,6 @@ interface GetMapUseCase {
         bbox: BBox,
         albumId: Long? = null,
         lastDataVersion: Long? = null,
-        loadedCells: Set<String>? = null,
     ): MapMeResponse
 
     fun getClusterPhotos(clusterId: String, userId: Long?): List<ClusterPhotoResponse>

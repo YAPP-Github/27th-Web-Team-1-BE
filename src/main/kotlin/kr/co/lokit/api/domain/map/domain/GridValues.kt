@@ -7,8 +7,8 @@ object GridValues {
     const val CLUSTER_ZOOM_THRESHOLD = 15
 
     fun getGridSize(zoom: Int): Double {
-        val effectiveZoom = (zoom).coerceIn(0, 22)
-        return 1.0 / 2.0.pow(effectiveZoom - 6.0)
+        val effectiveZoom = zoom.coerceIn(0, 22)
+        return 1.0 / 2.0.pow((effectiveZoom - 7.0) * 0.7)
     }
 
     fun getSupportedZoomLevels(): Set<Int> = (0..22).toSet()

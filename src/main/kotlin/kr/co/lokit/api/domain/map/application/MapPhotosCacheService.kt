@@ -2,7 +2,6 @@ package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
-import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
@@ -52,7 +51,6 @@ class MapPhotosCacheService(
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
-        loadedCells: Set<String>? = null,
     ): MapPhotosResponse {
         val gridSize = GridValues.getGridSize(zoom)
         val inverseGridSize = 1.0 / gridSize
@@ -74,9 +72,6 @@ class MapPhotosCacheService(
 
         for (cx in cellXMin..cellXMax) {
             for (cy in cellYMin..cellYMax) {
-                val clusterId = ClusterId.format(zoom, cx, cy)
-                if (loadedCells != null && clusterId in loadedCells) continue
-
                 val key = buildCellKey(zoom, cx, cy, coupleId, albumId)
                 val cached = cache.nativeCache.getIfPresent(key) as? CachedCell
                 if (cached != null) {
@@ -126,7 +121,9 @@ class MapPhotosCacheService(
     @Cacheable(
         cacheNames = ["mapPhotos"],
         key = "#cacheKey",
-        unless = "(#result.clusters == null || #result.clusters.isEmpty()) && (#result.photos == null || #result.photos.isEmpty())",
+        unless =
+            "(#result.clusters == null || #result.clusters.isEmpty())" +
+                " && (#result.photos == null || #result.photos.isEmpty())",
     )
     fun getIndividualPhotos(
         bbox: BBox,
