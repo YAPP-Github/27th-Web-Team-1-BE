@@ -19,10 +19,13 @@ USER spring
 EXPOSE 8080
 
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
-    -XX:MaxRAMPercentage=75.0 \
-    -XX:InitialRAMPercentage=50.0 \
+    -XX:+UseG1GC \
+    -Xms256m \
+    -Xmx400m \
+    -XX:MaxMetaspaceSize=150m \
     -XX:MaxGCPauseMillis=200 \
     -XX:+UseStringDeduplication \
+    -XX:+ExitOnOutOfMemoryError \
     -Dfile.encoding=UTF-8"
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

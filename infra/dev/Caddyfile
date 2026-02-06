@@ -1,18 +1,33 @@
-domain {
-    tls email
+develop-api.lokit.co.kr {
+    tls lokit1220@gmail.com
     encode zstd gzip
+
+    @allowed {
+                 path /api/actuator/health*
+                 path /api/swagger*
+                 path /api/docs*
+                 path /api/admin/*
+             }
+
+    reverse_proxy @allowed localhost:8080 {
+                                              header_up Host {host}
+                                              header_up X-Real-IP {remote}
+                                          }
 
     @actuator_blocked {
                           path /api/actuator*
-                          not path /api/actuator/health* /api/admin/* /api/swagger* /api/docs*
                       }
     respond @actuator_blocked 404
 
-    reverse_proxy /api/* localhost:8080 {
-                                            header_up Host {host}
-                                            header_up X-Real-IP {remote}
+    reverse_proxy /api localhost:8080 {
+                                          header_up Host {host}
+                                          header_up X-Real-IP {remote}
 
-                                            health_uri /api/actuator/health
-                                            health_interval 1m
-                                        }
+                                          health_uri /api/actuator/health
+                                          health_interval 1m
+
+                                          transport http {
+                                                             read_timeout 60s
+                                                         }
+                                      }
 }
