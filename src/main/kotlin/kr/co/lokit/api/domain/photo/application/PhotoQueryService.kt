@@ -39,6 +39,8 @@ class PhotoQueryService(
             uploaderName = photoDetail.uploaderName,
             address = AddressFormatter.removeProvinceAndCity(locationInfo.address),
             description = photoDetail.description,
+            longitude = photoDetail.location.longitude,
+            latitude = photoDetail.location.latitude,
         )
     }
 }

@@ -104,6 +104,8 @@ class PhotoControllerTest {
             uploaderName = "테스트",
             address = "서울 강남구",
             description = "테스트",
+            longitude = 127.0276,
+            latitude = 37.4979,
         )
         doReturn(response).`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong())
 

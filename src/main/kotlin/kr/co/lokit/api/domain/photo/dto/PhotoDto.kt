@@ -119,4 +119,8 @@ data class PhotoDetailResponse(
     val address: String?,
     @Schema(description = "사진 설명", example = "가족 여행 사진")
     val description: String?,
+    @Schema(description = "경도", example = "127.0276")
+    val longitude: Double,
+    @Schema(description = "위도", example = "37.4979")
+    val latitude: Double,
 )
