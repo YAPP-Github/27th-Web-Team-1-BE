@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.map.presentation
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -172,7 +173,7 @@ interface MapApi {
             ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = [Content(schema = Schema(implementation = ClusterPhotoResponse::class))],
+                content = [Content(array = ArraySchema(schema = Schema(implementation = ClusterPhotoResponse::class)))],
             ),
             ApiResponse(
                 responseCode = "400",
