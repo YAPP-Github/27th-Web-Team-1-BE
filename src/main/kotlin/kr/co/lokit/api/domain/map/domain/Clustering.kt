@@ -97,7 +97,7 @@ data class GridCell(
     val cellY: Long,
 ) {
     fun toBBox(): BBox {
-        val gridSize = GridValues.getGridSize(zoom - 1)
+        val gridSize = GridValues.getGridSize(zoom)
         val west = cellX * gridSize
         val south = cellY * gridSize
         return BBox(

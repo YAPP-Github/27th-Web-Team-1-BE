@@ -130,7 +130,7 @@ class MapQueryService(
         albumId: Long?,
         lastDataVersion: Long?,
     ): MapMeResponse {
-        val homeBBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+        val homeBBox = BBox.fromCenter(zoom, longitude, latitude)
         val coupleId = coupleRepository.findByUserId(userId)?.id
         val currentVersion = mapPhotosCacheService.getDataVersion(coupleId)
         val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion

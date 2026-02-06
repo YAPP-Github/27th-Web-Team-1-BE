@@ -52,7 +52,7 @@ class MapPhotosCacheService(
         coupleId: Long?,
         albumId: Long?,
     ): MapPhotosResponse {
-        val gridSize = GridValues.getGridSize(zoom - 1)
+        val gridSize = GridValues.getGridSize(zoom)
         val inverseGridSize = 1.0 / gridSize
         val cache = cacheManager.getCache("mapCells") as? CaffeineCache
 
