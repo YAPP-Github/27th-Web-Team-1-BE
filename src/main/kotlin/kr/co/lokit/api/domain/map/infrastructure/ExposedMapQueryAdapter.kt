@@ -7,6 +7,7 @@ import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.application.port.UniquePhotoRecord
 import kr.co.lokit.api.infrastructure.exposed.schema.PhotoTable
 import kr.co.lokit.api.infrastructure.exposed.toClusterProjections
+
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -24,33 +25,43 @@ class ExposedMapQueryAdapter(
         userId: Long?,
         albumId: Long?,
     ): List<ClusterProjection> = transaction(database) {
-        val uniquePhotos = queryUniquePhotosWithDistinctOn(west, south, east, north, gridSize, userId, albumId)
-        uniquePhotos.toClusterProjections()
+        val inverseGridSize = 1.0 / gridSize
+
+        val photos = queryClusterPhotos(
+            west = west,
+            south = south,
+            east = east,
+            north = north,
+            inverseGridSize = inverseGridSize,
+            userId = userId,
+            albumId = albumId,
+        )
+
+        photos.toClusterProjections()
     }
 
-    private fun queryUniquePhotosWithDistinctOn(
+    private fun queryClusterPhotos(
         west: Double,
         south: Double,
         east: Double,
         north: Double,
-        gridSize: Double,
+        inverseGridSize: Double,
         userId: Long?,
         albumId: Long?,
     ): List<UniquePhotoRecord> {
-        val sql = buildDistinctOnQuery(userId, albumId)
-
+        val sql = buildClusterQuery(userId, albumId)
         val conn = TransactionManager.current().connection
         val stmt = conn.prepareStatement(sql, false)
 
-        var paramIndex = 1
-        stmt.set(paramIndex++, gridSize)
-        stmt.set(paramIndex++, gridSize)
-        stmt.set(paramIndex++, west)
-        stmt.set(paramIndex++, south)
-        stmt.set(paramIndex++, east)
-        stmt.set(paramIndex++, north)
-        if (userId != null) stmt.set(paramIndex++, userId)
-        if (albumId != null) stmt.set(paramIndex++, albumId)
+        var i = 1
+        stmt.set(i++, inverseGridSize)
+        stmt.set(i++, inverseGridSize)
+        stmt.set(i++, west)
+        stmt.set(i++, south)
+        stmt.set(i++, east)
+        stmt.set(i++, north)
+        if (userId != null) stmt.set(i++, userId)
+        if (albumId != null) stmt.set(i++, albumId)
 
         val results = mutableListOf<UniquePhotoRecord>()
         stmt.executeQuery().use { rs ->
@@ -71,25 +82,48 @@ class ExposedMapQueryAdapter(
         return results
     }
 
-    private fun buildDistinctOnQuery(userId: Long?, albumId: Long?): String = buildString {
-        append("SELECT id, url, longitude, latitude, cell_x, cell_y, taken_at FROM ( ")
-        append("  SELECT p.id, p.url, p.location, p.taken_at, ")
-        append("         ST_X(p.location) as longitude, ST_Y(p.location) as latitude, ")
-        append("         FLOOR(ST_X(p.location) / ?) as cell_x, ")
-        append("         FLOOR(ST_Y(p.location) / ?) as cell_y, ")
-        append("         ROW_NUMBER() OVER (PARTITION BY p.url ORDER BY p.taken_at DESC) as rn ")
-        append("  FROM ${PhotoTable.tableName} p ")
+    private fun buildClusterQuery(userId: Long?, albumId: Long?): String = buildString {
+        append(
+            """
+            SELECT
+                MAX(p.id) AS id,
+                p.url,
+                ST_X(p.location) AS longitude,
+                ST_Y(p.location) AS latitude,
+                FLOOR(ST_X(p.location) * ?) AS cell_x,
+                FLOOR(ST_Y(p.location) * ?) AS cell_y,
+                MAX(p.taken_at) AS taken_at
+            FROM ${PhotoTable.tableName} p
+            WHERE
+                p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
+                AND p.is_deleted = false
+            """.trimIndent()
+        )
+
         if (userId != null) {
-            append("  JOIN album a ON p.album_id = a.id ")
-            append("  JOIN couple_user cu ON a.couple_id = cu.couple_id ")
+            append(
+                """
+                AND EXISTS (
+                    SELECT 1
+                    FROM album a
+                    JOIN couple_user cu ON a.couple_id = cu.couple_id
+                    WHERE a.id = p.album_id
+                        AND cu.user_id = ?
+                )
+                """.trimIndent()
+            )
         }
-        append("  WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) ")
-        append("    AND p.is_deleted = false ")
-        if (userId != null) append("    AND cu.user_id = ? ")
-        if (albumId != null) append("    AND p.album_id = ? ")
-        append(") ranked ")
-        append("WHERE rn = 1 ")
-        append("ORDER BY taken_at DESC")
+
+        if (albumId != null) {
+            append(" AND p.album_id = ? ")
+        }
+
+        append(
+            """
+            GROUP BY
+                cell_x, cell_y, p.url, p.location
+            """.trimIndent()
+        )
     }
 
     override fun findPhotosWithinBBox(
@@ -104,13 +138,13 @@ class ExposedMapQueryAdapter(
         val conn = TransactionManager.current().connection
         val stmt = conn.prepareStatement(sql, false)
 
-        var paramIndex = 1
-        stmt.set(paramIndex++, west)
-        stmt.set(paramIndex++, south)
-        stmt.set(paramIndex++, east)
-        stmt.set(paramIndex++, north)
-        if (userId != null) stmt.set(paramIndex++, userId)
-        if (albumId != null) stmt.set(paramIndex++, albumId)
+        var i = 1
+        stmt.set(i++, west)
+        stmt.set(i++, south)
+        stmt.set(i++, east)
+        stmt.set(i++, north)
+        if (userId != null) stmt.set(i++, userId)
+        if (albumId != null) stmt.set(i++, albumId)
 
         val results = mutableListOf<PhotoProjection>()
         stmt.executeQuery().use { rs ->
@@ -126,22 +160,45 @@ class ExposedMapQueryAdapter(
                 )
             }
         }
-        return@transaction results
+        results
     }
 
     private fun buildPhotosQuery(userId: Long?, albumId: Long?): String = buildString {
-        append("SELECT p.id, p.url, p.taken_at, p.address, ")
-        append("       ST_X(p.location) as longitude, ST_Y(p.location) as latitude ")
-        append("FROM ${PhotoTable.tableName} p ")
+        append(
+            """
+            SELECT
+                p.id,
+                p.url,
+                p.taken_at,
+                p.address,
+                ST_X(p.location) AS longitude,
+                ST_Y(p.location) AS latitude
+            FROM ${PhotoTable.tableName} p
+            WHERE
+                p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
+                AND p.is_deleted = false
+            """.trimIndent()
+        )
+
         if (userId != null) {
-            append("JOIN album a ON p.album_id = a.id ")
-            append("JOIN couple_user cu ON a.couple_id = cu.couple_id ")
+            append(
+                """
+                AND EXISTS (
+                    SELECT 1
+                    FROM album a
+                    JOIN couple_user cu ON a.couple_id = cu.couple_id
+                    WHERE a.id = p.album_id
+                        AND cu.user_id = ?
+                )
+                """.trimIndent()
+            )
         }
-        append("WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) ")
-        append("  AND p.is_deleted = false ")
-        if (userId != null) append("  AND cu.user_id = ? ")
-        if (albumId != null) append("  AND p.album_id = ? ")
-        append("ORDER BY p.taken_at DESC")
+
+        if (albumId != null) {
+            append(" AND p.album_id = ? ")
+        }
+
+        append(" ORDER BY p.taken_at DESC ")
     }
 
     override fun findPhotosInGridCell(
@@ -152,35 +209,20 @@ class ExposedMapQueryAdapter(
         userId: Long?,
     ): List<ClusterPhotoProjection> = transaction(database) {
         val sql = buildGridCellQuery(userId)
-        val countSql = buildGridCellCountQuery(userId)
         val conn = TransactionManager.current().connection
-
-        // Count query
-        val countStmt = conn.prepareStatement(countSql, false)
-        var paramIndex = 1
-        countStmt.set(paramIndex++, west)
-        countStmt.set(paramIndex++, south)
-        countStmt.set(paramIndex++, east)
-        countStmt.set(paramIndex++, north)
-        if (userId != null) countStmt.set(paramIndex++, userId)
-
-        val totalElements = countStmt.executeQuery().use { rs ->
-            if (rs.next()) rs.getInt(1) else 0
-        }
-
-        // Content query
         val stmt = conn.prepareStatement(sql, false)
-        paramIndex = 1
-        stmt.set(paramIndex++, west)
-        stmt.set(paramIndex++, south)
-        stmt.set(paramIndex++, east)
-        stmt.set(paramIndex++, north)
-        if (userId != null) stmt.set(paramIndex++, userId)
 
-        val content = mutableListOf<ClusterPhotoProjection>()
+        var i = 1
+        stmt.set(i++, west)
+        stmt.set(i++, south)
+        stmt.set(i++, east)
+        stmt.set(i++, north)
+        if (userId != null) stmt.set(i++, userId)
+
+        val results = mutableListOf<ClusterPhotoProjection>()
         stmt.executeQuery().use { rs ->
             while (rs.next()) {
-                content.add(
+                results.add(
                     ClusterPhotoProjection(
                         id = rs.getLong("id"),
                         url = rs.getString("url"),
@@ -192,33 +234,40 @@ class ExposedMapQueryAdapter(
                 )
             }
         }
-        content
+        results
     }
 
     private fun buildGridCellQuery(userId: Long?): String = buildString {
-        append("SELECT p.id, p.url, p.taken_at, ")
-        append("       ST_X(p.location) as longitude, ST_Y(p.location) as latitude ")
-        append("FROM ${PhotoTable.tableName} p ")
-        if (userId != null) {
-            append("JOIN album a ON p.album_id = a.id ")
-            append("JOIN couple_user cu ON a.couple_id = cu.couple_id ")
-        }
-        append("WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) ")
-        append("  AND p.is_deleted = false ")
-        if (userId != null) append("  AND cu.user_id = ? ")
-        append("ORDER BY p.taken_at DESC ")
-        append("LIMIT ? OFFSET ?")
-    }
+        append(
+            """
+            SELECT
+                p.id,
+                p.url,
+                p.taken_at,
+                p.address,
+                ST_X(p.location) AS longitude,
+                ST_Y(p.location) AS latitude
+            FROM ${PhotoTable.tableName} p
+            WHERE
+                p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
+                AND p.is_deleted = false
+            """.trimIndent()
+        )
 
-    private fun buildGridCellCountQuery(userId: Long?): String = buildString {
-        append("SELECT COUNT(*) ")
-        append("FROM ${PhotoTable.tableName} p ")
         if (userId != null) {
-            append("JOIN album a ON p.album_id = a.id ")
-            append("JOIN couple_user cu ON a.couple_id = cu.couple_id ")
+            append(
+                """
+                AND EXISTS (
+                    SELECT 1
+                    FROM album a
+                    JOIN couple_user cu ON a.couple_id = cu.couple_id
+                    WHERE a.id = p.album_id
+                        AND cu.user_id = ?
+                )
+                """.trimIndent()
+            )
         }
-        append("WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326) ")
-        append("  AND p.is_deleted = false ")
-        if (userId != null) append("  AND cu.user_id = ? ")
+
+        append(" ORDER BY p.taken_at DESC ")
     }
 }
