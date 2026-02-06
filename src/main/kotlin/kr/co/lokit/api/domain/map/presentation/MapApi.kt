@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapMeResponse

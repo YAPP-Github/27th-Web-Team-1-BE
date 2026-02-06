@@ -25,7 +25,7 @@ data class ClusterResponse(
         example = "127.0276",
         minimum = "124.0",
         maximum = "132.0",
-        required = true
+        required = true,
     )
     var longitude: Double,
     @field:NotNull
@@ -36,7 +36,7 @@ data class ClusterResponse(
         example = "37.4979",
         minimum = "33.0",
         maximum = "39.0",
-        required = true
+        required = true,
     )
     var latitude: Double,
 )
@@ -55,7 +55,7 @@ data class MapPhotoResponse(
         example = "127.0276",
         minimum = "124.0",
         maximum = "132.0",
-        required = true
+        required = true,
     )
     var longitude: Double,
     @field:NotNull
@@ -66,7 +66,7 @@ data class MapPhotoResponse(
         example = "37.4979",
         minimum = "33.0",
         maximum = "39.0",
-        required = true
+        required = true,
     )
     var latitude: Double,
     @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
@@ -95,7 +95,7 @@ data class ClusterPhotoResponse(
         example = "127.0276",
         minimum = "124.0",
         maximum = "132.0",
-        required = true
+        required = true,
     )
     var longitude: Double,
     @field:NotNull
@@ -106,13 +106,13 @@ data class ClusterPhotoResponse(
         example = "37.4979",
         minimum = "33.0",
         maximum = "39.0",
-        required = true
+        required = true,
     )
     var latitude: Double,
     @Schema(description = "촬영일시 (ISO 8601 형식)", example = "2026-01-06T14:30:00")
     val takenAt: LocalDateTime,
     @Schema(description = "주소", example = "역삼동 858")
-    var address: String
+    var address: String,
 )
 
 @Schema(description = "바운딩 박스 응답")
@@ -167,7 +167,7 @@ data class PlaceResponse(
         example = "126.9780",
         minimum = "124.0",
         maximum = "132.0",
-        required = true
+        required = true,
     )
     var longitude: Double,
     @field:NotNull
@@ -178,7 +178,7 @@ data class PlaceResponse(
         example = "37.5665",
         minimum = "33.0",
         maximum = "39.0",
-        required = true
+        required = true,
     )
     var latitude: Double,
     @Schema(description = "카테고리", example = "카페")
@@ -213,31 +213,35 @@ data class HomeResponse(
             val thumbnailUrls: List<String>,
         )
 
-        fun of(location: LocationInfoResponse, albums: List<Album>, bBox: BBox): HomeResponse = HomeResponse(
-            location = location,
-            albums = albums.toAlbumThumbnails(),
-            boundingBox = bBox.toResponse(),
-        )
+        fun of(
+            location: LocationInfoResponse,
+            albums: List<Album>,
+            bBox: BBox,
+        ): HomeResponse =
+            HomeResponse(
+                location = location,
+                albums = albums.toAlbumThumbnails(),
+                boundingBox = bBox.toResponse(),
+            )
 
         fun List<Album>.toAlbumThumbnails(): List<AlbumThumbnails> =
             this.map {
-                val actualPhotoCount = if (it.isDefault) {
-                    it.photos.size
-                } else {
-                    it.photoCount
-                }
+                val actualPhotoCount =
+                    if (it.isDefault) {
+                        it.photos.size
+                    } else {
+                        it.photoCount
+                    }
 
                 AlbumThumbnails(
                     id = it.id,
                     title = it.title,
                     photoCount = actualPhotoCount,
-                    thumbnailUrls = it.thumbnails.map { thumbnail -> thumbnail.url }
+                    thumbnailUrls = it.thumbnails.map { thumbnail -> thumbnail.url },
                 )
             }
     }
 }
-
-typealias ClusterPhotosPageResponse = List<ClusterPhotoResponse>
 
 @Schema(description = "지도 ME 응답 (홈 + 사진 조회 통합)")
 data class MapMeResponse(
