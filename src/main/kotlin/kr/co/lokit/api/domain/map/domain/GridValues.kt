@@ -8,7 +8,7 @@ object GridValues {
 
     fun getGridSize(zoom: Int): Double {
         val effectiveZoom = (zoom).coerceIn(0, 22)
-        return 1.0 / 2.0.pow(effectiveZoom - 9.0)
+        return 1.0 / 2.0.pow(effectiveZoom - 6.0)
     }
 
     fun getSupportedZoomLevels(): Set<Int> = (0..22).toSet()
