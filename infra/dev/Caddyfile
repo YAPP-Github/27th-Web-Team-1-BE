@@ -13,7 +13,7 @@ domain {
     handle @cors_preflight {
         header Access-Control-Allow-Origin "{http.request.header.Origin}"
         header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        header Access-Control-Allow-Headers "{http.request.header.Access-Control-Request-Headers}"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-VERSION, X-Admin-Key, X-Idempotency-Key"
         header Access-Control-Allow-Credentials "true"
         header Access-Control-Max-Age "86400"
         respond 204
@@ -22,6 +22,7 @@ domain {
     header @allowed_origins {
         Access-Control-Allow-Origin "{http.request.header.Origin}"
         Access-Control-Allow-Credentials "true"
+        Vary Origin
     }
 
     reverse_proxy /api/* localhost:8080

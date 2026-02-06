@@ -54,10 +54,6 @@ aws:
         region: ap-northeast-2
         bucket: test-bucket
 
-cors:
-    allowed-origins:
-        - http://localhost:3000
-
 kakao:
     api:
         key: test-key

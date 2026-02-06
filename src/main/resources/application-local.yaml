@@ -65,10 +65,6 @@ aws:
         region: ${AWS_REGION:}
         bucket: ${AWS_S3_BUCKET:}
 
-cors:
-    allowed-origins:
-        - https://localhost:3000
-
 kakao:
     api:
         key: ${KAKAO_API_KEY:}
