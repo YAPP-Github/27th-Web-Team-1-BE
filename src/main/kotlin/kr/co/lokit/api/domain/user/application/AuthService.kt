@@ -19,7 +19,6 @@ import java.time.LocalDateTime
 class AuthService(
     private val userJpaRepository: UserJpaRepository,
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
-
     private val jwtTokenProvider: JwtTokenProvider,
     private val transactionTemplate: TransactionTemplate,
 ) {
@@ -37,7 +36,6 @@ class AuthService(
     }
 
     private fun generateTokensAndSave(user: User): JwtTokenResponse {
-
         val (accessTokenFuture, refreshTokenFuture, userEntityFuture) =
             StructuredConcurrency.run { scope ->
                 Triple(

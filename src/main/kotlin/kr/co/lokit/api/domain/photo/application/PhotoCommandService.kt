@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
+import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
@@ -15,9 +16,9 @@ import kr.co.lokit.api.domain.photo.domain.PhotoCreatedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoDeletedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoLocationUpdatedEvent
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.Caching
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,13 +32,14 @@ class PhotoCommandService(
     private val mapQueryService: SearchLocationUseCase,
     private val eventPublisher: ApplicationEventPublisher,
     private val mapPhotosCacheService: MapPhotosCacheService,
-) : CreatePhotoUseCase, UpdatePhotoUseCase {
-
+    private val cacheManager: CacheManager,
+) : CreatePhotoUseCase,
+    UpdatePhotoUseCase {
     @Cacheable(
-        cacheNames = ["presignedUrlCache"],
+        cacheNames = ["presignedUrl"],
         key = "#idempotencyKey",
         condition = "#idempotencyKey != null",
-        sync = true
+        sync = true,
     )
     override fun generatePresignedUrl(
         idempotencyKey: String?,
@@ -51,17 +53,30 @@ class PhotoCommandService(
 
     @OptimisticRetry
     @Transactional
-    @CacheEvict(cacheNames = ["userAlbums"], key = "#photo.uploadedById")
     override fun create(photo: Photo): Photo {
-        photoStoragePort?.verifyFileExists(photo.url)
-        val locationInfo = mapQueryService.getLocationInfo(photo.location.longitude, photo.location.latitude)
+        val (_, locationFuture, defaultAlbumFuture) =
+            StructuredConcurrency.run { scope ->
+                Triple(
+                    scope.fork { photoStoragePort?.verifyFileExists(photo.url) },
+                    scope.fork { mapQueryService.getLocationInfo(photo.location.longitude, photo.location.latitude) },
+                    scope.fork {
+                        if (!isValidId(photo.albumId)) {
+                            albumRepository.findDefaultByUserId(photo.uploadedById)
+                                ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
+                                    errors = mapOf("uploadedById" to photo.uploadedById.toString()),
+                                )
+                        } else {
+                            null
+                        }
+                    },
+                )
+            }
+
+        val locationInfo = locationFuture.get()
+        val defaultAlbum = defaultAlbumFuture.get()
+
         val effectivePhoto =
-            if (!isValidId(photo.albumId)) {
-                val defaultAlbum =
-                    albumRepository.findDefaultByUserId(photo.uploadedById)
-                        ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
-                            errors = mapOf("uploadedById" to photo.uploadedById.toString()),
-                        )
+            if (defaultAlbum != null) {
                 photo.copy(albumId = defaultAlbum.id, address = locationInfo.address)
             } else {
                 photo.copy(address = locationInfo.address)
@@ -78,19 +93,17 @@ class PhotoCommandService(
                 ),
             )
         }
-        val coupleId = albumRepository.findById(effectivePhoto.albumId!!)?.coupleId
-        if (coupleId != null) mapPhotosCacheService.evictForCouple(coupleId)
+        val coupleId = saved.coupleId
+        if (coupleId != null) {
+            cacheManager.getCache("coupleAlbums")?.evict(coupleId)
+            mapPhotosCacheService.evictForCouple(coupleId)
+        }
         return saved
     }
 
     @OptimisticRetry
     @Transactional
-    @Caching(
-        evict = [
-            CacheEvict(cacheNames = ["photo"], key = "#userId + ':' + #id"),
-            CacheEvict(cacheNames = ["userAlbums"], key = "#userId"),
-        ],
-    )
+    @CacheEvict(cacheNames = ["photo"], key = "#userId + ':' + #id")
     override fun update(
         id: Long,
         albumId: Long,
@@ -100,14 +113,16 @@ class PhotoCommandService(
         userId: Long,
     ): Photo {
         val photo = photoRepository.findById(id)
-        val updated = photo.copy(
-            albumId = albumId,
-            description = description,
-            location = photo.location.copy(
-                longitude = longitude,
-                latitude = latitude,
-            ),
-        )
+        val updated =
+            photo.copy(
+                albumId = albumId,
+                description = description,
+                location =
+                    photo.location.copy(
+                        longitude = longitude,
+                        latitude = latitude,
+                    ),
+            )
         val result = photoRepository.apply(updated)
 
         if (updated.hasLocation()) {
@@ -120,23 +135,27 @@ class PhotoCommandService(
                 ),
             )
         }
-        val coupleId = albumRepository.findById(updated.albumId!!)?.coupleId
-        if (coupleId != null) mapPhotosCacheService.evictForCouple(coupleId)
+        val coupleId = result.coupleId
+        if (coupleId != null) {
+            cacheManager.getCache("coupleAlbums")?.evict(coupleId)
+            mapPhotosCacheService.evictForCouple(coupleId)
+        }
         return result
     }
 
     @Transactional
-    @Caching(
-        evict = [
-            CacheEvict(cacheNames = ["photo"], key = "#userId + ':' + #photoId"),
-            CacheEvict(cacheNames = ["userAlbums"], key = "#userId"),
-        ],
-    )
-    override fun delete(photoId: Long, userId: Long) {
+    @CacheEvict(cacheNames = ["photo"], key = "#userId + ':' + #photoId")
+    override fun delete(
+        photoId: Long,
+        userId: Long,
+    ) {
         val photo = photoRepository.findById(photoId)
         photoRepository.deleteById(photoId)
-        val coupleId = photo.albumId?.let { albumRepository.findById(it)?.coupleId }
-        if (coupleId != null) mapPhotosCacheService.evictForCouple(coupleId)
+        val coupleId = photo.coupleId
+        if (coupleId != null) {
+            cacheManager.getCache("coupleAlbums")?.evict(coupleId)
+            mapPhotosCacheService.evictForCouple(coupleId)
+        }
         eventPublisher.publishEvent(PhotoDeletedEvent(photoUrl = photo.url))
     }
 

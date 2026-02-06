@@ -22,22 +22,22 @@ class CoupleController(
     private val createCoupleUseCase: CreateCoupleUseCase,
     private val joinCoupleUseCase: JoinCoupleUseCase,
 ) : CoupleApi {
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     override fun create(
         @RequestBody @Valid request: CreateCoupleRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
-        createCoupleUseCase.createIfNone(Couple(name = request.name), userId)
+        createCoupleUseCase
+            .createIfNone(Couple(name = request.name), userId)
             .toIdResponse(Couple::id)
 
     @PostMapping("join")
-    @ResponseStatus(HttpStatus.OK)
     override fun joinByInviteCode(
         @RequestBody @Valid request: JoinCoupleRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
-        joinCoupleUseCase.joinByInviteCode(request.inviteCode, userId)
+        joinCoupleUseCase
+            .joinByInviteCode(request.inviteCode, userId)
             .toIdResponse(Couple::id)
 }

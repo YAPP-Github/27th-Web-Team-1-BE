@@ -1,30 +1,18 @@
-${domain} {
-    tls ${email}
+domain {
+    tls email
+    encode zstd gzip
 
-    log {
-        output file ${path}
-        format json
-    }
+    @actuator_blocked {
+                          path /api/actuator*
+                          not path /api/actuator/health* /api/admin/* /api/swagger* /api/docs*
+                      }
+    respond @actuator_blocked 404
 
-    route ${api-path} {
-        # /actuator/health만 허용, 나머지 차단
-        @actuator_blocked {
-            path /api/actuator*
-            not path /api/actuator/health*
-        }
-        respond @actuator_blocked 404
+    reverse_proxy /api/* localhost:8080 {
+                                            header_up Host {host}
+                                            header_up X-Real-IP {remote}
 
-        reverse_proxy ${ip} {
-            health_uri ${health-path}
-            health_interval 10s
-            health_timeout 5s
-
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-        }
-    }
-
-    handle_path ${etc-path}* {
-        reverse_proxy ${ip}
-    }
+                                            health_uri /api/actuator/health
+                                            health_interval 1m
+                                        }
 }

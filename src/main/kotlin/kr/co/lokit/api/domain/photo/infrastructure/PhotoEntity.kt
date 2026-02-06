@@ -45,8 +45,11 @@ class PhotoEntity(
         get() = location.y
 
     init {
-        album.addPhoto(this)
+        album.onPhotoAdded()
     }
+
+    @Column(name = "couple_id")
+    var coupleId: Long? = null
 
     @Column(length = 1000)
     var description: String? = null

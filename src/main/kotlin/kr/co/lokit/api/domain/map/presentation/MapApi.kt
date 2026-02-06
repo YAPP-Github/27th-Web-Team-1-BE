@@ -16,15 +16,22 @@ import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapMeResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestParam
 
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Map", description = "지도 API")
 interface MapApi {
     @Operation(
         summary = "홈 조회(홈 화면 초기 진입 시 1회 호출)",
-        description = ""
+        description = "",
+        hidden = true,
     )
-    fun home(@Parameter(hidden = true) userId: Long, longitude: Double, latitude: Double): HomeResponse
+    fun home(
+        @Parameter(hidden = true) userId: Long,
+        @RequestParam longitude: Double,
+        @RequestParam latitude: Double,
+    ): HomeResponse
 
     @Operation(
         summary = "지도 ME 조회 (홈 + 사진 조회 통합)",
@@ -62,31 +69,31 @@ interface MapApi {
             example = "127.0276",
             required = true,
         )
-        longitude: Double,
+        @RequestParam longitude: Double,
         @Parameter(
             description = "위도",
             example = "37.4979",
             required = true,
         )
-        latitude: Double,
+        @RequestParam latitude: Double,
         @Parameter(
             description = "줌 레벨. 15 미만이면 클러스터링, 15 이상이면 개별 사진 반환",
             example = "12",
             required = true,
         )
-        zoom: Int,
+        @RequestParam zoom: Int,
         @Parameter(
             description = "바운딩 박스 (west,south,east,north 형식의 경도/위도)",
             example = "126.9,37.4,127.1,37.6",
             required = true,
         )
-        bbox: String,
+        @RequestParam albumId: Long?,
         @Parameter(
-            description = "앨범 ID (선택). 지정 시 해당 앨범의 사진만 조회",
-            example = "1",
+            description = "이전 응답의 dataVersion. 일치하면 사진 데이터를 생략하여 응답 최적화",
+            example = "3",
             required = false,
         )
-        albumId: Long?,
+        @RequestParam lastDataVersion: Long?,
     ): MapMeResponse
 
     @Operation(
@@ -101,6 +108,7 @@ interface MapApi {
 
             - **줌 레벨 >= 15**: 개별 사진 썸네일을 반환
         """,
+        hidden = true,
     )
     @ApiResponses(
         value = [
@@ -145,7 +153,7 @@ interface MapApi {
             example = "1",
             required = false,
         )
-        albumId: Long?,
+        @RequestParam albumId: Long?,
     ): MapPhotosResponse
 
     @Operation(
@@ -190,7 +198,7 @@ interface MapApi {
             example = "z14_130234_38456",
             required = true,
         )
-        clusterId: String,
+        @RequestParam clusterId: String,
     ): ClusterPhotosPageResponse
 
     @Operation(
@@ -228,7 +236,7 @@ interface MapApi {
             example = "1",
             required = true,
         )
-        albumId: Long,
+        @PathVariable albumId: Long,
     ): AlbumMapInfoResponse
 
     @Operation(
@@ -261,13 +269,13 @@ interface MapApi {
             example = "127.0276",
             required = true,
         )
-        longitude: Double,
+        @RequestParam longitude: Double,
         @Parameter(
             description = "위도",
             example = "37.4979",
             required = true,
         )
-        latitude: Double,
+        @RequestParam latitude: Double,
     ): LocationInfoResponse
 
     @Operation(
@@ -300,6 +308,6 @@ interface MapApi {
             example = "스타벅스 강남",
             required = true,
         )
-        query: String,
+        @RequestParam query: String,
     ): PlaceSearchResponse
 }

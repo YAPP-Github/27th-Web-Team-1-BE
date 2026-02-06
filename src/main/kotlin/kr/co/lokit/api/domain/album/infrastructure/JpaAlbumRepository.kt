@@ -78,7 +78,6 @@ class JpaAlbumRepository(
     override fun findById(id: Long): Album? =
         albumJpaRepository.findByIdOrNull(id)?.toDomain()
 
-    @Cacheable(cacheNames = ["userAlbums"], key = "#userId", sync = true)
     @Transactional(readOnly = true)
     override fun findAllByUserId(userId: Long): List<Album> {
         val albums = findAllByUserIdInternal(userId)
@@ -86,6 +85,20 @@ class JpaAlbumRepository(
         return albums.map { album ->
             if (album.isDefault) {
                 enrichDefaultAlbumWithAllPhotos(album, album.coupleId)
+            } else {
+                album
+            }
+        }
+    }
+
+    @Cacheable(cacheNames = ["coupleAlbums"], key = "#coupleId", sync = true)
+    @Transactional(readOnly = true)
+    override fun findAllByCoupleId(coupleId: Long): List<Album> {
+        val albums = findAllByCoupleIdInternal(coupleId)
+
+        return albums.map { album ->
+            if (album.isDefault) {
+                enrichDefaultAlbumWithAllPhotos(album, coupleId)
             } else {
                 album
             }

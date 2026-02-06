@@ -41,7 +41,7 @@ class JpaPhotoRepository(
         val photoEntity = photoJpaRepository.findByIdWithRelations(id)
             ?: throw entityNotFound<Photo>(id)
 
-        photoEntity.album.removePhoto(photoEntity)
+        photoEntity.album.onPhotoRemoved()
         photoJpaRepository.deleteById(id)
     }
 
@@ -77,8 +77,8 @@ class JpaPhotoRepository(
 
         val oldAlbum = photoEntity.album
         if (oldAlbum.nonNullId() != albumEntity.nonNullId()) {
-            oldAlbum.removePhoto(photoEntity)
-            albumEntity.addPhoto(photoEntity)
+            oldAlbum.onPhotoRemoved()
+            albumEntity.onPhotoAdded()
         }
 
         photoEntity.apply {
@@ -86,6 +86,7 @@ class JpaPhotoRepository(
             this.uploadedBy = userEntity
             this.url = photo.url
             this.description = photo.description
+            this.coupleId = albumEntity.couple.nonNullId()
         }
         return photoEntity.toDomain()
     }

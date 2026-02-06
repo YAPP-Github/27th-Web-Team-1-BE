@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit
 @Configuration
 @EnableCaching
 class CacheConfig {
-
     @Bean
     fun cacheManager(): CacheManager {
         val cacheManager = SimpleCacheManager()
@@ -20,70 +19,88 @@ class CacheConfig {
             listOf(
                 CaffeineCache(
                     "reverseGeocode",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(1, TimeUnit.HOURS)
                         .maximumSize(10_000)
                         .build(),
                 ),
                 CaffeineCache(
                     "searchPlaces",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(1, TimeUnit.HOURS)
                         .maximumSize(1_000)
                         .build(),
                 ),
                 CaffeineCache(
                     "userDetails",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
                         .maximumSize(1_000)
                         .build(),
                 ),
                 CaffeineCache(
                     "photo",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
                         .maximumSize(1_000)
                         .build(),
                 ),
                 CaffeineCache(
                     "album",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
                         .maximumSize(1_000)
                         .build(),
                 ),
                 CaffeineCache(
                     "albumCouple",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(3, TimeUnit.HOURS)
                         .maximumSize(10_000)
                         .build(),
                 ),
                 CaffeineCache(
-                    "coupleMembership",
-                    Caffeine.newBuilder()
+                    "userCouple",
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(1, TimeUnit.HOURS)
-                        .maximumSize(50_000)
+                        .maximumSize(10_000)
                         .build(),
                 ),
                 CaffeineCache(
-                    "userAlbums",
-                    Caffeine.newBuilder()
+                    "coupleAlbums",
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(1, TimeUnit.MINUTES)
                         .maximumSize(10_000)
                         .build(),
                 ),
                 CaffeineCache(
                     "mapPhotos",
-                    Caffeine.newBuilder()
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(1, TimeUnit.MINUTES)
                         .maximumSize(50_000)
                         .build(),
                 ),
                 CaffeineCache(
-                    "presignedUrlCache",
-                    Caffeine.newBuilder()
+                    "mapCells",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(100_000)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "presignedUrl",
+                    Caffeine
+                        .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
                         .maximumSize(1_000)
                         .build(),

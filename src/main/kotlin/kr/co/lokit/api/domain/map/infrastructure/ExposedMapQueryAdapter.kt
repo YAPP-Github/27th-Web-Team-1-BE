@@ -57,7 +57,7 @@ class ExposedMapQueryAdapter(
     ): List<UniquePhotoRecord> {
         val sql = buildClusterQuery(coupleId, albumId)
         val conn = TransactionManager.current().connection
-        val stmt = conn.prepareStatement(sql, false)
+        val stmt = conn.prepareStatement(sql, true)
 
         var i = 1
         stmt.set(i++, inverseGridSize)
@@ -92,34 +92,23 @@ class ExposedMapQueryAdapter(
     private fun buildClusterQuery(coupleId: Long?, albumId: Long?): String = buildString {
         append(
             """
-        SELECT
-            MAX(p.id) AS id,
-            MAX(p.url) AS url,
-            MAX(ST_X(p.location)) AS longitude,
-            MAX(ST_Y(p.location)) AS latitude,
-            FLOOR(ST_X(p.location) * ?) AS cell_x,
-            FLOOR(ST_Y(p.location) * ?) AS cell_y,
-            MAX(p.taken_at) AS taken_at,
-            COUNT(*) AS photo_count
-        FROM ${PhotoTable.tableName} p
-        WHERE 1 = 1
-            AND p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
-            AND p.is_deleted = false
+        WITH photo_cells AS (
+            SELECT
+                p.id,
+                p.url,
+                ST_X(p.location) AS longitude,
+                ST_Y(p.location) AS latitude,
+                FLOOR(ST_X(p.location) * ?) AS cell_x,
+                FLOOR(ST_Y(p.location) * ?) AS cell_y,
+                p.taken_at
+            FROM ${PhotoTable.tableName} p
+            WHERE p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
+                AND p.is_deleted = false
         """.trimIndent()
         )
 
         if (coupleId != null) {
-            append(
-                """
-
-            AND EXISTS (
-                SELECT 1
-                FROM album a
-                WHERE a.id = p.album_id
-                    AND a.couple_id = ?
-            )
-            """.trimIndent()
-            )
+            append(" AND p.couple_id = ? ")
         }
 
         if (albumId != null) {
@@ -129,8 +118,16 @@ class ExposedMapQueryAdapter(
         append(
             """
 
-        GROUP BY
-            cell_x, cell_y
+        ),
+        ranked AS (
+            SELECT *,
+                COUNT(*) OVER (PARTITION BY cell_x, cell_y) AS photo_count,
+                ROW_NUMBER() OVER (PARTITION BY cell_x, cell_y ORDER BY taken_at DESC) AS rn
+            FROM photo_cells
+        )
+        SELECT id, url, longitude, latitude, cell_x, cell_y, taken_at, photo_count
+        FROM ranked
+        WHERE rn = 1
         """.trimIndent()
         )
     }
@@ -146,7 +143,7 @@ class ExposedMapQueryAdapter(
     ): List<PhotoProjection> = transaction(database) {
         val sql = buildPhotosQuery(coupleId, albumId)
         val conn = TransactionManager.current().connection
-        val stmt = conn.prepareStatement(sql, false)
+        val stmt = conn.prepareStatement(sql, true)
 
         var i = 1
         stmt.set(i++, west)
@@ -191,17 +188,7 @@ class ExposedMapQueryAdapter(
         )
 
         if (coupleId != null) {
-            append(
-                """
-
-                AND EXISTS (
-                    SELECT 1
-                    FROM album a
-                    WHERE a.id = p.album_id
-                        AND a.couple_id = ?
-                )
-                """.trimIndent()
-            )
+            append(" AND p.couple_id = ? ")
         }
 
         if (albumId != null) {
@@ -220,7 +207,7 @@ class ExposedMapQueryAdapter(
     ): List<ClusterPhotoProjection> = transaction(database) {
         val sql = buildGridCellQuery(coupleId)
         val conn = TransactionManager.current().connection
-        val stmt = conn.prepareStatement(sql, false)
+        val stmt = conn.prepareStatement(sql, true)
 
         var i = 1
         stmt.set(i++, west)
@@ -265,17 +252,7 @@ class ExposedMapQueryAdapter(
         )
 
         if (coupleId != null) {
-            append(
-                """
-
-                AND EXISTS (
-                    SELECT 1
-                    FROM album a
-                    WHERE a.id = p.album_id
-                        AND a.couple_id = ?
-                )
-                """.trimIndent()
-            )
+            append(" AND p.couple_id = ? ")
         }
 
         append(" ORDER BY p.taken_at DESC ")

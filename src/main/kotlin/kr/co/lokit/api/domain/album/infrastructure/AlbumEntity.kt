@@ -35,10 +35,6 @@ class AlbumEntity(
     val isDefault: Boolean = false,
 ) : BaseEntity() {
 
-    init {
-        couple.addAlbum(this)
-    }
-
     @Column(nullable = false)
     var photoCount: Int = 0
         protected set
@@ -54,20 +50,14 @@ class AlbumEntity(
     var photoAddedAt: LocalDateTime? = null
         protected set
 
-    fun addPhoto(photo: PhotoEntity) {
-        if (photos.contains(photo)) {
-            return
-        }
-        photos.add(photo)
+    fun onPhotoAdded() {
         photoAddedAt = LocalDateTime.now()
         photoCount++
     }
 
-    fun removePhoto(photo: PhotoEntity) {
-        if (photos.remove(photo)) {
-            if (photoCount > 0) {
-                photoCount--
-            }
+    fun onPhotoRemoved() {
+        if (photoCount > 0) {
+            photoCount--
         }
     }
 

@@ -10,6 +10,7 @@ object PhotoTable : LongIdTable("photo") {
     val takenAt: Column<LocalDateTime> = datetime("taken_at")
     val albumId: Column<Long> = long("album_id").index()
     val uploadedById: Column<Long> = long("uploaded_by").index()
+    val coupleId: Column<Long?> = long("couple_id").nullable()
     val location: Column<String> = text("location")
     val description: Column<String?> = varchar("description", 1000).nullable()
     val createdAt: Column<LocalDateTime> = datetime("created_at")

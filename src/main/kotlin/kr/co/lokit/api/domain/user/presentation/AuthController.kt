@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 import java.net.URLDecoder
@@ -25,15 +26,16 @@ class AuthController(
     private val cookieGenerator: CookieGenerator,
     private val corsProperties: CorsProperties,
 ) : AuthApi {
-
+    @ResponseStatus(HttpStatus.FOUND)
     @GetMapping("kakao")
     override fun kakaoAuthorize(
         @RequestParam(required = false) redirect: String?,
     ): ResponseEntity<Unit> {
-        val state = redirect
-            ?.takeIf { isAllowedOrigin(it) }
-            ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
-            ?: ""
+        val state =
+            redirect
+                ?.takeIf { isAllowedOrigin(it) }
+                ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
+                ?: ""
 
         val authUrl =
             KakaoOAuthProperties.AUTHORIZATION_URL +
@@ -48,6 +50,7 @@ class AuthController(
             .build()
     }
 
+    @ResponseStatus(HttpStatus.FOUND)
     @GetMapping("kakao/callback")
     override fun kakaoCallback(
         @RequestParam code: String,
@@ -59,11 +62,12 @@ class AuthController(
         val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, tokens.accessToken)
         val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, tokens.refreshToken)
 
-        val redirectUri = state
-            ?.takeIf { it.isNotBlank() }
-            ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8) }
-            ?.takeIf { isAllowedOrigin(it) }
-            ?: kakaoOAuthProperties.frontRedirectUri
+        val redirectUri =
+            state
+                ?.takeIf { it.isNotBlank() }
+                ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8) }
+                ?.takeIf { isAllowedOrigin(it) }
+                ?: kakaoOAuthProperties.frontRedirectUri
 
         return ResponseEntity
             .status(HttpStatus.FOUND)
@@ -73,13 +77,12 @@ class AuthController(
             .build()
     }
 
-    private fun isAllowedOrigin(uri: String): Boolean {
-        return try {
+    private fun isAllowedOrigin(uri: String): Boolean =
+        try {
             val parsed = URI(uri)
             val origin = "${parsed.scheme}://${parsed.authority}"
             corsProperties.allowedOrigins.any { it == origin || it == uri }
         } catch (_: Exception) {
             false
         }
-    }
 }

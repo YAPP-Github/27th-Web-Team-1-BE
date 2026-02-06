@@ -33,12 +33,14 @@ fun Photo.toEntity(album: AlbumEntity, uploadedBy: UserEntity): PhotoEntity =
     ).apply {
         this.description = this@toEntity.description
         this.takenAt = this@toEntity.takenAt
+        this.coupleId = album.couple.nonNullId()
     }
 
 fun PhotoEntity.toDomain(): Photo =
     Photo(
         id = this.nonNullId(),
         albumId = this.album.nonNullId(),
+        coupleId = this.coupleId,
         location = Location(longitude = this.longitude, latitude = this.latitude),
         description = this.description,
         url = this.url,

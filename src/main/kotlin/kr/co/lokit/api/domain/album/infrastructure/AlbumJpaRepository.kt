@@ -11,7 +11,7 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
         join c.coupleUsers cu
         where cu.user.id = :userId
         order by a.updatedAt desc, a.createdAt desc
-        """
+        """,
     )
     fun findAlbumIdsByUserId(userId: Long): List<Long>
 
@@ -20,7 +20,7 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
         select a.id from Album a
         where a.couple.id = :coupleId
         order by a.updatedAt desc, a.createdAt desc
-        """
+        """,
     )
     fun findAlbumIdsByCoupleId(coupleId: Long): List<Long>
 
@@ -30,7 +30,7 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
         left join fetch a.photos p
         left join fetch p.uploadedBy
         where a.id in :ids
-        """
+        """,
     )
     fun findAllWithPhotosByIds(ids: List<Long>): List<AlbumEntity>
 
@@ -38,7 +38,7 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
         """
         select a.id from Album a
         order by a.photoAddedAt desc, a.createdAt desc
-        """
+        """,
     )
     fun findAllAlbumIds(): List<Long>
 
@@ -48,7 +48,7 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
         left join fetch a.photos p
         left join fetch p.uploadedBy
         where a.id = :id
-        """
+        """,
     )
     fun findByIdWithPhotos(id: Long): List<AlbumEntity>
 
@@ -60,23 +60,23 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
             join c.coupleUsers cu
             where cu.user.id = :userId
                 and a.isDefault = true
-        """
+        """,
     )
     fun findByUserIdAndIsDefaultTrue(userId: Long): AlbumEntity?
 
-    fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean
+    fun existsByCoupleIdAndTitle(
+        coupleId: Long,
+        title: String,
+    ): Boolean
 
     @Query(
         """
         select sum(a.photoCount)
         from Album a
-        where a.id in
-            (select distinct a2.id
-            from Album a2
-            join a2.couple c
-            join c.coupleUsers cu
-            where cu.user.id = :userId)
-    """
+        join a.couple c
+        join c.coupleUsers cu
+        where cu.user.id = :userId
+    """,
     )
     fun sumPhotoCountByUserId(userId: Long): Int?
 }

@@ -10,6 +10,7 @@ import kr.co.lokit.api.domain.couple.mapping.toDomain
 import kr.co.lokit.api.domain.couple.mapping.toEntity
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -78,6 +79,7 @@ class JpaCoupleRepository(
         return coupleEntity.toDomain()
     }
 
+    @Cacheable(cacheNames = ["userCouple"], key = "#userId", sync = true)
     @Transactional(readOnly = true)
     override fun findByUserId(userId: Long): Couple? =
         coupleJpaRepository.findByUserId(userId)?.toDomain()

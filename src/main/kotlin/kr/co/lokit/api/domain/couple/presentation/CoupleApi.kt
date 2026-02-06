@@ -12,7 +12,6 @@ import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Couple", description = "커플 API")
 interface CoupleApi {
-
     @Operation(
         summary = "커플 생성",
         description = "새로운 커플을 생성합니다.",
@@ -21,7 +20,10 @@ interface CoupleApi {
             ApiResponse(responseCode = "400", description = "잘못된 입력값"),
         ],
     )
-    fun create(request: CreateCoupleRequest, @Parameter(hidden = true) userId: Long): IdResponse
+    fun create(
+        request: CreateCoupleRequest,
+        @Parameter(hidden = true) userId: Long,
+    ): IdResponse
 
     @Operation(
         summary = "초대 코드로 커플 합류",
@@ -31,5 +33,8 @@ interface CoupleApi {
             ApiResponse(responseCode = "404", description = "유효하지 않은 초대 코드"),
         ],
     )
-    fun joinByInviteCode(request: JoinCoupleRequest, @Parameter(hidden = true) userId: Long): IdResponse
+    fun joinByInviteCode(
+        request: JoinCoupleRequest,
+        @Parameter(hidden = true) userId: Long,
+    ): IdResponse
 }

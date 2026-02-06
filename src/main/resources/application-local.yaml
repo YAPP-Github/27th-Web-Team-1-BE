@@ -4,8 +4,6 @@ spring:
         username: ${POSTGRES_USER:postgres}
         password: ${POSTGRES_PASSWORD:local-password}
         driver-class-name: org.postgresql.Driver
-        hikari:
-            maximum-pool-size: 20
     jpa:
         hibernate:
             ddl-auto: create-drop
@@ -84,3 +82,5 @@ cookie:
 discord:
     webhook:
         url: ${DISCORD_WEBHOOK_URL:}
+
+admin.key: ${ADMIN_KEY:}

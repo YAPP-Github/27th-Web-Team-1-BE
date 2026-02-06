@@ -24,12 +24,10 @@ class PermissionService(
     fun isAdmin(userId: Long): Boolean =
         getUserRole(userId) == UserRole.ADMIN
 
-    @Cacheable(cacheNames = ["coupleMembership"], key = "#userId + ':' + #coupleId", sync = true)
     fun isCoupleMember(userId: Long, coupleId: Long): Boolean {
         if (isAdmin(userId)) return true
-
-        val couple = getCoupleOrThrow(coupleId)
-        return userId in couple.userIds
+        val couple = coupleRepository.findByUserId(userId) ?: return false
+        return couple.id == coupleId
     }
 
     @Cacheable(cacheNames = ["albumCouple"], key = "#albumId", sync = true)
@@ -84,10 +82,6 @@ class PermissionService(
     private fun getUserRole(userId: Long): UserRole =
         userRepository.findById(userId)?.role
             ?: throw entityNotFound<User>(userId)
-
-    private fun getCoupleOrThrow(coupleId: Long): Couple =
-        coupleRepository.findById(coupleId)
-            ?: throw entityNotFound<Couple>(coupleId)
 
     private fun getAlbumOrThrow(albumId: Long): Album =
         albumRepository.findById(albumId)

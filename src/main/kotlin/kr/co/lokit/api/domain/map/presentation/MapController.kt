@@ -24,33 +24,24 @@ class MapController(
     private val getMapUseCase: GetMapUseCase,
     private val searchLocationUseCase: SearchLocationUseCase,
 ) : MapApi {
-    // 삭제 예정
-    @GetMapping("home")
-    override fun home(@CurrentUserId userId: Long, longitude: Double, latitude: Double): HomeResponse =
-        getMapUseCase.home(userId, longitude, latitude)
-
     @GetMapping("me")
     override fun getMe(
         @CurrentUserId userId: Long,
         @RequestParam longitude: Double,
         @RequestParam latitude: Double,
         @RequestParam zoom: Int,
-        @RequestParam bbox: String,
         @RequestParam(required = false) albumId: Long?,
-    ): MapMeResponse {
-        return getMapUseCase.getMe(userId, longitude, latitude, zoom, BBox.fromStringCenter(bbox, zoom), albumId)
-    }
-
-    // 삭제 예정
-    @GetMapping("photos")
-    override fun getPhotos(
-        @CurrentUserId userId: Long,
-        @RequestParam zoom: Int,
-        @RequestParam bbox: String,
-        @RequestParam(required = false) albumId: Long?,
-    ): MapPhotosResponse {
-        return getMapUseCase.getPhotos(zoom, BBox.fromStringCenter(bbox, zoom), userId, albumId)
-    }
+        @RequestParam(required = false) lastDataVersion: Long?,
+    ): MapMeResponse =
+        getMapUseCase.getMe(
+            userId,
+            longitude,
+            latitude,
+            zoom,
+            BBox.fromCenter(zoom, longitude, latitude),
+            albumId,
+            lastDataVersion,
+        )
 
     @GetMapping("clusters/{clusterId}/photos")
     override fun getClusterPhotos(
@@ -75,4 +66,21 @@ class MapController(
     override fun searchPlaces(
         @RequestParam query: String,
     ): PlaceSearchResponse = searchLocationUseCase.searchPlaces(query)
+
+    // 삭제 예정
+    @GetMapping("home")
+    override fun home(
+        @CurrentUserId userId: Long,
+        @RequestParam longitude: Double,
+        @RequestParam latitude: Double,
+    ): HomeResponse = getMapUseCase.home(userId, longitude, latitude)
+
+    // 삭제 예정
+    @GetMapping("photos")
+    override fun getPhotos(
+        @CurrentUserId userId: Long,
+        @RequestParam zoom: Int,
+        @RequestParam bbox: String,
+        @RequestParam(required = false) albumId: Long?,
+    ): MapPhotosResponse = getMapUseCase.getPhotos(zoom, BBox.fromStringCenter(bbox, zoom), userId, albumId)
 }

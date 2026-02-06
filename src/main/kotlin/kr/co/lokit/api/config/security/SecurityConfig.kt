@@ -29,6 +29,7 @@ class SecurityConfig(
         http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
+            .headers { headers -> headers.cacheControl { it.disable() } }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
@@ -40,7 +41,8 @@ class SecurityConfig(
                     ).permitAll()
                     .requestMatchers("/actuator/health", "/actuator/prometheus")
                     .permitAll()
-                    .requestMatchers("/ut/**").permitAll()
+                    .requestMatchers("/admin/**")
+                    .permitAll()
                     .requestMatchers(
                         "/swagger/**",
                         "/swagger-ui/**",
@@ -49,13 +51,11 @@ class SecurityConfig(
                     ).permitAll()
                     .anyRequest()
                     .authenticated()
-            }
-            .exceptionHandling { exceptions ->
+            }.exceptionHandling { exceptions ->
                 exceptions
                     .authenticationEntryPoint(loginAuthenticationEntryPoint)
                     .accessDeniedHandler(loginAccessDeniedHandler)
-            }
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            }.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
 
     @Bean

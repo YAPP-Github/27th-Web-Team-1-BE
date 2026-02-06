@@ -13,7 +13,6 @@ import kr.co.lokit.api.domain.album.dto.UpdateAlbumTitleRequest
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Album", description = "앨범 API")
 interface AlbumApi {
-
     @Operation(
         summary = "앨범 생성",
         description = "새로운 앨범을 생성합니다.",
@@ -22,7 +21,10 @@ interface AlbumApi {
             ApiResponse(responseCode = "404", description = "워크스페이스를 찾을 수 없음"),
         ],
     )
-    fun create(@Parameter(hidden = true) userId: Long, albumRequest: AlbumRequest): IdResponse
+    fun create(
+        @Parameter(hidden = true) userId: Long,
+        albumRequest: AlbumRequest,
+    ): IdResponse
 
     @Operation(
         summary = "선택 가능한 앨범 조회",
@@ -31,7 +33,9 @@ interface AlbumApi {
             ApiResponse(responseCode = "200", description = "선택 가능한 앨범 조회 성공"),
         ],
     )
-    fun getSelectableAlbums(@Parameter(hidden = true) userId: Long): SelectableAlbumResponse
+    fun getSelectableAlbums(
+        @Parameter(hidden = true) userId: Long,
+    ): SelectableAlbumResponse
 
     @Operation(
         summary = "앨범 제목 수정",

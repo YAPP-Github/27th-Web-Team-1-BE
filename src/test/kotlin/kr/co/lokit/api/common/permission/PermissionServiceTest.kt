@@ -59,7 +59,7 @@ class PermissionServiceTest {
         val user = createUser(id = 1L)
         val couple = createCouple(id = 1L, userIds = listOf(1L, 2L))
         `when`(userRepository.findById(1L)).thenReturn(user)
-        `when`(coupleRepository.findById(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
 
         assert(permissionService.isCoupleMember(1L, 1L))
     }
@@ -67,9 +67,8 @@ class PermissionServiceTest {
     @Test
     fun `커플 비멤버는 커플에 접근할 수 없다`() {
         val user = createUser(id = 3L)
-        val couple = createCouple(id = 1L, userIds = listOf(1L, 2L))
         `when`(userRepository.findById(3L)).thenReturn(user)
-        `when`(coupleRepository.findById(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserId(3L)).thenReturn(null)
 
         assert(!permissionService.isCoupleMember(3L, 1L))
     }
@@ -169,7 +168,7 @@ class PermissionServiceTest {
         val couple = createCouple(id = 1L, userIds = listOf(1L))
         `when`(userRepository.findById(1L)).thenReturn(user)
         `when`(albumRepository.findById(1L)).thenReturn(album)
-        `when`(coupleRepository.findById(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
 
         assert(permissionService.canAccessAlbum(1L, 1L))
     }
@@ -178,10 +177,9 @@ class PermissionServiceTest {
     fun `커플 비멤버는 앨범을 읽을 수 없다`() {
         val user = createUser(id = 2L)
         val album = createAlbum(id = 1L, coupleId = 1L)
-        val couple = createCouple(id = 1L, userIds = listOf(1L))
         `when`(userRepository.findById(2L)).thenReturn(user)
         `when`(albumRepository.findById(1L)).thenReturn(album)
-        `when`(coupleRepository.findById(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserId(2L)).thenReturn(null)
 
         assert(!permissionService.canAccessAlbum(2L, 1L))
     }
@@ -203,7 +201,7 @@ class PermissionServiceTest {
         `when`(userRepository.findById(1L)).thenReturn(user)
         `when`(photoRepository.findById(1L)).thenReturn(photo)
         `when`(albumRepository.findById(1L)).thenReturn(album)
-        `when`(coupleRepository.findById(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
 
         assert(permissionService.canReadPhoto(1L, 1L))
     }

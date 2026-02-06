@@ -7,10 +7,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ClusteringTest {
-
     @Test
     fun `BBox를 문자열에서 파싱할 수 있다`() {
-        val bbox = BBox.fromString("126.9,37.4,127.1,37.6")
+        val bbox = BBox.parseToBBox("126.9,37.4,127.1,37.6")
 
         assertEquals(126.9, bbox.west)
         assertEquals(37.4, bbox.south)
@@ -21,7 +20,7 @@ class ClusteringTest {
     @Test
     fun `잘못된 BBox 문자열은 예외가 발생한다`() {
         assertThrows<IllegalArgumentException> {
-            BBox.fromString("126.9,37.4")
+            BBox.parseToBBox("126.9,37.4")
         }
     }
 
@@ -58,7 +57,7 @@ class ClusteringTest {
     @Test
     fun `GridCell에서 BBox를 계산할 수 있다`() {
         val cell = GridCell(zoom = 14, cellX = 1, cellY = 1)
-        val gridSize = GridValues.getGridSize(14)
+        val gridSize = GridValues.getGridSize(14 - 1)
         val bbox = cell.toBBox()
 
         assertEquals(gridSize, bbox.west)
@@ -72,15 +71,24 @@ class ClusteringTest {
         val zoom = 14
         val longitude = 127.0
         val latitude = 37.5
-        val gridSize = GridValues.getGridSize(zoom)
-        val halfSize = gridSize / 2
 
         val bbox = BBox.fromCenter(zoom, longitude, latitude)
 
-        assertEquals(longitude - halfSize, bbox.west)
-        assertEquals(latitude - halfSize, bbox.south)
-        assertEquals(longitude + halfSize, bbox.east)
-        assertEquals(latitude + halfSize, bbox.north)
+        // 중심점이 BBox 내에 포함되어야 한다
+        assertTrue(bbox.west <= longitude)
+        assertTrue(bbox.east >= longitude)
+        assertTrue(bbox.south <= latitude)
+        assertTrue(bbox.north >= latitude)
+
+        // 그리드 정렬되어야 한다
+        val gridSize = GridValues.getGridSize(zoom)
+        assertEquals(0.0, bbox.west % gridSize, 1e-10)
+        assertEquals(0.0, bbox.south % gridSize, 1e-10)
+
+        // 모바일 세로 화면: 가로가 세로보다 좁아야 한다
+        val width = bbox.east - bbox.west
+        val height = bbox.north - bbox.south
+        assertTrue(width < height, "모바일 세로 화면: 가로($width) < 세로($height)")
     }
 
     @Test

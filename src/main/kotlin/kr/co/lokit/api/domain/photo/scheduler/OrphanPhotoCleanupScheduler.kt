@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.photo.scheduler
 
+import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoJpaRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -7,8 +8,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.Delete
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -28,19 +31,30 @@ class OrphanPhotoCleanupScheduler(
         val since = LocalDateTime.now().minusDays(1)
         val cutoff = Instant.now().minus(1, ChronoUnit.DAYS)
 
-        val dbUrls = photoJpaRepository.findUrlsCreatedSince(since).toSet()
-        val recentS3Keys = listRecentS3Keys(cutoff)
+        val (dbUrlsFuture, s3KeysFuture) = StructuredConcurrency.run { scope ->
+            Pair(
+                scope.fork { photoJpaRepository.findUrlsCreatedSince(since).toSet() },
+                scope.fork { listRecentS3Keys(cutoff) },
+            )
+        }
+
+        val dbUrls = dbUrlsFuture.get()
+        val recentS3Keys = s3KeysFuture.get()
 
         val orphanKeys = recentS3Keys.filter { key ->
             val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, region, key)
             objectUrl !in dbUrls
         }
 
-        orphanKeys.forEach { key ->
-            s3Client.deleteObject(
-                DeleteObjectRequest.builder()
+        orphanKeys.chunked(MAX_BATCH_DELETE_SIZE).forEach { chunk ->
+            val delete = Delete.builder()
+                .objects(chunk.map { key -> ObjectIdentifier.builder().key(key).build() })
+                .quiet(true)
+                .build()
+            s3Client.deleteObjects(
+                DeleteObjectsRequest.builder()
                     .bucket(bucket)
-                    .key(key)
+                    .delete(delete)
                     .build()
             )
         }
@@ -74,5 +88,6 @@ class OrphanPhotoCleanupScheduler(
     companion object {
         private const val PREFIX = "photos/"
         private const val OBJECT_URL_TEMPLATE = "https://%s.s3.%s.amazonaws.com/%s"
+        private const val MAX_BATCH_DELETE_SIZE = 1000
     }
 }

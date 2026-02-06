@@ -16,28 +16,28 @@ import tools.jackson.databind.ObjectMapper
 class LoginAuthenticationEntryPoint(
     private val objectMapper: ObjectMapper,
 ) : AuthenticationEntryPoint {
-
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun commence(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        authException: AuthenticationException
+        authException: AuthenticationException,
     ) {
         logger.warn(
             "Authentication failed: method={}, uri={}, message={}",
             request.method,
             request.requestURI,
-            authException.message
+            authException.message,
         )
 
         val errorCode = ErrorCode.UNAUTHORIZED
-        val errorResponse = ApiResponse.failure(
-            status = HttpStatus.UNAUTHORIZED,
-            detail = authException.message ?: errorCode.message,
-            request = request,
-            errorCode = errorCode.code,
-        )
+        val errorResponse =
+            ApiResponse.failure(
+                status = HttpStatus.UNAUTHORIZED,
+                detail = authException.message ?: errorCode.message,
+                request = request,
+                errorCode = errorCode.code,
+            )
 
         response.status = HttpStatus.UNAUTHORIZED.value()
         response.contentType = MediaType.APPLICATION_JSON_VALUE

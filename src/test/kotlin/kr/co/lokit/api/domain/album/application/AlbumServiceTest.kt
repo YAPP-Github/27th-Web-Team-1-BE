@@ -2,8 +2,10 @@ package kr.co.lokit.api.domain.album.application
 
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
 import kr.co.lokit.api.fixture.createAlbum
+import kr.co.lokit.api.fixture.createCouple
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -12,6 +14,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.cache.CacheManager
 import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
@@ -21,7 +24,13 @@ class AlbumServiceTest {
     lateinit var albumRepository: AlbumRepositoryPort
 
     @Mock
+    lateinit var coupleRepository: CoupleRepositoryPort
+
+    @Mock
     lateinit var mapPhotosCacheService: MapPhotosCacheService
+
+    @Mock
+    lateinit var cacheManager: CacheManager
 
     @InjectMocks
     lateinit var albumCommandService: AlbumCommandService
@@ -60,7 +69,8 @@ class AlbumServiceTest {
             createAlbum(id = 1L, title = "앨범1"),
             createAlbum(id = 2L, title = "앨범2"),
         )
-        `when`(albumRepository.findAllByUserId(1L)).thenReturn(albums)
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
+        `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(albums)
 
         val result = albumQueryService.getSelectableAlbums(1L)
 

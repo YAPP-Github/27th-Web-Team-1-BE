@@ -65,15 +65,12 @@ class MapServiceTest {
             ),
         )
 
-        `when`(mapPhotosCacheService.buildCacheKey(12, bbox, null, null))
-            .thenReturn("12:126900:37400")
         `when`(
             mapPhotosCacheService.getClusteredPhotos(
                 zoom = 12,
                 bbox = bbox,
                 coupleId = null,
                 albumId = null,
-                cacheKey = "12:126900:37400",
             ),
         ).thenReturn(expectedResponse)
 

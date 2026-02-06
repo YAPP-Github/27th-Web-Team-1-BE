@@ -16,7 +16,8 @@ interface GetMapUseCase {
         latitude: Double,
         zoom: Int,
         bbox: BBox,
-        albumId: Long? = null
+        albumId: Long? = null,
+        lastDataVersion: Long? = null,
     ): MapMeResponse
 
     fun getClusterPhotos(clusterId: String, userId: Long?): List<ClusterPhotoResponse>

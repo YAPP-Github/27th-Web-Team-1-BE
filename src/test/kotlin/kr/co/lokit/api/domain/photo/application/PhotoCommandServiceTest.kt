@@ -23,6 +23,7 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.cache.CacheManager
 import org.springframework.context.ApplicationEventPublisher
 
 @ExtendWith(MockitoExtension::class)
@@ -45,6 +46,9 @@ class PhotoCommandServiceTest {
 
     @Mock
     lateinit var mapPhotosCacheService: MapPhotosCacheService
+
+    @Mock
+    lateinit var cacheManager: CacheManager
 
     @InjectMocks
     lateinit var photoCommandService: PhotoCommandService

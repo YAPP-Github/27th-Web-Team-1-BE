@@ -8,6 +8,5 @@ import org.springframework.stereotype.Service
 class KakaoLoginService(
     private val oAuthService: OAuthService,
 ) {
-    fun login(code: String): JwtTokenResponse =
-        oAuthService.login(OAuthProvider.KAKAO, code)
+    fun login(code: String): JwtTokenResponse = oAuthService.login(OAuthProvider.KAKAO, code)
 }

@@ -36,9 +36,15 @@ class MapQueryService(
     private val mapClientPort: MapClientPort,
     private val transactionTemplate: TransactionTemplate,
     private val mapPhotosCacheService: MapPhotosCacheService,
-) : GetMapUseCase, SearchLocationUseCase {
-    override fun home(userId: Long, longitude: Double, latitude: Double): HomeResponse {
+) : GetMapUseCase,
+    SearchLocationUseCase {
+    override fun home(
+        userId: Long,
+        longitude: Double,
+        latitude: Double,
+    ): HomeResponse {
         val bBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+        val coupleId = coupleRepository.findByUserId(userId)?.id
 
         val (locationFuture, albumsFuture) =
             StructuredConcurrency.run { scope ->
@@ -46,9 +52,13 @@ class MapQueryService(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
                         transactionTemplate.execute {
-                            albumRepository
-                                .findAllByUserId(userId)
-                                .sortedByDescending { it.isDefault }
+                            if (coupleId != null) {
+                                albumRepository
+                                    .findAllByCoupleId(coupleId)
+                                    .sortedByDescending { it.isDefault }
+                            } else {
+                                emptyList()
+                            }
                         }!!
                     },
                 )
@@ -66,20 +76,21 @@ class MapQueryService(
         zoom: Int,
         bbox: BBox,
         userId: Long?,
-        albumId: Long?
+        albumId: Long?,
     ): MapPhotosResponse {
         val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
 
-        val effectiveAlbumId = if (isValidId(albumId) && isValidId(userId)) {
-            val album = albumRepository.findById(albumId!!)
-            if (album?.isDefault == true) null else albumId
-        } else {
-            albumId
-        }
-        val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, coupleId, effectiveAlbumId)
+        val effectiveAlbumId =
+            if (isValidId(albumId) && isValidId(userId)) {
+                val album = albumRepository.findById(albumId!!)
+                if (album?.isDefault == true) null else albumId
+            } else {
+                albumId
+            }
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
-            mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId, cacheKey)
+            mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId)
         } else {
+            val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, coupleId, effectiveAlbumId)
             mapPhotosCacheService.getIndividualPhotos(bbox, coupleId, effectiveAlbumId, cacheKey)
         }
     }
@@ -116,8 +127,12 @@ class MapQueryService(
         zoom: Int,
         bbox: BBox,
         albumId: Long?,
+        lastDataVersion: Long?,
     ): MapMeResponse {
         val homeBBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+        val coupleId = coupleRepository.findByUserId(userId)?.id
+        val currentVersion = mapPhotosCacheService.getDataVersion(coupleId)
+        val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
 
         val (locationFuture, albumsFuture, photosFuture) =
             StructuredConcurrency.run { scope ->
@@ -125,26 +140,38 @@ class MapQueryService(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
                         transactionTemplate.execute {
-                            albumRepository
-                                .findAllByUserId(userId)
-                                .sortedByDescending { it.isDefault }
+                            if (coupleId != null) {
+                                albumRepository
+                                    .findAllByCoupleId(coupleId)
+                                    .sortedByDescending { it.isDefault }
+                            } else {
+                                emptyList()
+                            }
                         }!!
                     },
                     scope.fork {
-                        getPhotos(zoom, homeBBox, userId, albumId)
+                        if (versionUnchanged) {
+                            null
+                        } else {
+                            transactionTemplate.execute {
+                                getPhotos(zoom, homeBBox, userId, albumId)
+                            }
+                        }
                     },
                 )
             }
 
         val location = locationFuture.get()
-        val formattedLocation = LocationInfoResponse(
-            address = AddressFormatter.removeProvinceAndCity(
-                AddressFormatter.toRoadHeader(location.address ?: "", location.roadName ?: "")
-            ),
-            roadName = location.roadName,
-            placeName = location.placeName,
-            regionName = AddressFormatter.removeProvinceAndCity(location.regionName ?: ""),
-        )
+        val formattedLocation =
+            LocationInfoResponse(
+                address =
+                    AddressFormatter.removeProvinceAndCity(
+                        AddressFormatter.toRoadHeader(location.address ?: "", location.roadName ?: ""),
+                    ),
+                roadName = location.roadName,
+                placeName = location.placeName,
+                regionName = AddressFormatter.removeProvinceAndCity(location.regionName ?: ""),
+            )
 
         val photosResponse = photosFuture.get()
         val albums = albumsFuture.get()
@@ -153,13 +180,17 @@ class MapQueryService(
             location = formattedLocation,
             boundingBox = homeBBox.toResponse(),
             albums = albums.toAlbumThumbnails(),
-            clusters = photosResponse.clusters,
-            photos = photosResponse.photos,
-            totalHistoryCount = albumRepository.photoCountSumByUserId(userId)
+            dataVersion = currentVersion,
+            clusters = photosResponse?.clusters,
+            photos = photosResponse?.photos,
+            totalHistoryCount = albumRepository.photoCountSumByUserId(userId),
         )
     }
 
-    override fun getLocationInfo(longitude: Double, latitude: Double): LocationInfoResponse {
+    override fun getLocationInfo(
+        longitude: Double,
+        latitude: Double,
+    ): LocationInfoResponse {
         val raw = mapClientPort.reverseGeocode(longitude, latitude)
         val header = AddressFormatter.toRoadHeader(raw.address ?: "", raw.roadName ?: "")
         val formattedAddress = AddressFormatter.removeProvinceAndCity(header)
