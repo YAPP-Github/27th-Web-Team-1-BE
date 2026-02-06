@@ -21,6 +21,8 @@ object RequestTrace {
         traces.get()?.add(TraceHistory(method, durationMs))
     }
 
+    fun snapshot(): List<TraceHistory> = traces.get()?.toList() ?: emptyList()
+
     fun drain(): List<TraceHistory> {
         val queue = traces.get() ?: return emptyList()
         traces.remove()

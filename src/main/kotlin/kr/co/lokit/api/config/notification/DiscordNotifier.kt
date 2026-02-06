@@ -110,7 +110,7 @@ class DiscordNotifier(
         }
     }
 
-    fun notify(ex: Exception, request: HttpServletRequest) {
+    fun notify(ex: Exception, request: HttpServletRequest, trace: String? = null) {
         val deduplicationKey = "${ex::class.simpleName}:${ex.message.hashCode()}"
         val now = Instant.now()
 
@@ -130,6 +130,7 @@ class DiscordNotifier(
                 uri = request.requestURI,
                 stacktrace = ex.stackTraceToString().take(STACKTRACE_MAX_LENGTH),
                 timestamp = KST_FORMATTER.format(now),
+                trace = trace,
             ),
         )
 
@@ -174,17 +175,24 @@ class DiscordNotifier(
         val uri: String,
         val stacktrace: String,
         val timestamp: String,
+        val trace: String? = null,
     ) {
-        fun toEmbed(): Map<String, Any> = mapOf(
-            "title" to "[$exceptionClass]",
-            "color" to 0xFF0000,
-            "fields" to listOf(
+        fun toEmbed(): Map<String, Any> {
+            val fields = mutableListOf(
                 field("Message", message),
                 field("Request", "$method $uri"),
                 field("Timestamp", timestamp),
                 field("Stacktrace", "```\n$stacktrace\n```"),
-            ),
-        )
+            )
+            if (!trace.isNullOrEmpty()) {
+                fields.add(field("Trace", "```\n$trace\n```"))
+            }
+            return mapOf(
+                "title" to "[$exceptionClass]",
+                "color" to 0xFF0000,
+                "fields" to fields,
+            )
+        }
 
         private fun field(name: String, value: String) =
             mapOf("name" to name, "value" to value, "inline" to false)
