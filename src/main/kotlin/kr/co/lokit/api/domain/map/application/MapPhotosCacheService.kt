@@ -40,7 +40,7 @@ class MapPhotosCacheService(
         albumId: Long?,
         cacheKey: String,
     ): MapPhotosResponse {
-        val gridSize = GridValues.getGridSize(zoom)
+        val gridSize = GridValues.getGridSize(zoom - 1)
 
         val clusters =
             mapQueryPort.findClustersWithinBBox(
