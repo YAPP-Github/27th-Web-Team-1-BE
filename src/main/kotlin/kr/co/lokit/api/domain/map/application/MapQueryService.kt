@@ -131,7 +131,7 @@ class MapQueryService(
                         }!!
                     },
                     scope.fork {
-                        getPhotos(zoom, bbox, userId, albumId)
+                        getPhotos(zoom, homeBBox, userId, albumId)
                     },
                 )
             }
