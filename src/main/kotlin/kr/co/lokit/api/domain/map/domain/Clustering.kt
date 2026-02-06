@@ -40,14 +40,9 @@ data class BBox(
 
         fun fromStringCenter(bbox: String, zoom: Int): BBox {
             val parsed = fromString(bbox)
-            val gridSize = GridValues.getGridSize(zoom - 1)
-            val inverseGridSize = 1.0 / gridSize
-            return BBox(
-                west = floor(parsed.west * inverseGridSize) * gridSize,
-                south = floor(parsed.south * inverseGridSize) * gridSize,
-                east = ceil(parsed.east * inverseGridSize) * gridSize,
-                north = ceil(parsed.north * inverseGridSize) * gridSize,
-            )
+            val longitude = (parsed.west + parsed.east) / 2.0
+            val latitude = (parsed.south + parsed.north) / 2.0
+            return fromCenter(zoom, longitude, latitude)
         }
     }
 }
