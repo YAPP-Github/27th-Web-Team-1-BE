@@ -36,7 +36,7 @@ data class BBox(
             val tileDegreesLng = 360.0 / 2.0.pow(zoom.toDouble())
             val horizontalHalf = tileDegreesLng * HORIZONTAL_MULTIPLIER
             val verticalHalf = tileDegreesLng * VERTICAL_MULTIPLIER
-            val gridSize = GridValues.getGridSize(zoom)
+            val gridSize = GridValues.getGridSize(zoom, latitude)
             val inverseGridSize = 1.0 / gridSize
 
             return BBox(

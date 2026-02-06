@@ -12,7 +12,7 @@ import kr.co.lokit.api.domain.map.dto.MapPhotoResponse
 
 fun ClusterProjection.toResponse(zoom: Int): ClusterResponse =
     ClusterResponse(
-        clusterId = ClusterId.format(zoom, cellX, cellY),
+        clusterId = ClusterId.format(zoom, cellX, cellY, centerLongitude, centerLatitude),
         count = count,
         thumbnailUrl = thumbnailUrl,
         longitude = centerLongitude,
