@@ -88,11 +88,16 @@ class MapQueryService(
             } else {
                 albumId
             }
+
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
             mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId)
         } else {
-            val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, coupleId, effectiveAlbumId)
-            mapPhotosCacheService.getIndividualPhotos(bbox, coupleId, effectiveAlbumId, cacheKey)
+            mapPhotosCacheService.getIndividualPhotos(
+                zoom = zoom,
+                bbox = bbox,
+                coupleId = coupleId,
+                albumId = effectiveAlbumId,
+            )
         }
     }
 
@@ -132,7 +137,7 @@ class MapQueryService(
     ): MapMeResponse {
         val homeBBox = BBox.fromCenter(zoom, longitude, latitude)
         val coupleId = coupleRepository.findByUserId(userId)?.id
-        val currentVersion = mapPhotosCacheService.getDataVersion(coupleId)
+        val currentVersion = mapPhotosCacheService.getVersion(coupleId)
         val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
 
         val (locationFuture, albumsFuture, photosFuture) =

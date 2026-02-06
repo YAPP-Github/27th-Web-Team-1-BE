@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.map.domain
 
-import kotlin.math.cos
 import kotlin.math.pow
 
 object GridValues {
@@ -9,19 +8,11 @@ object GridValues {
 
     fun getGridSize(
         zoom: Int,
-        latitude: Double = 37.0,
         gridPx: Int = 60,
     ): Double {
-        val effectiveZoom = zoom.coerceIn(0, 22)
-        val tileSize = 256.0
-        val earthCircumference = 40075017.0
-
-        val metersPerPx =
-            (earthCircumference * cos(latitude * Math.PI / 180)) / (tileSize * 2.0.pow(effectiveZoom.toDouble()))
-
-        val gridMeters = metersPerPx * gridPx
-
-        return gridMeters / 111000.0
+        val worldSizeMeters = 40075016.68557849
+        val totalPxAtZoom = 256.0 * 2.0.pow(zoom.toDouble())
+        return (worldSizeMeters / totalPxAtZoom) * gridPx
     }
 
     fun getSupportedZoomLevels(): Set<Int> = (0..22).toSet()

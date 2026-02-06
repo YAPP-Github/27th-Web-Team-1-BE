@@ -82,5 +82,5 @@ class MapController(
         @RequestParam zoom: Int,
         @RequestParam bbox: String,
         @RequestParam(required = false) albumId: Long?,
-    ): MapPhotosResponse = getMapUseCase.getPhotos(zoom, BBox.fromStringCenter(bbox, zoom), userId, albumId)
+    ): MapPhotosResponse = getMapUseCase.getPhotos(zoom, BBox.parseToBBox(bbox), userId, albumId)
 }
