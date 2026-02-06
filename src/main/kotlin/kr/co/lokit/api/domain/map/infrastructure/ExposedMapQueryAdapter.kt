@@ -103,6 +103,7 @@ class ExposedMapQueryAdapter(
         if (userId != null) {
             append(
                 """
+
             AND EXISTS (
                 SELECT 1
                 FROM album a
@@ -120,6 +121,7 @@ class ExposedMapQueryAdapter(
 
         append(
             """
+
         GROUP BY
             cell_x, cell_y, p.url, p.location
         """.trimIndent()
@@ -184,6 +186,7 @@ class ExposedMapQueryAdapter(
         if (userId != null) {
             append(
                 """
+
                 AND EXISTS (
                     SELECT 1
                     FROM album a
@@ -258,6 +261,7 @@ class ExposedMapQueryAdapter(
         if (userId != null) {
             append(
                 """
+
                 AND EXISTS (
                     SELECT 1
                     FROM album a
