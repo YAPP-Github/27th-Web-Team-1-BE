@@ -85,32 +85,32 @@ class ExposedMapQueryAdapter(
     private fun buildClusterQuery(userId: Long?, albumId: Long?): String = buildString {
         append(
             """
-            SELECT
-                MAX(p.id) AS id,
-                p.url,
-                ST_X(p.location) AS longitude,
-                ST_Y(p.location) AS latitude,
-                FLOOR(ST_X(p.location) * ?) AS cell_x,
-                FLOOR(ST_Y(p.location) * ?) AS cell_y,
-                MAX(p.taken_at) AS taken_at
-            FROM ${PhotoTable.tableName} p
-            WHERE
-                p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
-                AND p.is_deleted = false
-            """.trimIndent()
+        SELECT
+            MAX(p.id) AS id,
+            p.url,
+            ST_X(p.location) AS longitude,
+            ST_Y(p.location) AS latitude,
+            FLOOR(ST_X(p.location) * ?) AS cell_x,
+            FLOOR(ST_Y(p.location) * ?) AS cell_y,
+            MAX(p.taken_at) AS taken_at
+        FROM ${PhotoTable.tableName} p
+        WHERE 1 = 1
+            AND p.location && ST_MakeEnvelope(?, ?, ?, ?, 4326)
+            AND p.is_deleted = false
+        """.trimIndent()
         )
 
         if (userId != null) {
             append(
                 """
-                AND EXISTS (
-                    SELECT 1
-                    FROM album a
-                    JOIN couple_user cu ON a.couple_id = cu.couple_id
-                    WHERE a.id = p.album_id
-                        AND cu.user_id = ?
-                )
-                """.trimIndent()
+            AND EXISTS (
+                SELECT 1
+                FROM album a
+                JOIN couple_user cu ON a.couple_id = cu.couple_id
+                WHERE a.id = p.album_id
+                    AND cu.user_id = ?
+            )
+            """.trimIndent()
             )
         }
 
@@ -120,11 +120,12 @@ class ExposedMapQueryAdapter(
 
         append(
             """
-            GROUP BY
-                cell_x, cell_y, p.url, p.location
-            """.trimIndent()
+        GROUP BY
+            cell_x, cell_y, p.url, p.location
+        """.trimIndent()
         )
     }
+
 
     override fun findPhotosWithinBBox(
         west: Double,
