@@ -198,7 +198,7 @@ interface MapApi {
             example = "z14_130234_38456",
             required = true,
         )
-        @RequestParam clusterId: String,
+        @PathVariable clusterId: String,
     ): ClusterPhotosPageResponse
 
     @Operation(
