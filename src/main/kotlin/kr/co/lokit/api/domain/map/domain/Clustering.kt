@@ -15,7 +15,7 @@ data class BBox(
 ) {
     companion object {
         fun fromCenter(zoom: Int, longitude: Double, latitude: Double): BBox {
-            val viewportSize = (360.0 / 2.0.pow(zoom.toDouble())) * 3
+            val viewportSize = (360.0 / 2.0.pow(zoom.toDouble())) * 5.0
             val gridSize = GridValues.getGridSize(zoom)
             val inverseGridSize = 1.0 / gridSize
             
