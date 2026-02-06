@@ -24,14 +24,15 @@ class LoggingInterceptor(
                 MediaType.TEXT_PLAIN_VALUE,
                 MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             )
-        private val EXCLUDED_PREFIXES = setOf(
-            "/actuator/",
-            "/swagger",
-            "/swagger-ui/",
-            "/v3/api-docs",
-            "/docs/",
-            "/admin/",
-        )
+        private val EXCLUDED_PREFIXES =
+            setOf(
+                "/actuator/",
+                "/swagger",
+                "/swagger-ui/",
+                "/v3/api-docs",
+                "/docs/",
+                "/admin/",
+            )
     }
 
     override fun preHandle(
@@ -92,17 +93,17 @@ class LoggingInterceptor(
         val responseBody = wrappedResponse?.let { getBody(it.contentAsByteArray, it.contentType) } ?: ""
 
         val sb = StringBuilder()
-        sb.append("$method $uri$query → $status (${latency}ms)")
+        sb.appendLine("$method $uri$query → $status (${latency}ms)")
 
         if (requestBody.isNotEmpty()) {
-            sb.append("\n  >>> $requestBody")
+            sb.appendLine(">>> $requestBody")
         }
 
         val traces = RequestTrace.drain()
-        traces.forEach { sb.append("\n  ├ ${it.method} → ${it.durationMs}ms") }
+        traces.forEach { sb.appendLine("├ ${it.method} → ${it.durationMs}ms") }
 
         if (responseBody.isNotEmpty()) {
-            sb.append("\n  <<< $responseBody")
+            sb.appendLine("\n  <<< $responseBody")
         }
 
         logAtLevel(status, ex, sb.toString())
