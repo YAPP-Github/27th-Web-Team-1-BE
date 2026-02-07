@@ -82,3 +82,6 @@ discord:
         url: ${DISCORD_WEBHOOK_URL:}
 
 admin.key: ${ADMIN_KEY:}
+
+cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}

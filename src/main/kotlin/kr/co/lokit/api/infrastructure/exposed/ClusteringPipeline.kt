@@ -17,7 +17,7 @@ object ClusteringPipeline {
 
             ClusterData(
                 gridKey = key,
-                count = photos.sumOf { it.count },
+                count = photos.size,
                 centerLongitude = representative.longitude,
                 centerLatitude = representative.latitude,
                 photosByRank =

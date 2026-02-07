@@ -4,6 +4,7 @@ import kr.co.lokit.api.config.web.CorsProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -33,6 +34,8 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    .requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll()
                     .requestMatchers(
                         "/auth/register",
                         "/auth/login",
@@ -62,11 +65,12 @@ class SecurityConfig(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration =
             CorsConfiguration().apply {
-                allowedOrigins = corsProperties.allowedOrigins
-                    .flatMap { it.split(",") }
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
-                allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                allowedOriginPatterns =
+                    corsProperties.allowedOrigins
+                        .flatMap { it.split(",") }
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                allowedMethods = listOf("*")
                 allowedHeaders = listOf("*")
                 allowCredentials = true
             }

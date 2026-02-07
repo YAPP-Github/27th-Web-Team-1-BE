@@ -37,8 +37,10 @@ class ExposedMapQueryAdapter(
                     setDouble(2, south - margin)
                     setDouble(3, east + margin)
                     setDouble(4, north + margin)
-                    for (idx in 5..10) setDouble(idx, gridSize) // repeat 6 times
-                    bindCommonParams(11, coupleId, albumId)
+                    var idx = 5
+                    coupleId?.let { setLong(idx++, it) }
+                    albumId?.let { setLong(idx++, it) }
+                    for (i in idx..idx + 5) setDouble(i, gridSize)
                 }) { it.toUniquePhotoRecord() }.toClusterProjections()
             }
         }
