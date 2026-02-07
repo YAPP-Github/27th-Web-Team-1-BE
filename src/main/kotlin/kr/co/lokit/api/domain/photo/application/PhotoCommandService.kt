@@ -106,21 +106,21 @@ class PhotoCommandService(
     @CacheEvict(cacheNames = ["photo"], key = "#userId + ':' + #id")
     override fun update(
         id: Long,
-        albumId: Long,
+        albumId: Long?,
         description: String?,
-        longitude: Double,
-        latitude: Double,
+        longitude: Double?,
+        latitude: Double?,
         userId: Long,
     ): Photo {
         val photo = photoRepository.findById(id)
         val updated =
             photo.copy(
-                albumId = albumId,
-                description = description,
+                albumId = albumId ?: photo.albumId,
+                description = description ?: photo.description,
                 location =
                     photo.location.copy(
-                        longitude = longitude,
-                        latitude = latitude,
+                        longitude = longitude ?: photo.location.longitude,
+                        latitude = latitude ?: photo.location.latitude,
                     ),
             )
         val result = photoRepository.apply(updated)
