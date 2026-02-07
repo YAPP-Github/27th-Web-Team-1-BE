@@ -6,9 +6,15 @@ import kr.co.lokit.api.common.dto.ApiResponse
 import kr.co.lokit.api.common.dto.ApiResponse.Companion.ErrorDetail
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorCode
+import kr.co.lokit.api.config.logging.RequestTrace
+import kr.co.lokit.api.config.notification.DiscordNotifier
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.core.AuthenticationException
 import org.springframework.validation.BindException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -20,8 +26,27 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
-class ErrorControllerAdvice {
+class ErrorControllerAdvice(
+    private val discordNotifier: DiscordNotifier?,
+    @Value("\${logging.request.verbose:false}") private val verbose: Boolean,
+) {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    private fun buildTraceString(): String? {
+        val traces = RequestTrace.snapshot()
+        if (traces.isEmpty()) return null
+        return buildString {
+            traces.forEach { appendLine("├ ${it.method} → ${it.durationMs}ms") }
+        }.trimEnd()
+    }
+
+    private fun withTraceLog(errors: Map<String, String>? = null): Map<String, String>? {
+        if (!verbose) return errors
+        val logStr = buildTraceString() ?: return errors
+        val merged = errors?.toMutableMap() ?: mutableMapOf()
+        merged["trace"] = logStr
+        return merged
+    }
 
     @ExceptionHandler(BusinessException::class)
     fun handleBusinessException(
@@ -35,6 +60,7 @@ class ErrorControllerAdvice {
             exception = ex,
             request = request,
             errorCode = ex.errorCode,
+            errors = withTraceLog(ex.errors.ifEmpty { null }),
         )
     }
 
@@ -50,9 +76,11 @@ class ErrorControllerAdvice {
             request = request,
             errorCode = ErrorCode.INVALID_INPUT.code,
             errors =
-                ex.bindingResult.fieldErrors.associate {
-                    it.field to (it.defaultMessage ?: ex::class.java.name)
-                },
+                withTraceLog(
+                    ex.bindingResult.fieldErrors.associate {
+                        it.field to (it.defaultMessage ?: ex::class.java.name)
+                    },
+                ),
         )
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -71,7 +99,7 @@ class ErrorControllerAdvice {
             detail = ErrorCode.INVALID_INPUT.message,
             request = request,
             errorCode = ErrorCode.INVALID_INPUT.code,
-            errors = errors,
+            errors = withTraceLog(errors),
         )
     }
 
@@ -86,6 +114,7 @@ class ErrorControllerAdvice {
             detail = "${ex.parameterName} 파라미터가 필요합니다",
             request = request,
             errorCode = ErrorCode.MISSING_PARAMETER.code,
+            errors = withTraceLog(),
         )
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -99,6 +128,7 @@ class ErrorControllerAdvice {
             detail = "${ex.name} 파라미터의 타입이 올바르지 않습니다",
             request = request,
             errorCode = ErrorCode.INVALID_TYPE.code,
+            errors = withTraceLog(),
         )
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -112,6 +142,7 @@ class ErrorControllerAdvice {
             detail = "요청 본문을 읽을 수 없습니다. JSON 형식을 확인해주세요",
             request = request,
             errorCode = ErrorCode.INVALID_INPUT.code,
+            errors = withTraceLog(),
         )
 
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
@@ -125,6 +156,7 @@ class ErrorControllerAdvice {
             detail = "${ex.method} 메서드는 지원하지 않습니다",
             request = request,
             errorCode = ErrorCode.METHOD_NOT_ALLOWED.code,
+            errors = withTraceLog(),
         )
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -138,6 +170,51 @@ class ErrorControllerAdvice {
             detail = "요청한 리소스를 찾을 수 없습니다",
             request = request,
             errorCode = ErrorCode.RESOURCE_NOT_FOUND.code,
+            errors = withTraceLog(),
+        )
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(ObjectOptimisticLockingFailureException::class)
+    fun handleOptimisticLockException(
+        ex: ObjectOptimisticLockingFailureException,
+        request: HttpServletRequest,
+    ): ApiResponse<ErrorDetail> {
+        log.warn("Optimistic lock conflict: ${ex.message}")
+        return ApiResponse.failure(
+            status = HttpStatus.CONFLICT,
+            detail = ErrorCode.CONFLICT.message,
+            request = request,
+            errorCode = ErrorCode.CONFLICT.code,
+            errors = withTraceLog(),
+        )
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(
+        ex: AuthenticationException,
+        request: HttpServletRequest,
+    ): ApiResponse<ErrorDetail> =
+        ApiResponse.failure(
+            status = HttpStatus.UNAUTHORIZED,
+            detail = ex.message ?: ErrorCode.UNAUTHORIZED.message,
+            request = request,
+            errorCode = ErrorCode.UNAUTHORIZED.code,
+            errors = withTraceLog(),
+        )
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AccessDeniedException::class)
+    fun handleAccessDeniedException(
+        ex: AccessDeniedException,
+        request: HttpServletRequest,
+    ): ApiResponse<ErrorDetail> =
+        ApiResponse.failure(
+            status = HttpStatus.FORBIDDEN,
+            detail = ex.message ?: ErrorCode.FORBIDDEN.message,
+            request = request,
+            errorCode = ErrorCode.FORBIDDEN.code,
+            errors = withTraceLog(),
         )
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -145,11 +222,16 @@ class ErrorControllerAdvice {
     fun handleException(
         ex: Exception,
         request: HttpServletRequest,
-    ): ApiResponse<ErrorDetail> =
-        ApiResponse.failure(
+    ): ApiResponse<ErrorDetail> {
+        log.error("Unhandled exception occurred: {}", ex.message)
+        val traceLog = buildTraceString()
+        discordNotifier?.notify(ex, request, traceLog)
+        return ApiResponse.failure(
             status = HttpStatus.INTERNAL_SERVER_ERROR,
             detail = ErrorCode.INTERNAL_SERVER_ERROR.message,
             request = request,
             errorCode = ErrorCode.INTERNAL_SERVER_ERROR.code,
+            errors = withTraceLog(),
         )
+    }
 }

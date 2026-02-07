@@ -1,0 +1,112 @@
+package kr.co.lokit.api.config.cache
+
+import com.github.benmanes.caffeine.cache.Caffeine
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.EnableCaching
+import org.springframework.cache.caffeine.CaffeineCache
+import org.springframework.cache.support.SimpleCacheManager
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import java.util.concurrent.TimeUnit
+
+@Configuration
+@EnableCaching
+class CacheConfig {
+    @Bean
+    fun cacheManager(): CacheManager {
+        val cacheManager = SimpleCacheManager()
+        cacheManager.setCaches(
+            listOf(
+                CaffeineCache(
+                    "reverseGeocode",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(1, TimeUnit.HOURS)
+                        .maximumSize(500)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "searchPlaces",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(1, TimeUnit.HOURS)
+                        .maximumSize(100)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "userDetails",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(200)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "photo",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(200)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "album",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(100)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "albumCouple",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(3, TimeUnit.HOURS)
+                        .maximumSize(500)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "userCouple",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(1, TimeUnit.HOURS)
+                        .maximumSize(500)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "coupleAlbums",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(1, TimeUnit.MINUTES)
+                        .maximumSize(200)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "mapPhotos",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(1, TimeUnit.MINUTES)
+                        .maximumSize(500)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "mapCells",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(3, TimeUnit.MINUTES)
+                        .maximumSize(300)
+                        .build(),
+                ),
+                CaffeineCache(
+                    "presignedUrl",
+                    Caffeine
+                        .newBuilder()
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(100)
+                        .build(),
+                ),
+            ),
+        )
+        return cacheManager
+    }
+}

@@ -4,34 +4,53 @@ spring:
         username: ${POSTGRES_USER}
         password: ${POSTGRES_PASSWORD}
         driver-class-name: org.postgresql.Driver
+        hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 5000
+            idle-timeout: 600000
+            max-lifetime: 1800000
+            leak-detection-threshold: 30000
     jpa:
         hibernate:
             ddl-auto: update
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
-                format_sql: true
-                show_sql: true
+                format_sql: false
+                show_sql: false
                 use_sql_comments: true
+                jdbc:
+                    batch_size: 50
+                default_batch_fetch_size: 100
+                order_inserts: true
+                order_updates: true
             jdbc:
                 time_zone: Asia/Seoul
         open-in-view: false
 
 logging:
+    request:
+        verbose: true
     level:
-        org.hibernate.orm.jdbc.bind: trace
         root: INFO
         kr.co.lokit.api: DEBUG
+        kr.co.lokit.api.config.security: WARN
 
 management:
     endpoints:
         web:
             exposure:
-                include: "health"
+                include: "health,prometheus"
             base-path: /actuator
     endpoint:
         health:
             show-details: when-authorized
+
+jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION}
 
 springdoc:
     api-docs:
@@ -41,5 +60,30 @@ springdoc:
         enabled: true
         path: /swagger
         display-request-duration: true
+        tags-sorter: alpha
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
+
+aws:
+    s3:
+        enabled: true
+        region: ${AWS_REGION}
+        bucket: ${AWS_S3_BUCKET}
+
+kakao:
+    api:
+        key: ${KAKAO_API_KEY}
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: ${KAKAO_REDIRECT_URI}
+    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI}
+
+cookie:
+    secure: true
+    domain: ${COOKIE_DOMAIN:}
+
+discord:
+    webhook:
+        url: ${DISCORD_WEBHOOK_URL:}
+
+admin.key: ${ADMIN_KEY:}

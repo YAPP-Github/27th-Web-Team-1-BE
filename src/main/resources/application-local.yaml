@@ -6,13 +6,18 @@ spring:
         driver-class-name: org.postgresql.Driver
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: create-drop
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
                 format_sql: true
                 show_sql: true
                 use_sql_comments: true
+                jdbc:
+                    batch_size: 50
+                default_batch_fetch_size: 100
+                order_inserts: true
+                order_updates: true
             jdbc:
                 time_zone: Asia/Seoul
         open-in-view: false
@@ -23,6 +28,8 @@ spring:
             file: infra/local/compose.yaml
 
 logging:
+    request:
+        verbose: true
     level:
         org.hibernate.orm.jdbc.bind: trace
         root: INFO
@@ -35,6 +42,11 @@ management:
                 include: "health"
             base-path: /actuator
 
+jwt:
+    secret: ${JWT_SECRET:local-dev-jwt-secret-key-minimum-32-chars}
+    expiration: ${JWT_EXPIRATION:86400000}  # 24시간
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7일
+
 springdoc:
     api-docs:
         enabled: true
@@ -43,5 +55,30 @@ springdoc:
         enabled: true
         path: /swagger
         display-request-duration: true
+        tags-sorter: alpha
     default-consumes-media-type: application/json
     default-produces-media-type: application/json
+
+aws:
+    s3:
+        enabled: false
+        region: ${AWS_REGION:}
+        bucket: ${AWS_S3_BUCKET:}
+
+kakao:
+    api:
+        key: ${KAKAO_API_KEY:}
+    client-id: ${KAKAO_CLIENT_ID:}
+    client-secret: ${KAKAO_CLIENT_SECRET:}
+    redirect-uri: ${KAKAO_REDIRECT_URI:}
+    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI:}
+
+cookie:
+    secure: true
+    domain: ${COOKIE_DOMAIN:}
+
+discord:
+    webhook:
+        url: ${DISCORD_WEBHOOK_URL:}
+
+admin.key: ${ADMIN_KEY:}

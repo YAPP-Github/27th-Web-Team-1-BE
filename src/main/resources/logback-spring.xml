@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-            <layout class="kr.co.lokit.api.config.logging.MaskingPatternLayout">
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{clientIp}] [%X{requestMethod} %X{requestUri}] %-5level %logger{36} - %msg%n</pattern>
-            </layout>
-        </encoder>
-    </appender>
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
 
     <springProfile name="local">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="kr.co.lokit.api.config.logging.MaskingPatternLayout">
+                    <maskPattern>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
+                    </maskPattern>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] [%X{clientIp}] [%X{requestMethod}
+                        %X{requestUri}] %-5level %logger{36} - %msg%n
+                    </pattern>
+                </layout>
+            </encoder>
+        </appender>
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>
@@ -20,21 +22,40 @@
     </springProfile>
 
     <springProfile name="dev">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
+                    <prettyPrint>false</prettyPrint>
+                    <maskPattern>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
+                    </maskPattern>
+                </layout>
+            </encoder>
+        </appender>
+
+        <logger name="org.springframework.web.filter.OncePerRequestFilter" level="INFO"/>
+        <logger name="kr.co.lokit.api.config.logging.MdcContextFilter" level="INFO"/>
+        <logger name="kr.co.lokit.api.config.security.AuthenticationFilter" level="INFO"/>
+
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="JSON_CONSOLE"/>
         </root>
-        <logger name="kr.co.lokit.api" level="DEBUG"/>
     </springProfile>
 
     <springProfile name="prod">
         <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout"/>
+                <layout class="kr.co.lokit.api.config.logging.MaskingJsonLayout">
+                    <prettyPrint>false</prettyPrint>
+                    <maskPattern>
+                        <![CDATA[("?(access_?token|refresh_?token|authorization|token)"?\s*[:=]\s*"?)(Bearer\s*)?[^"\s,]+]]>
+                    </maskPattern>
+                </layout>
             </encoder>
         </appender>
 
         <root level="INFO">
-            <appender-ref ref="JSON" />
+            <appender-ref ref="JSON"/>
         </root>
     </springProfile>
 </configuration>
