@@ -24,6 +24,7 @@ object ClusteringPipeline {
                     photos.sortedByDescending { it.takenAt }.mapIndexed { index, photo ->
                         RankedPhoto(url = photo.url, rank = index + 1)
                     },
+                takenAt = representative.takenAt,
             )
         }
 
@@ -53,6 +54,7 @@ object ClusteringPipeline {
                                 thumbnailUrl = selectedUrl,
                                 centerLongitude = cluster.centerLongitude,
                                 centerLatitude = cluster.centerLatitude,
+                                takenAt = cluster.takenAt,
                             ),
                 )
             }.results

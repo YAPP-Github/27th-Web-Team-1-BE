@@ -11,6 +11,7 @@ import kr.co.lokit.api.infrastructure.exposed.toClusterProjections
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.util.concurrent.Semaphore
@@ -89,7 +90,7 @@ class ExposedMapQueryAdapter(
         setup: PreparedStatement.() -> Unit,
         mapper: (ResultSet) -> T,
     ): List<T> {
-        val conn = TransactionManager.current().connection.connection as java.sql.Connection
+        val conn = TransactionManager.current().connection.connection as Connection
 
         return conn.prepareStatement(sql).use { stmt ->
             stmt.setup()
