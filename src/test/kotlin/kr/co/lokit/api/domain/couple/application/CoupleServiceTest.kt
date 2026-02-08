@@ -8,6 +8,8 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import kotlin.test.assertEquals
@@ -57,5 +59,18 @@ class CoupleServiceTest {
         }
 
         assertEquals("Couple을(를) (invalid1)로 찾을 수 없습니다", exception.message)
+    }
+
+    @Test
+    fun `이미 커플이 존재하면 기존 커플을 반환한다`() {
+        val existingCouple = createCouple(id = 1L, name = "기존 커플", inviteCode = "existing1", userIds = listOf(1L))
+        val newCouple = createCouple(name = "새 커플")
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(existingCouple)
+
+        val result = coupleCommandService.createIfNone(newCouple, 1L)
+
+        assertEquals(1L, result.id)
+        assertEquals("기존 커플", result.name)
+        verify(coupleRepository, never()).saveWithUser(newCouple, 1L)
     }
 }

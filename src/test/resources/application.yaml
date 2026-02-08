@@ -66,3 +66,6 @@ cookie:
     secure: false
 
 admin.key: ""
+
+cors:
+    allowed-origins: http://localhost:8080

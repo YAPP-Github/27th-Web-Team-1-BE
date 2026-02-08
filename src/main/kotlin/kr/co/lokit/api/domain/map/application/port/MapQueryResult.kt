@@ -9,6 +9,7 @@ data class ClusterProjection(
     val thumbnailUrl: String,
     val centerLongitude: Double,
     val centerLatitude: Double,
+    val takenAt: LocalDateTime? = null,
 )
 
 data class PhotoProjection(
@@ -57,6 +58,7 @@ data class ClusterData(
     val centerLongitude: Double,
     val centerLatitude: Double,
     val photosByRank: List<RankedPhoto>,
+    val takenAt: LocalDateTime? = null,
 )
 
 data class RankedPhoto(

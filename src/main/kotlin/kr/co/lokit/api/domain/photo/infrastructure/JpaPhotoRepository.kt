@@ -87,6 +87,7 @@ class JpaPhotoRepository(
             this.url = photo.url
             this.description = photo.description
             this.coupleId = albumEntity.couple.nonNullId()
+            updateLocation(photo.location.longitude, photo.location.latitude)
         }
         return photoEntity.toDomain()
     }

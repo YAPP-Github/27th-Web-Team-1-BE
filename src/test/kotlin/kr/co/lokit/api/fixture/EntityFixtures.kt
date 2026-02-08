@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
+import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import org.locationtech.jts.geom.Point
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -92,6 +93,17 @@ fun createAlbumBoundsEntity(
         minLatitude = minLatitude,
         maxLatitude = maxLatitude,
     )
+    id?.let { setEntityId(entity, it) }
+    return entity
+}
+
+fun createRefreshTokenEntity(
+    id: Long? = null,
+    token: String = "test-refresh-token",
+    user: UserEntity = createUserEntity(id = 1L),
+    expiresAt: LocalDateTime = LocalDateTime.now().plusDays(7),
+): RefreshTokenEntity {
+    val entity = RefreshTokenEntity(token = token, user = user, expiresAt = expiresAt)
     id?.let { setEntityId(entity, it) }
     return entity
 }
