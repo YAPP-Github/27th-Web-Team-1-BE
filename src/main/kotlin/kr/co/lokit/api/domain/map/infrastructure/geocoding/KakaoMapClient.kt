@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpHeaders
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 
@@ -20,6 +21,10 @@ class KakaoMapClient(
     private val restClient = RestClient.builder()
         .baseUrl(BASE_URL)
         .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK $apiKey")
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(5_000)
+            setReadTimeout(10_000)
+        })
         .build()
 
     @Cacheable(

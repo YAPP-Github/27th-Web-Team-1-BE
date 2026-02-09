@@ -14,7 +14,6 @@ import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class CoupleServiceTest {
-
     @Mock
     lateinit var coupleRepository: CoupleRepositoryPort
 
@@ -52,9 +51,10 @@ class CoupleServiceTest {
     fun `잘못된 초대 코드로 합류하면 예외가 발생한다`() {
         `when`(coupleRepository.findByInviteCode("invalid1")).thenReturn(null)
 
-        val exception = assertThrows<BusinessException.ResourceNotFoundException> {
-            coupleCommandService.joinByInviteCode("invalid1", 1L)
-        }
+        val exception =
+            assertThrows<BusinessException.ResourceNotFoundException> {
+                coupleCommandService.joinByInviteCode("invalid1", 1L)
+            }
 
         assertEquals("Couple을(를) (invalid1)로 찾을 수 없습니다", exception.message)
     }

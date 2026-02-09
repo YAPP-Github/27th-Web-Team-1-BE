@@ -10,6 +10,7 @@ fun UserEntity.toDomain(): User =
         email = email,
         name = name,
         role = role,
+        profileImageUrl = profileImageUrl,
     )
 
 fun User.toEntity(): UserEntity =
@@ -17,6 +18,7 @@ fun User.toEntity(): UserEntity =
         email = email,
         name = name,
         role = role,
+        profileImageUrl = profileImageUrl,
     )
 
 fun JwtTokenResponse.toJwtTokenResponse(): JwtTokenResponse =

@@ -28,9 +28,11 @@ class AuthController(
     @GetMapping("kakao")
     override fun kakaoAuthorize(
         @RequestParam(required = false) redirect: String?,
+        req: HttpServletRequest,
     ): ResponseEntity<Unit> {
+        val resolvedRedirect = redirect ?: resolveRedirectFromReferer(req)
         val state =
-            redirect
+            resolvedRedirect
                 ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
                 ?: ""
 
@@ -63,6 +65,7 @@ class AuthController(
             state
                 ?.takeIf { it.isNotBlank() }
                 ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8) }
+                ?.takeIf { isAllowedRedirect(it) }
                 ?: kakaoOAuthProperties.frontRedirectUri
 
         return ResponseEntity
@@ -71,5 +74,27 @@ class AuthController(
             .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
             .location(URI.create(redirectUri))
             .build()
+    }
+
+    private fun resolveRedirectFromReferer(req: HttpServletRequest): String? {
+        val referer = req.getHeader("Referer") ?: return null
+        val uri = URI.create(referer)
+        if (uri.host == LOCAL_HOST) {
+            val port = if (uri.port > 0) ":${uri.port}" else ""
+            return "${uri.scheme}://${uri.host}$port"
+        }
+        return null
+    }
+
+    private fun isAllowedRedirect(uri: String): Boolean =
+        try {
+            URI.create(uri).host?.endsWith(ALLOWED_DOMAIN) == true
+        } catch (_: Exception) {
+            false
+        }
+
+    companion object {
+        private const val LOCAL_HOST = "local.lokit.co.kr"
+        private const val ALLOWED_DOMAIN = "lokit.co.kr"
     }
 }

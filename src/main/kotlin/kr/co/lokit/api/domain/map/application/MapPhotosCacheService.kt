@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
+import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.GridValues
@@ -8,6 +9,7 @@ import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
+import java.time.LocalDateTime
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCache
@@ -101,7 +103,19 @@ class MapPhotosCacheService(
             scope.join().throwIfFailed()
 
             val dbResults = dbResultsTask.get()
-            val dbCellMap = dbResults.associateBy { it.cellX to it.cellY }
+            val dbCellMap = dbResults.groupBy { it.cellX to it.cellY }
+                .mapValues { (_, projections) ->
+                    val latest = projections.maxByOrNull { it.takenAt ?: LocalDateTime.MIN }!!
+                    ClusterProjection(
+                        cellX = projections.first().cellX,
+                        cellY = projections.first().cellY,
+                        count = projections.sumOf { it.count },
+                        thumbnailUrl = latest.thumbnailUrl,
+                        centerLongitude = projections.map { it.centerLongitude }.average(),
+                        centerLatitude = projections.map { it.centerLatitude }.average(),
+                        takenAt = latest.takenAt,
+                    )
+                }
             val newResponses = mutableListOf<ClusterResponse>()
             val bulkInsertMap = mutableMapOf<String, CachedCell>()
 

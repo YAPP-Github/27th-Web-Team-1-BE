@@ -8,4 +8,10 @@ interface UserRepositoryPort {
     fun findById(id: Long): User?
 
     fun findByEmail(email: String): User?
+
+    fun apply(
+        user: User,
+        name: String,
+        profileImageUrl: String?,
+    )
 }

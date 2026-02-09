@@ -6,6 +6,7 @@ import kr.co.lokit.api.domain.user.dto.KakaoUserInfoResponse
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
@@ -14,7 +15,12 @@ import org.springframework.web.client.RestClient
 @EnableConfigurationProperties(KakaoOAuthProperties::class)
 class KakaoOAuthClient(
     private val properties: KakaoOAuthProperties,
-    private val restClient: RestClient = RestClient.create(),
+    private val restClient: RestClient = RestClient.builder()
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(5_000)
+            setReadTimeout(10_000)
+        })
+        .build(),
 ) : OAuthClient {
 
     override val provider: OAuthProvider = OAuthProvider.KAKAO

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.domain.couple.dto.CreateCoupleRequest
+import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
 import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
 
 @SecurityRequirement(name = "Authorization")
@@ -24,6 +25,18 @@ interface CoupleApi {
         request: CreateCoupleRequest,
         @Parameter(hidden = true) userId: Long,
     ): IdResponse
+
+    @Operation(
+        summary = "초대 코드 조회",
+        description = "초대 코드를 조회합니다.",
+        responses = [
+            ApiResponse(responseCode = "200", description = "커플 생성 성공"),
+            ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+        ],
+    )
+    fun getCode(
+        @Parameter(hidden = true) userId: Long,
+    ): InviteCodeResponse
 
     @Operation(
         summary = "초대 코드로 커플 합류",

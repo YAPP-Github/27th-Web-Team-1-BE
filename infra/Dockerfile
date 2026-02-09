@@ -20,7 +20,7 @@ EXPOSE 8080
 
 # Dockerfile의 ENV JAVA_OPTS 수정
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
-    -XX:MaxRAMPercentage=75.0 \
+    -XX:MaxRAMPercentage=65.0 \
     -XX:MaxMetaspaceSize=150m \
     -XX:+UseStringDeduplication \
     -XX:+ExitOnOutOfMemoryError \

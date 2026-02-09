@@ -19,3 +19,12 @@ data class JoinCoupleRequest(
     @Schema(description = "초대 코드", example = "ABC12345", requiredMode = Schema.RequiredMode.REQUIRED)
     val inviteCode: String,
 )
+
+@Schema(description = "초대 코드 응답")
+data class InviteCodeResponse(
+    val inviteCode: String,
+) {
+    companion object {
+        fun from(code: String): InviteCodeResponse = InviteCodeResponse(code)
+    }
+}

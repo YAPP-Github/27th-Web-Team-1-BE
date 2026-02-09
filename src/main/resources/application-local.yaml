@@ -9,7 +9,6 @@ spring:
             ddl-auto: create-drop
         properties:
             hibernate:
-                dialect: org.hibernate.dialect.PostgreSQLDialect
                 format_sql: true
                 show_sql: true
                 use_sql_comments: true
@@ -82,3 +81,6 @@ discord:
         url: ${DISCORD_WEBHOOK_URL:}
 
 admin.key: ${ADMIN_KEY:}
+
+cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}

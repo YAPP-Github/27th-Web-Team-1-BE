@@ -140,6 +140,7 @@ jobs:
                         docker run -d \
                             --name $CONTAINER_NAME \
                             --restart unless-stopped \
+                            --network lokit-net \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
                             -e TZ=Asia/Seoul \
@@ -150,8 +151,8 @@ jobs:
                             --log-opt awslogs-group=/docker/lokit-api-dev \
                             --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
                             --log-opt awslogs-create-group=true \
-                            --memory="700m" \
-                            --memory-swap="1400m" \
+                            --memory="1024m" \
+                            --memory-swap="1536m" \
                             --cpus="1" \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
 

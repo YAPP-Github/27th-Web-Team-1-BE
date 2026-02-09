@@ -13,20 +13,29 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CoupleCommandService(
     private val coupleRepository: CoupleRepositoryPort,
-) : CreateCoupleUseCase, JoinCoupleUseCase {
+) : CreateCoupleUseCase,
+    JoinCoupleUseCase {
+    @OptimisticRetry
+    @Transactional
+    @CachePut(cacheNames = ["userCouple"], key = "#userId")
+    override fun createIfNone(
+        couple: Couple,
+        userId: Long,
+    ): Couple = coupleRepository.findByUserId(userId) ?: coupleRepository.saveWithUser(couple, userId)
 
     @OptimisticRetry
     @Transactional
     @CachePut(cacheNames = ["userCouple"], key = "#userId")
-    override fun createIfNone(couple: Couple, userId: Long): Couple =
-        coupleRepository.findByUserId(userId) ?: coupleRepository.saveWithUser(couple, userId)
-
-    @OptimisticRetry
-    @Transactional
-    @CachePut(cacheNames = ["userCouple"], key = "#userId")
-    override fun joinByInviteCode(inviteCode: String, userId: Long): Couple {
-        val couple = coupleRepository.findByInviteCode(inviteCode)
-            ?: throw entityNotFound<Couple>("inviteCode", inviteCode)
+    override fun joinByInviteCode(
+        inviteCode: String,
+        userId: Long,
+    ): Couple {
+        val couple =
+            coupleRepository.findByInviteCode(inviteCode)
+                ?: throw entityNotFound<Couple>("inviteCode", inviteCode)
         return coupleRepository.addUser(couple.id, userId)
     }
+
+    override fun getInviteCode(userId: Long): String =
+        (coupleRepository.findByUserId(userId) ?: throw entityNotFound<Couple>(userId)).inviteCode
 }

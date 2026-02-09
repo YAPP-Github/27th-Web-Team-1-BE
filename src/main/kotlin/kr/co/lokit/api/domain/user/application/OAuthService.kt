@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.user.application
 
+import jakarta.persistence.EntityManager
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -12,7 +13,6 @@ import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
-import jakarta.persistence.EntityManager
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,27 +29,36 @@ class OAuthService(
     private val entityManager: EntityManager,
 ) {
     @Transactional
-    fun login(provider: OAuthProvider, code: String): JwtTokenResponse {
+    fun login(
+        provider: OAuthProvider,
+        code: String,
+    ): JwtTokenResponse {
         val client = oAuthClientRegistry.getClient(provider)
         val accessToken = client.getAccessToken(code)
         val userInfo = client.getUserInfo(accessToken)
 
-        val email = userInfo.email
-            ?: throw BusinessException.KakaoEmailNotProvidedException(
-                message = "${provider.name} 계정에서 이메일 정보를 제공받지 못했습니다",
-                errors = mapOf("providerId" to userInfo.providerId),
-            )
+        val email =
+            userInfo.email
+                ?: throw BusinessException.KakaoEmailNotProvidedException(
+                    message = "${provider.name} 계정에서 이메일 정보를 제공받지 못했습니다",
+                    errors = mapOf("providerId" to userInfo.providerId),
+                )
 
         val name = userInfo.name ?: "${provider.name} 사용자"
 
-        val user = userRepository.findByEmail(email)
-            ?: registerUser(email, name)
+        val user =
+            userRepository.findByEmail(email)
+                ?: registerUser(email, name)
+        userRepository.apply(user, name, userInfo.profileImageUrl)
 
         return generateTokens(user)
     }
 
-    private fun registerUser(email: String, name: String): User {
-        return try {
+    private fun registerUser(
+        email: String,
+        name: String,
+    ): User =
+        try {
             val user = userRepository.save(User(email = email, name = name))
             createCoupleUseCase.createIfNone(Couple(name = "default"), user.id)
             user
@@ -58,22 +67,23 @@ class OAuthService(
             userRepository.findByEmail(email)
                 ?: throw e
         }
-    }
 
     private fun generateTokens(user: User): JwtTokenResponse {
         val accessToken = jwtTokenProvider.generateAccessToken(user)
         val refreshToken = jwtTokenProvider.generateRefreshToken()
 
-        val userEntity = userJpaRepository.findByEmail(user.email)
-            ?: throw BusinessException.UserNotFoundException(
-                errors = mapOf("email" to user.email),
-            )
+        val userEntity =
+            userJpaRepository.findByEmail(user.email)
+                ?: throw BusinessException.UserNotFoundException(
+                    errors = mapOf("email" to user.email),
+                )
 
         refreshTokenJpaRepository.deleteByUser(userEntity)
 
-        val expiresAt = LocalDateTime.now().plusSeconds(
-            jwtTokenProvider.getRefreshTokenExpirationMillis() / 1000,
-        )
+        val expiresAt =
+            LocalDateTime.now().plusSeconds(
+                jwtTokenProvider.getRefreshTokenExpirationMillis() / 1000,
+            )
 
         refreshTokenJpaRepository.save(
             RefreshTokenEntity(
