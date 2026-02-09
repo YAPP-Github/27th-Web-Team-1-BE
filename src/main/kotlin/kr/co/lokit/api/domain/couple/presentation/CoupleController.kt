@@ -39,7 +39,6 @@ class CoupleController(
         @CurrentUserId userId: Long,
     ): InviteCodeResponse = InviteCodeResponse.from(joinCoupleUseCase.getInviteCode(userId))
 
-    @GetMapping
     @PostMapping("join")
     override fun joinByInviteCode(
         @RequestBody @Valid request: JoinCoupleRequest,

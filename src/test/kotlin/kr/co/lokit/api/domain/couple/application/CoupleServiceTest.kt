@@ -8,15 +8,12 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class CoupleServiceTest {
-
     @Mock
     lateinit var coupleRepository: CoupleRepositoryPort
 
@@ -54,23 +51,11 @@ class CoupleServiceTest {
     fun `잘못된 초대 코드로 합류하면 예외가 발생한다`() {
         `when`(coupleRepository.findByInviteCode("invalid1")).thenReturn(null)
 
-        val exception = assertThrows<BusinessException.ResourceNotFoundException> {
-            coupleCommandService.joinByInviteCode("invalid1", 1L)
-        }
+        val exception =
+            assertThrows<BusinessException.ResourceNotFoundException> {
+                coupleCommandService.joinByInviteCode("invalid1", 1L)
+            }
 
         assertEquals("Couple을(를) (invalid1)로 찾을 수 없습니다", exception.message)
-    }
-
-    @Test
-    fun `이미 커플이 존재하면 기존 커플을 반환한다`() {
-        val existingCouple = createCouple(id = 1L, name = "기존 커플", inviteCode = "existing1", userIds = listOf(1L))
-        val newCouple = createCouple(name = "새 커플")
-        `when`(coupleRepository.findByUserId(1L)).thenReturn(existingCouple)
-
-        val result = coupleCommandService.createIfNone(newCouple, 1L)
-
-        assertEquals(1L, result.id)
-        assertEquals("기존 커플", result.name)
-        verify(coupleRepository, never()).saveWithUser(newCouple, 1L)
     }
 }

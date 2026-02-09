@@ -1,6 +1,7 @@
 package kr.co.lokit.api.fixture
 
 import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.util.InviteCodeGenerator
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
@@ -20,7 +21,7 @@ fun createComment(
     userId: Long = 1L,
     content: String = "테스트 댓글",
     commentedAt: LocalDate = LocalDate.of(2025, 1, 1),
-) = Comment(id = id, photoId = photoId, userId = userId, content = content, commentedAt = commentedAt)
+) = Comment(id = id, photoId = photoId, userId = userId, content = content)
 
 fun createEmoticon(
     id: Long = 0L,
@@ -39,7 +40,7 @@ fun createUser(
 fun createCouple(
     id: Long = 0L,
     name: String = "테스트",
-    inviteCode: String? = null,
+    inviteCode: String = InviteCodeGenerator.generate(),
     userIds: List<Long> = emptyList(),
 ) = Couple(id = id, name = name, inviteCode = inviteCode, userIds = userIds)
 
