@@ -8,6 +8,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import kotlin.test.assertEquals
@@ -39,12 +40,43 @@ class CoupleServiceTest {
         val couple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678")
         val joinedCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L, 2L))
         `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(couple)
+        `when`(coupleRepository.findByUserId(2L)).thenReturn(null)
         `when`(coupleRepository.addUser(1L, 2L)).thenReturn(joinedCouple)
 
         val result = coupleCommandService.joinByInviteCode("12345678", 2L)
 
         assertEquals(1L, result.id)
         assertEquals(listOf(1L, 2L), result.userIds)
+    }
+
+    @Test
+    fun `기존 혼자인 커플이 있으면 삭제 후 새 커플에 합류한다`() {
+        val existingCouple = createCouple(id = 2L, name = "default", inviteCode = "87654321", userIds = listOf(2L))
+        val targetCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678")
+        val joinedCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L, 2L))
+        `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(targetCouple)
+        `when`(coupleRepository.findByUserId(2L)).thenReturn(existingCouple)
+        `when`(coupleRepository.findById(2L)).thenReturn(existingCouple)
+        `when`(coupleRepository.addUser(1L, 2L)).thenReturn(joinedCouple)
+
+        val result = coupleCommandService.joinByInviteCode("12345678", 2L)
+
+        assertEquals(1L, result.id)
+        assertEquals(listOf(1L, 2L), result.userIds)
+        Mockito.verify(coupleRepository).deleteById(2L)
+    }
+
+    @Test
+    fun `이미 다른 사용자와 커플로 연결되어 있으면 예외가 발생한다`() {
+        val existingCouple = createCouple(id = 2L, name = "기존 커플", inviteCode = "87654321", userIds = listOf(2L, 3L))
+        val targetCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678")
+        `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(targetCouple)
+        `when`(coupleRepository.findByUserId(2L)).thenReturn(existingCouple)
+        `when`(coupleRepository.findById(2L)).thenReturn(existingCouple)
+
+        assertThrows<BusinessException.CoupleAlreadyConnectedException> {
+            coupleCommandService.joinByInviteCode("12345678", 2L)
+        }
     }
 
     @Test

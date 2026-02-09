@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
-import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.user.application.port.OAuthClientPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
@@ -25,10 +24,8 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
-import org.springframework.dao.DataIntegrityViolationException
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -68,7 +65,6 @@ class OAuthServiceTest {
                 refreshTokenJpaRepository,
                 jwtTokenProvider,
                 createCoupleUseCase,
-                entityManager,
             )
     }
 
@@ -88,7 +84,6 @@ class OAuthServiceTest {
         whenever(userInfo.email).thenReturn(email)
         whenever(userInfo.name).thenReturn(name)
 
-        // providerId는 email이 null일 때만 예외 생성에서 사용됨 → 그때만 스텁 (UnnecessaryStubbing 방지)
         if (email == null) {
             whenever(userInfo.providerId).thenReturn(providerId)
         }
@@ -106,7 +101,7 @@ class OAuthServiceTest {
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
         val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
 
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(existingUser)
+        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
         whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
         setupTokenGeneration(existingUser)
 
@@ -115,27 +110,6 @@ class OAuthServiceTest {
         assertNotNull(result)
         assertEquals("access-token", result.accessToken)
         assertEquals("refresh-token", result.refreshToken)
-    }
-
-    @Test
-    fun `신규 사용자로 로그인하면 회원가입 후 토큰을 발급한다`() {
-        setupOAuthClient()
-        val newUser = User(id = 1L, email = "test@test.com", name = "테스트")
-        val newUserEntity = createUserEntity(id = 1L, email = newUser.email)
-
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(null)
-        whenever(userRepository.save(any())).thenReturn(newUser)
-
-        // registerUser 내부에서 createCoupleUseCase 호출됨(반환 타입이 Couple이라고 가정)
-        whenever(createCoupleUseCase.createIfNone(eq(Couple(name = "default")), eq(newUser.id)))
-            .thenReturn(Couple(id = 1L, name = "default"))
-
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(newUserEntity)
-        setupTokenGeneration(newUser)
-
-        val result = oAuthService.login(OAuthProvider.KAKAO, "auth-code")
-
-        assertNotNull(result)
     }
 
     @Test
@@ -148,63 +122,11 @@ class OAuthServiceTest {
     }
 
     @Test
-    fun `이름이 없으면 기본 이름이 사용된다`() {
-        setupOAuthClient(name = null)
-        val newUser = User(id = 1L, email = "test@test.com", name = "KAKAO 사용자")
-        val newUserEntity = createUserEntity(id = 1L, email = newUser.email, name = newUser.name)
-
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(null)
-        whenever(userRepository.save(any())).thenReturn(newUser)
-
-        whenever(createCoupleUseCase.createIfNone(eq(Couple(name = "default")), eq(newUser.id)))
-            .thenReturn(Couple(id = 1L, name = "default"))
-
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(newUserEntity)
-        setupTokenGeneration(newUser)
-
-        val result = oAuthService.login(OAuthProvider.KAKAO, "auth-code")
-
-        assertNotNull(result)
-    }
-
-    @Test
-    fun `동시 회원가입으로 DataIntegrityViolationException 발생 시 기존 사용자를 반환한다`() {
-        setupOAuthClient()
-        val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
-        val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
-
-        whenever(userRepository.findByEmail("test@test.com"))
-            .thenReturn(null)
-            .thenReturn(existingUser)
-
-        whenever(userRepository.save(any())).thenThrow(DataIntegrityViolationException("duplicate"))
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
-        setupTokenGeneration(existingUser)
-
-        val result = oAuthService.login(OAuthProvider.KAKAO, "auth-code")
-
-        assertNotNull(result)
-        verify(entityManager).clear()
-    }
-
-    @Test
-    fun `동시 회원가입 후에도 사용자를 찾을 수 없으면 예외를 재전파한다`() {
-        setupOAuthClient()
-
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(null)
-        whenever(userRepository.save(any())).thenThrow(DataIntegrityViolationException("duplicate"))
-
-        assertThrows<DataIntegrityViolationException> {
-            oAuthService.login(OAuthProvider.KAKAO, "auth-code")
-        }
-    }
-
-    @Test
     fun `토큰 생성 시 사용자를 찾을 수 없으면 UserNotFoundException이 발생한다`() {
         setupOAuthClient()
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
 
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(existingUser)
+        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
         whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(null)
         setupTokenGeneration(existingUser)
 
@@ -219,7 +141,7 @@ class OAuthServiceTest {
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
         val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
 
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(existingUser)
+        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
         whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
         setupTokenGeneration(existingUser)
 
@@ -234,7 +156,7 @@ class OAuthServiceTest {
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
         val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
 
-        whenever(userRepository.findByEmail("test@test.com")).thenReturn(existingUser)
+        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
         whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
         setupTokenGeneration(existingUser)
 

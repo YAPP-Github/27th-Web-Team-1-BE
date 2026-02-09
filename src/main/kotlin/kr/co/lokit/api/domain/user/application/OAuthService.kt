@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.user.application
 
-import jakarta.persistence.EntityManager
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -13,7 +12,6 @@ import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -26,7 +24,6 @@ class OAuthService(
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val createCoupleUseCase: CreateCoupleUseCase,
-    private val entityManager: EntityManager,
 ) {
     @Transactional
     fun login(
@@ -45,26 +42,19 @@ class OAuthService(
                 )
 
         val name = userInfo.name ?: "${provider.name} 사용자"
+        userRepository.lockWithEmail(email)
 
         val user =
-            userRepository.findByEmailForUpdate(email, name, userInfo.profileImageUrl)
+            userRepository.findByEmail(email, name)
 
+        user.profileImageUrl = userInfo.profileImageUrl
+
+        createCoupleUseCase.createIfNone(
+            Couple(name = "default"),
+            user.id,
+        )
         return generateTokens(user)
     }
-
-    private fun registerUser(
-        email: String,
-        name: String,
-    ): User =
-        try {
-            val user = userRepository.save(User(email = email, name = name))
-            createCoupleUseCase.createIfNone(Couple(name = "default"), user.id)
-            user
-        } catch (e: DataIntegrityViolationException) {
-            entityManager.clear()
-            userRepository.findByEmail(email)
-                ?: throw e
-        }
 
     private fun generateTokens(user: User): JwtTokenResponse {
         val accessToken = jwtTokenProvider.generateAccessToken(user)

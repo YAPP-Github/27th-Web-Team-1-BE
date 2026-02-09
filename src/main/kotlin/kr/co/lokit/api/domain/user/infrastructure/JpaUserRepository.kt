@@ -22,18 +22,17 @@ class JpaUserRepository(
     override fun findById(id: Long): User? = userJpaRepository.findByIdOrNull(id)?.toDomain()
 
     @Transactional(readOnly = true)
-    override fun findByEmail(email: String): User? = userJpaRepository.findByEmail(email)?.toDomain()
+    override fun lockWithEmail(email: String) {
+        userJpaRepository.lockWithEmail(email)
+    }
 
     @Transactional
-    override fun findByEmailForUpdate(
+    override fun findByEmail(
         email: String,
         name: String,
-        profileImageUrl: String?,
     ): User {
-        userJpaRepository.lockWithEmail(email)
         val userEntity =
             userJpaRepository.findByEmail(email) ?: userJpaRepository.save(User(email = email, name = name).toEntity())
-        userEntity.profileImageUrl = profileImageUrl
         return userEntity.toDomain()
     }
 

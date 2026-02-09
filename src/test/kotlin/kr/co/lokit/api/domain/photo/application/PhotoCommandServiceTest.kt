@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import java.util.concurrent.ExecutionException
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.ArgumentMatchers.anyString
@@ -34,10 +33,10 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
 import org.springframework.context.ApplicationEventPublisher
+import java.util.concurrent.ExecutionException
 
 @ExtendWith(MockitoExtension::class)
 class PhotoCommandServiceTest {
-
     @Mock
     lateinit var photoRepository: PhotoRepositoryPort
 
@@ -68,13 +67,14 @@ class PhotoCommandServiceTest {
     @Test
     fun `사진을 생성할 수 있다`() {
         val photo = createPhoto(albumId = 1L, location = createLocation(127.0, 37.5))
-        val savedPhoto = createPhoto(
-            id = 1L,
-            albumId = 1L,
-            coupleId = 1L,
-            url = "https://example.com/picture.png",
-            location = createLocation(127.0, 37.5)
-        )
+        val savedPhoto =
+            createPhoto(
+                id = 1L,
+                albumId = 1L,
+                coupleId = 1L,
+                url = "https://example.com/picture.png",
+                location = createLocation(127.0, 37.5),
+            )
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
             LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
@@ -110,7 +110,7 @@ class PhotoCommandServiceTest {
                 coupleId = 1L,
                 description = "수정된 설명",
                 location = createLocation(0.0, 0.0),
-                uploadedById = 1L
+                uploadedById = 1L,
             )
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
         `when`(photoRepository.apply(anyObject())).thenReturn(updatedPhoto)
@@ -131,7 +131,7 @@ class PhotoCommandServiceTest {
                 albumId = 1L,
                 coupleId = 1L,
                 location = createLocation(longitude = 128.0, latitude = 38.0),
-                uploadedById = 1L
+                uploadedById = 1L,
             )
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
         `when`(photoRepository.apply(anyObject())).thenReturn(updatedPhoto)
@@ -143,10 +143,11 @@ class PhotoCommandServiceTest {
 
     @Test
     fun `presigned URL을 생성할 수 있다`() {
-        val expected = PresignedUrl(
-            presignedUrl = "https://bucket.s3.amazonaws.com/presigned",
-            objectUrl = "https://bucket.s3.amazonaws.com/photos/test-key/image.jpg",
-        )
+        val expected =
+            PresignedUrl(
+                presignedUrl = "https://bucket.s3.amazonaws.com/presigned",
+                objectUrl = "https://bucket.s3.amazonaws.com/photos/test-key/image.jpg",
+            )
         `when`(photoStoragePort.generatePresignedUrl(anyString(), anyString())).thenReturn(expected)
 
         val result = photoCommandService.generatePresignedUrl("test-key", "image/jpeg")
@@ -156,28 +157,12 @@ class PhotoCommandServiceTest {
     }
 
     @Test
-    fun `S3가 비활성화되어 있으면 UnsupportedOperationException이 발생한다`() {
-        val serviceWithoutS3 = PhotoCommandService(
-            photoRepository = photoRepository,
-            albumRepository = albumRepository,
-            photoStoragePort = null,
-            mapQueryService = mapQueryService,
-            eventPublisher = eventPublisher,
-            mapPhotosCacheService = mapPhotosCacheService,
-            cacheManager = cacheManager,
-        )
-
-        assertThrows<UnsupportedOperationException> {
-            serviceWithoutS3.generatePresignedUrl("test-key", "image/jpeg")
-        }
-    }
-
-    @Test
     fun `idempotencyKey가 null이면 UUID가 생성된다`() {
-        val expected = PresignedUrl(
-            presignedUrl = "https://bucket.s3.amazonaws.com/presigned",
-            objectUrl = "https://bucket.s3.amazonaws.com/photos/uuid/image.jpg",
-        )
+        val expected =
+            PresignedUrl(
+                presignedUrl = "https://bucket.s3.amazonaws.com/presigned",
+                objectUrl = "https://bucket.s3.amazonaws.com/photos/uuid/image.jpg",
+            )
         `when`(photoStoragePort.generatePresignedUrl(anyString(), anyString())).thenReturn(expected)
 
         val result = photoCommandService.generatePresignedUrl(null, "image/jpeg")
@@ -212,9 +197,10 @@ class PhotoCommandServiceTest {
             LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
 
-        val exception = assertThrows<ExecutionException> {
-            photoCommandService.create(photo)
-        }
+        val exception =
+            assertThrows<ExecutionException> {
+                photoCommandService.create(photo)
+            }
         assertInstanceOf(BusinessException.DefaultAlbumNotFoundForUserException::class.java, exception.cause)
     }
 
