@@ -67,7 +67,7 @@ class SecurityConfig(
             CorsConfiguration().apply {
                 allowedOriginPatterns =
                     corsProperties.allowedOrigins
-                        .flatMap { it.split(",") }
+                        .split(",")
                         .map { it.trim() }
                         .filter { it.isNotEmpty() }
                 allowedMethods = listOf("*")
