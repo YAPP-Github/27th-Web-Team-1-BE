@@ -339,7 +339,7 @@ class MapRepositoryImplTest {
     }
 
     @Test
-    fun `calculateClusterStats에서 대표 사진의 좌표가 클러스터 중심 좌표로 사용된다`() {
+    fun `calculateClusterStats에서 클러스터 중심 좌표는 모든 포인트의 평균 위치이다`() {
         val now = LocalDateTime.now()
         val photos = listOf(
             UniquePhotoRecord(
@@ -365,8 +365,8 @@ class MapRepositoryImplTest {
         val grouped = ClusteringPipeline.groupByGridCell(photos)
         val result = ClusteringPipeline.calculateClusterStats(grouped)
 
-        assertEquals(128.0, result[0].centerLongitude)
-        assertEquals(38.0, result[0].centerLatitude)
+        assertEquals(127.0, result[0].centerLongitude)
+        assertEquals(37.0, result[0].centerLatitude)
     }
 
     // --- deduplicateThumbnails 엣지 케이스 ---

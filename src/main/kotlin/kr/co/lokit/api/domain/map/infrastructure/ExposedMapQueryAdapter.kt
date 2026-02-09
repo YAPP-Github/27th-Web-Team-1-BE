@@ -41,7 +41,8 @@ class ExposedMapQueryAdapter(
                     var idx = 5
                     coupleId?.let { setLong(idx++, it) }
                     albumId?.let { setLong(idx++, it) }
-                    for (i in idx..idx + 5) setDouble(i, gridSize)
+                    setDouble(idx, gridSize)
+                    setDouble(idx + 1, gridSize)
                 }) { it.toUniquePhotoRecord() }.toClusterProjections()
             }
         }
@@ -124,6 +125,8 @@ class ExposedMapQueryAdapter(
             cellY = getLong("cell_y"),
             takenAt = getTimestamp("taken_at").toLocalDateTime(),
             count = getInt("photo_count"),
+            avgLongitude = getDouble("avg_longitude"),
+            avgLatitude = getDouble("avg_latitude"),
         )
 
     private fun ResultSet.toPhotoProjection() =
@@ -159,12 +162,17 @@ private object MapSqlTemplates {
             ${if (coupleId != null) "AND p.couple_id = ?" else ""}
             ${if (albumId != null) "AND p.album_id = ?" else ""}
         ),
+        cells AS (
+            SELECT *, FLOOR(ST_X(geom_3857) / ?) AS cell_x, FLOOR(ST_Y(geom_3857) / ?) AS cell_y
+            FROM projected_photos
+        ),
         ranked AS (
             SELECT *,
-                FLOOR(ST_X(geom_3857) / ?) AS cell_x, FLOOR(ST_Y(geom_3857) / ?) AS cell_y,
-                COUNT(*) OVER (PARTITION BY FLOOR(ST_X(geom_3857) / ?), FLOOR(ST_Y(geom_3857) / ?)) AS photo_count,
-                ROW_NUMBER() OVER (PARTITION BY FLOOR(ST_X(geom_3857) / ?), FLOOR(ST_Y(geom_3857) / ?) ORDER BY taken_at DESC) AS rn
-            FROM projected_photos
+                COUNT(*) OVER (PARTITION BY cell_x, cell_y) AS photo_count,
+                AVG(longitude) OVER (PARTITION BY cell_x, cell_y) AS avg_longitude,
+                AVG(latitude) OVER (PARTITION BY cell_x, cell_y) AS avg_latitude,
+                ROW_NUMBER() OVER (PARTITION BY cell_x, cell_y ORDER BY taken_at DESC) AS rn
+            FROM cells
         )
         SELECT * FROM ranked WHERE rn = 1
         """.trimIndent()

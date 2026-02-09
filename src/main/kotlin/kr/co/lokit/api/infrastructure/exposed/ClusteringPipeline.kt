@@ -18,8 +18,8 @@ object ClusteringPipeline {
             ClusterData(
                 gridKey = key,
                 count = photos.size,
-                centerLongitude = representative.longitude,
-                centerLatitude = representative.latitude,
+                centerLongitude = photos.firstOrNull()?.avgLongitude ?: photos.map { it.longitude }.average(),
+                centerLatitude = photos.firstOrNull()?.avgLatitude ?: photos.map { it.latitude }.average(),
                 photosByRank =
                     photos.sortedByDescending { it.takenAt }.mapIndexed { index, photo ->
                         RankedPhoto(url = photo.url, rank = index + 1)
