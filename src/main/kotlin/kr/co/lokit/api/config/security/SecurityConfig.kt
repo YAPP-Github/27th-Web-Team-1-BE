@@ -1,6 +1,8 @@
 package kr.co.lokit.api.config.security
 
 import kr.co.lokit.api.config.web.CorsProperties
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -25,6 +27,8 @@ class SecurityConfig(
     private val loginAuthenticationEntryPoint: LoginAuthenticationEntryPoint,
     private val loginAccessDeniedHandler: LoginAccessDeniedHandler,
 ) {
+    private val logger: Logger = LoggerFactory.getLogger(SecurityConfig::class.java)
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http
@@ -74,6 +78,7 @@ class SecurityConfig(
                 allowedHeaders = listOf("*")
                 allowCredentials = true
             }
+        logger.info("allowedOrigins: {}", configuration.allowedOriginPatterns?.joinToString { "[$it], " })
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", configuration)
         }
