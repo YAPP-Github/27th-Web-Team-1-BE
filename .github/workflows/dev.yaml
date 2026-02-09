@@ -140,6 +140,7 @@ jobs:
                         docker run -d \
                             --name $CONTAINER_NAME \
                             --restart unless-stopped \
+                            --network lokit-net \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
                             -e TZ=Asia/Seoul \

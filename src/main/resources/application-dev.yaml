@@ -5,12 +5,8 @@ spring:
         password: ${POSTGRES_PASSWORD}
         driver-class-name: org.postgresql.Driver
         hikari:
-            maximum-pool-size: 20
+            maximum-pool-size: 10
             minimum-idle: 5
-            connection-timeout: 5000
-            idle-timeout: 600000
-            max-lifetime: 1800000
-            leak-detection-threshold: 30000
     jpa:
         hibernate:
             ddl-auto: update
@@ -27,6 +23,16 @@ spring:
             jdbc:
                 time_zone: Asia/Seoul
         open-in-view: false
+    task:
+        execution:
+            pool:
+                core-size: 8
+                max-size: 50
+server:
+    tomcat:
+        threads:
+            max: 25
+            min-spare: 4
 
 logging:
     request:
