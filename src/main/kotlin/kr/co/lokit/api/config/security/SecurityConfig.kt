@@ -72,6 +72,7 @@ class SecurityConfig(
                 allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 allowedHeaders = listOf("*")
                 allowCredentials = true
+                exposedHeaders = listOf("*")
                 maxAge = 3600L
             }
         logger.info("allowedOrigins: {}", configuration.allowedOriginPatterns?.joinToString { "[$it], " })
