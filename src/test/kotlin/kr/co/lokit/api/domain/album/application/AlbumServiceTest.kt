@@ -132,4 +132,14 @@ class AlbumServiceTest {
             albumCommandService.delete(1L, 1L)
         }
     }
+
+    @Test
+    fun `기본 앨범이 없으면 앨범을 생성할 수 없다`() {
+        val album = createAlbum(title = "여행")
+        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(null)
+
+        assertThrows<BusinessException.DefaultAlbumNotFoundForUserException> {
+            albumCommandService.create(album, 1L)
+        }
+    }
 }

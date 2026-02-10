@@ -84,6 +84,11 @@ class JpaCoupleRepository(
     override fun findByUserId(userId: Long): Couple? =
         coupleJpaRepository.findByUserId(userId)?.toDomain()
 
+    @Transactional
+    override fun deleteById(id: Long) {
+        coupleJpaRepository.deleteById(id)
+    }
+
     companion object {
         private const val MAX_COUPLE_MEMBERS = 2
     }

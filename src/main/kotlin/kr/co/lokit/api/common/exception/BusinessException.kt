@@ -84,6 +84,12 @@ sealed class BusinessException(
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.COUPLE_MAX_MEMBERS_EXCEEDED, message, cause, errors)
 
+    class CoupleAlreadyConnectedException(
+        message: String = ErrorCode.COUPLE_ALREADY_CONNECTED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_ALREADY_CONNECTED, message, cause, errors)
+
     class UserNotFoundException(
         message: String = ErrorCode.USER_NOT_FOUND.message,
         cause: Throwable? = null,

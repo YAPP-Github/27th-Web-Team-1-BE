@@ -14,5 +14,7 @@ interface CoupleRepositoryPort {
     fun addUser(coupleId: Long, userId: Long): Couple
 
     fun findByUserId(userId: Long): Couple?
+
+    fun deleteById(id: Long)
 }
 

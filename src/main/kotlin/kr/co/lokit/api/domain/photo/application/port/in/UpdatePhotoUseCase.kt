@@ -5,10 +5,10 @@ import kr.co.lokit.api.domain.photo.domain.Photo
 interface UpdatePhotoUseCase {
     fun update(
         id: Long,
-        albumId: Long,
+        albumId: Long?,
         description: String?,
-        longitude: Double,
-        latitude: Double,
+        longitude: Double?,
+        latitude: Double?,
         userId: Long,
     ): Photo
 

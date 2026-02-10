@@ -18,12 +18,10 @@ USER spring
 
 EXPOSE 8080
 
+# Dockerfile의 ENV JAVA_OPTS 수정
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
-    -XX:+UseG1GC \
-    -Xms256m \
-    -Xmx400m \
+    -XX:MaxRAMPercentage=65.0 \
     -XX:MaxMetaspaceSize=150m \
-    -XX:MaxGCPauseMillis=200 \
     -XX:+UseStringDeduplication \
     -XX:+ExitOnOutOfMemoryError \
     -Dfile.encoding=UTF-8"

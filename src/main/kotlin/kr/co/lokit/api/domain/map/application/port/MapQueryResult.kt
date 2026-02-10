@@ -9,6 +9,7 @@ data class ClusterProjection(
     val thumbnailUrl: String,
     val centerLongitude: Double,
     val centerLatitude: Double,
+    val takenAt: LocalDateTime? = null,
 )
 
 data class PhotoProjection(
@@ -47,6 +48,8 @@ data class UniquePhotoRecord(
     val cellY: Long,
     val takenAt: LocalDateTime,
     val count: Int = 1,
+    val avgLongitude: Double? = null,
+    val avgLatitude: Double? = null,
 )
 
 data class GridKey(val cellX: Long, val cellY: Long)
@@ -57,6 +60,7 @@ data class ClusterData(
     val centerLongitude: Double,
     val centerLatitude: Double,
     val photosByRank: List<RankedPhoto>,
+    val takenAt: LocalDateTime? = null,
 )
 
 data class RankedPhoto(

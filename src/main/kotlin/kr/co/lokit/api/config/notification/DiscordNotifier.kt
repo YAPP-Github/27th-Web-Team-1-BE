@@ -10,6 +10,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import java.time.Duration
@@ -27,7 +28,12 @@ class DiscordNotifier(
     @Value("\${discord.webhook.url}") private val webhookUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val restClient = RestClient.builder().build()
+    private val restClient = RestClient.builder()
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(5_000)
+            setReadTimeout(10_000)
+        })
+        .build()
 
     private val backoffUntil =
         Caffeine.newBuilder()

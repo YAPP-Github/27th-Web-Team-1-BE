@@ -1,9 +1,12 @@
 package kr.co.lokit.api.config.security
 
 import kr.co.lokit.api.config.web.CorsProperties
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -24,15 +27,18 @@ class SecurityConfig(
     private val loginAuthenticationEntryPoint: LoginAuthenticationEntryPoint,
     private val loginAccessDeniedHandler: LoginAccessDeniedHandler,
 ) {
+    private val logger: Logger = LoggerFactory.getLogger(SecurityConfig::class.java)
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
-            .headers { headers -> headers.cacheControl { it.disable() } }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    .requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll()
                     .requestMatchers(
                         "/auth/register",
                         "/auth/login",
@@ -62,14 +68,14 @@ class SecurityConfig(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration =
             CorsConfiguration().apply {
-                allowedOrigins = corsProperties.allowedOrigins
-                    .flatMap { it.split(",") }
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
-                allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                allowedOriginPatterns = listOf("*")
+                allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 allowedHeaders = listOf("*")
                 allowCredentials = true
+                exposedHeaders = listOf("*")
+                maxAge = 3600L
             }
+        logger.info("allowedOrigins: {}", configuration.allowedOriginPatterns?.joinToString { "[$it], " })
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", configuration)
         }

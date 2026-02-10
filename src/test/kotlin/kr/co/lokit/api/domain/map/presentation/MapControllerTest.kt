@@ -30,7 +30,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest(MapController::class)
 class MapControllerTest {
-
     @Suppress("UNCHECKED_CAST")
     private fun <T> anyObject(): T = org.mockito.ArgumentMatchers.any<T>() as T
 
@@ -64,64 +63,69 @@ class MapControllerTest {
     @Test
     fun `지도 사진 조회 성공`() {
         doReturn(MapPhotosResponse(clusters = emptyList()))
-            .`when`(getMapUseCase).getPhotos(anyInt(), anyObject(), anyObject(), anyObject())
+            .`when`(getMapUseCase)
+            .getPhotos(anyInt(), anyObject(), anyObject(), anyObject())
 
-        mockMvc.perform(
-            get("/map/photos")
-                .with(authentication(userAuth()))
-                .param("zoom", "12")
-                .param("bbox", "126.9,37.4,127.1,37.6"),
-        )
-            .andExpect(status().isOk)
+        mockMvc
+            .perform(
+                get("/map/photos")
+                    .with(authentication(userAuth()))
+                    .param("zoom", "12")
+                    .param("bbox", "126.9,37.4,127.1,37.6"),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `앨범 지도 정보 조회 성공`() {
-        val response = AlbumMapInfoResponse(
-            albumId = 1L,
-            centerLongitude = 127.0,
-            centerLatitude = 37.5,
-            boundingBox = BoundingBoxResponse(west = 126.0, south = 37.0, east = 128.0, north = 38.0),
-        )
+        val response =
+            AlbumMapInfoResponse(
+                albumId = 1L,
+                centerLongitude = 127.0,
+                centerLatitude = 37.5,
+                boundingBox = BoundingBoxResponse(west = 126.0, south = 37.0, east = 128.0, north = 38.0),
+            )
         doReturn(response).`when`(getMapUseCase).getAlbumMapInfo(anyLong())
 
-        mockMvc.perform(
-            get("/map/albums/1")
-                .with(authentication(userAuth())),
-        )
-            .andExpect(status().isOk)
+        mockMvc
+            .perform(
+                get("/map/albums/1")
+                    .with(authentication(userAuth())),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `위치 정보 조회 성공`() {
         doReturn(LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"))
-            .`when`(searchLocationUseCase).getLocationInfo(anyDouble(), anyDouble())
+            .`when`(searchLocationUseCase)
+            .getLocationInfo(anyDouble(), anyDouble())
 
-        mockMvc.perform(
-            get("/map/location")
-                .with(authentication(userAuth()))
-                .param("longitude", "127.0")
-                .param("latitude", "37.5"),
-        )
-            .andExpect(status().isOk)
+        mockMvc
+            .perform(
+                get("/map/location")
+                    .with(authentication(userAuth()))
+                    .param("longitude", "127.0")
+                    .param("latitude", "37.5"),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `장소 검색 성공`() {
         doReturn(PlaceSearchResponse(places = emptyList()))
-            .`when`(searchLocationUseCase).searchPlaces(anyString())
+            .`when`(searchLocationUseCase)
+            .searchPlaces(anyString())
 
-        mockMvc.perform(
-            get("/map/places/search")
-                .with(authentication(userAuth()))
-                .param("query", "스타벅스"),
-        )
-            .andExpect(status().isOk)
+        mockMvc
+            .perform(
+                get("/map/places/search")
+                    .with(authentication(userAuth()))
+                    .param("query", "스타벅스"),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `인증되지 않은 사용자는 접근할 수 없다`() {
-        mockMvc.perform(get("/map/photos").param("zoom", "12").param("bbox", "126.9,37.4,127.1,37.6"))
+        mockMvc
+            .perform(get("/map/photos").param("zoom", "12").param("bbox", "126.9,37.4,127.1,37.6"))
             .andExpect(status().isUnauthorized)
     }
 }

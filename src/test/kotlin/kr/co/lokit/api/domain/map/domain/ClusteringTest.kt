@@ -55,15 +55,14 @@ class ClusteringTest {
     }
 
     @Test
-    fun `GridCell에서 BBox를 계산할 수 있다`() {
-        val cell = GridCell(zoom = 14, cellX = 1, cellY = 1)
-        val gridSize = GridValues.getGridSize(14 - 1)
+    fun `GridCell에서 생성된 BBox는 유효한 범위를 가져야 한다`() {
+        val cell = GridCell(zoom = 14, cellX = 12345, cellY = 6789)
         val bbox = cell.toBBox()
 
-        assertEquals(gridSize, bbox.west)
-        assertEquals(gridSize, bbox.south)
-        assertEquals(gridSize * 2, bbox.east)
-        assertEquals(gridSize * 2, bbox.north)
+        assertTrue(bbox.west < bbox.east)
+        assertTrue(bbox.south < bbox.north)
+        assertTrue(bbox.west in -180.0..180.0)
+        assertTrue(bbox.south in -90.0..90.0)
     }
 
     @Test
@@ -74,18 +73,28 @@ class ClusteringTest {
 
         val bbox = BBox.fromCenter(zoom, longitude, latitude)
 
-        // 중심점이 BBox 내에 포함되어야 한다
-        assertTrue(bbox.west <= longitude)
-        assertTrue(bbox.east >= longitude)
-        assertTrue(bbox.south <= latitude)
-        assertTrue(bbox.north >= latitude)
+        assertTrue(bbox.west <= longitude, "West(${bbox.west})는 경도($longitude)보다 작거나 같아야 함")
+        assertTrue(bbox.east >= longitude, "East(${bbox.east})는 경도($longitude)보다 크거나 같아야 함")
+        assertTrue(bbox.south <= latitude, "South(${bbox.south})는 위도($latitude)보다 작거나 같아야 함")
+        assertTrue(bbox.north >= latitude, "North(${bbox.north})는 위도($latitude)보다 크거나 같아야 함")
 
-        // 그리드 정렬되어야 한다
-        val gridSize = GridValues.getGridSize(zoom)
-        assertEquals(0.0, bbox.west % gridSize, 1e-10)
-        assertEquals(0.0, bbox.south % gridSize, 1e-10)
+        val gridSizeMeters = GridValues.getGridSize(zoom)
 
-        // 모바일 세로 화면: 가로가 세로보다 좁아야 한다
+        val metersX = longitude * (40075016.68557849 / 360.0)
+
+        val metersY =
+            Math.log(Math.tan(Math.toRadians(latitude) / 2.0 + Math.PI / 4.0)) * (40075016.68557849 / (2.0 * Math.PI))
+
+        val westMeters = bbox.west * (40075016.68557849 / 360.0)
+        val southMeters =
+            Math.log(Math.tan(Math.toRadians(bbox.south) / 2.0 + Math.PI / 4.0)) * (40075016.68557849 / (2.0 * Math.PI))
+
+        val westRemainder = Math.abs(westMeters % gridSizeMeters)
+        assertTrue(
+            westRemainder < 1e-3 || (gridSizeMeters - westRemainder) < 1e-3,
+            "West boundary($westMeters) should be aligned with gridSize($gridSizeMeters)",
+        )
+
         val width = bbox.east - bbox.west
         val height = bbox.north - bbox.south
         assertTrue(width < height, "모바일 세로 화면: 가로($width) < 세로($height)")

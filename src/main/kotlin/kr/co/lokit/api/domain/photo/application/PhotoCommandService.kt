@@ -87,7 +87,7 @@ class PhotoCommandService(
             eventPublisher.publishEvent(
                 PhotoCreatedEvent(
                     albumId = effectivePhoto.albumId!!,
-                    userId = saved.uploadedById,
+                    coupleId = saved.coupleId!!,
                     longitude = effectivePhoto.location.longitude,
                     latitude = effectivePhoto.location.latitude,
                 ),
@@ -106,21 +106,21 @@ class PhotoCommandService(
     @CacheEvict(cacheNames = ["photo"], key = "#userId + ':' + #id")
     override fun update(
         id: Long,
-        albumId: Long,
+        albumId: Long?,
         description: String?,
-        longitude: Double,
-        latitude: Double,
+        longitude: Double?,
+        latitude: Double?,
         userId: Long,
     ): Photo {
         val photo = photoRepository.findById(id)
         val updated =
             photo.copy(
-                albumId = albumId,
-                description = description,
+                albumId = albumId ?: photo.albumId,
+                description = description ?: photo.description,
                 location =
                     photo.location.copy(
-                        longitude = longitude,
-                        latitude = latitude,
+                        longitude = longitude ?: photo.location.longitude,
+                        latitude = latitude ?: photo.location.latitude,
                     ),
             )
         val result = photoRepository.apply(updated)
@@ -129,7 +129,7 @@ class PhotoCommandService(
             eventPublisher.publishEvent(
                 PhotoLocationUpdatedEvent(
                     albumId = updated.albumId!!,
-                    userId = result.uploadedById,
+                    coupleId = result.coupleId!!,
                     longitude = updated.location.longitude,
                     latitude = updated.location.latitude,
                 ),

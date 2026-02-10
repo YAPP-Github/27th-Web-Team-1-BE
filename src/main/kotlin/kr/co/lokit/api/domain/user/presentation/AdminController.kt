@@ -86,6 +86,7 @@ class AdminController(
     @Operation(
         summary = "서버 전체의 캐시 데이터를 강제 만료합니다.",
     )
+    @SecurityRequirements
     @GetMapping("cache/clear")
     fun clearAllCaches(
         @RequestHeader("X-Admin-Key") key: String,

@@ -57,6 +57,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:0.60.0")
 
     testRuntimeOnly("com.h2database:h2")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-restclient-test")

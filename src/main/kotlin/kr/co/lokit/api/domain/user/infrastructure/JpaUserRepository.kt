@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.user.infrastructure
 
+import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.mapping.toDomain
@@ -21,5 +22,31 @@ class JpaUserRepository(
     override fun findById(id: Long): User? = userJpaRepository.findByIdOrNull(id)?.toDomain()
 
     @Transactional(readOnly = true)
-    override fun findByEmail(email: String): User? = userJpaRepository.findByEmail(email)?.toDomain()
+    override fun lockWithEmail(email: String) {
+        userJpaRepository.lockWithEmail(email)
+    }
+
+    @Transactional
+    override fun findByEmail(
+        email: String,
+        name: String,
+    ): User {
+        val userEntity =
+            userJpaRepository.findByEmail(email) ?: userJpaRepository.save(User(email = email, name = name).toEntity())
+        return userEntity.toDomain()
+    }
+
+    @Transactional
+    override fun apply(
+        user: User,
+        name: String,
+        profileImageUrl: String?,
+    ) {
+        val updatedUser =
+            findById(user.id)?.copy(
+                name = name,
+                profileImageUrl = profileImageUrl,
+            ) ?: throw entityNotFound<UserEntity>(user.id)
+        save(updatedUser)
+    }
 }

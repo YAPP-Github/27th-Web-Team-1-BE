@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsEntity
 fun AlbumBounds.toEntity(): AlbumBoundsEntity =
     AlbumBoundsEntity(
         standardId = standardId,
+        idType = idType,
         minLongitude = minLongitude,
         maxLongitude = maxLongitude,
         minLatitude = minLatitude,
@@ -18,6 +19,7 @@ fun AlbumBoundsEntity.toDomain(): AlbumBounds =
     AlbumBounds(
         id = nonNullId(),
         standardId = standardId,
+        idType = idType,
         minLongitude = minLongitude,
         maxLongitude = maxLongitude,
         minLatitude = minLatitude,

@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
+import kr.co.lokit.api.common.concurrency.withPermit
 import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -10,6 +11,7 @@ import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
@@ -25,7 +27,7 @@ import kr.co.lokit.api.domain.map.mapping.toClusterPhotosPageResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.support.TransactionTemplate
+import java.util.concurrent.Semaphore
 
 @Service
 class MapQueryService(
@@ -34,10 +36,11 @@ class MapQueryService(
     private val albumRepository: AlbumRepositoryPort,
     private val coupleRepository: CoupleRepositoryPort,
     private val mapClientPort: MapClientPort,
-    private val transactionTemplate: TransactionTemplate,
     private val mapPhotosCacheService: MapPhotosCacheService,
 ) : GetMapUseCase,
     SearchLocationUseCase {
+    private val dbSemaphore = Semaphore(6)
+
     override fun home(
         userId: Long,
         longitude: Double,
@@ -51,7 +54,7 @@ class MapQueryService(
                 Pair(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
-                        transactionTemplate.execute {
+                        dbSemaphore.withPermit {
                             if (coupleId != null) {
                                 albumRepository
                                     .findAllByCoupleId(coupleId)
@@ -59,7 +62,7 @@ class MapQueryService(
                             } else {
                                 emptyList()
                             }
-                        }!!
+                        }
                     },
                 )
             }
@@ -87,11 +90,16 @@ class MapQueryService(
             } else {
                 albumId
             }
+
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
             mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId)
         } else {
-            val cacheKey = mapPhotosCacheService.buildCacheKey(zoom, bbox, coupleId, effectiveAlbumId)
-            mapPhotosCacheService.getIndividualPhotos(bbox, coupleId, effectiveAlbumId, cacheKey)
+            mapPhotosCacheService.getIndividualPhotos(
+                zoom = zoom,
+                bbox = bbox,
+                coupleId = coupleId,
+                albumId = effectiveAlbumId,
+            )
         }
     }
 
@@ -116,7 +124,7 @@ class MapQueryService(
 
     @Transactional(readOnly = true)
     override fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse {
-        val bounds = albumBoundsRepository.findByAlbumId(albumId)
+        val bounds = albumBoundsRepository.findByStandardIdAndIdType(albumId, BoundsIdType.ALBUM)
         return bounds.toAlbumMapInfoResponse(albumId)
     }
 
@@ -129,9 +137,9 @@ class MapQueryService(
         albumId: Long?,
         lastDataVersion: Long?,
     ): MapMeResponse {
-        val homeBBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+        val homeBBox = BBox.fromCenter(zoom, longitude, latitude)
         val coupleId = coupleRepository.findByUserId(userId)?.id
-        val currentVersion = mapPhotosCacheService.getDataVersion(coupleId)
+        val currentVersion = mapPhotosCacheService.getVersion(coupleId)
         val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
 
         val (locationFuture, albumsFuture, photosFuture) =
@@ -139,7 +147,7 @@ class MapQueryService(
                 Triple(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
-                        transactionTemplate.execute {
+                        dbSemaphore.withPermit {
                             if (coupleId != null) {
                                 albumRepository
                                     .findAllByCoupleId(coupleId)
@@ -147,13 +155,13 @@ class MapQueryService(
                             } else {
                                 emptyList()
                             }
-                        }!!
+                        }
                     },
                     scope.fork {
                         if (versionUnchanged) {
                             null
                         } else {
-                            transactionTemplate.execute {
+                            dbSemaphore.withPermit {
                                 getPhotos(zoom, homeBBox, userId, albumId)
                             }
                         }

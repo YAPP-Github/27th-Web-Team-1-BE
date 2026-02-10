@@ -8,8 +8,10 @@ import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.dto.CreateCoupleRequest
+import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
 import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -31,6 +33,11 @@ class CoupleController(
         createCoupleUseCase
             .createIfNone(Couple(name = request.name), userId)
             .toIdResponse(Couple::id)
+
+    @GetMapping("code")
+    override fun getCode(
+        @CurrentUserId userId: Long,
+    ): InviteCodeResponse = InviteCodeResponse.from(joinCoupleUseCase.getInviteCode(userId))
 
     @PostMapping("join")
     override fun joinByInviteCode(

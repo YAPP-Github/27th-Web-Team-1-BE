@@ -18,6 +18,10 @@ spring:
                 format_sql: true
                 show_sql: true
         open-in-view: false
+        defer-datasource-initialization: false
+    sql:
+        init:
+            mode: never
     docker:
         compose:
             enabled: false
@@ -54,10 +58,6 @@ aws:
         region: ap-northeast-2
         bucket: test-bucket
 
-cors:
-    allowed-origins:
-        - http://localhost:3000
-
 kakao:
     api:
         key: test-key
@@ -70,3 +70,6 @@ cookie:
     secure: false
 
 admin.key: ""
+
+cors:
+    allowed-origins: http://localhost:8080

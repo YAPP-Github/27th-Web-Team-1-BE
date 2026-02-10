@@ -1,5 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.common.concurrency.StructuredConcurrency
+import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.GridValues
@@ -7,6 +9,7 @@ import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
+import java.time.LocalDateTime
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCache
@@ -14,7 +17,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.PI
 import kotlin.math.floor
+import kotlin.math.ln
+import kotlin.math.tan
 
 @Service
 class MapPhotosCacheService(
@@ -25,109 +31,124 @@ class MapPhotosCacheService(
         val response: ClusterResponse?,
     )
 
-    private val coupleVersions = ConcurrentHashMap<Long, AtomicLong>()
+    private fun lonToM(lon: Double): Double = lon * (PI * EARTH_RADIUS / 180.0)
 
-    fun getDataVersion(coupleId: Long?): Long = coupleId?.let { coupleVersions[it]?.get() ?: 0L } ?: 0L
+    private fun latToM(lat: Double): Double = ln(tan((90.0 + lat) * PI / 360.0)) * EARTH_RADIUS
 
     fun evictForCouple(coupleId: Long) {
         coupleVersions.computeIfAbsent(coupleId) { AtomicLong(0) }.incrementAndGet()
-        listOf("mapCells", "mapPhotos").forEach { cacheName ->
-            val cache = cacheManager.getCache(cacheName) as? CaffeineCache ?: return@forEach
-            cache.nativeCache.asMap().keys.removeIf { key ->
-                (key as String).contains("_c$coupleId")
-            }
-        }
     }
 
-    /**
-     * Grid cell 단위 캐싱으로 클러스터 데이터를 조회한다.
-     * 1. bbox 내 모든 셀을 계산
-     * 2. 캐시된 셀은 제외
-     * 3. 미캐싱 셀만 DB에서 조회
-     * 4. 결과를 합쳐서 반환
-     */
+    fun getVersion(coupleId: Long?): Long = coupleId?.let { coupleVersions[it]?.get() } ?: 0L
+
     fun getClusteredPhotos(
         zoom: Int,
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
     ): MapPhotosResponse {
-        val gridSize = GridValues.getGridSize(zoom - 1)
-        val inverseGridSize = 1.0 / gridSize
-        val cache = cacheManager.getCache("mapCells") as? CaffeineCache
+        val gridSize = GridValues.getGridSize(zoom)
+        val cache =
+            cacheManager.getCache("mapCells") as? CaffeineCache
+                ?: return queryDirectly(zoom, bbox, gridSize, coupleId, albumId)
+        val version = getVersion(coupleId)
 
-        val cellXMin = floor(bbox.west * inverseGridSize).toLong()
-        val cellXMax = floor(bbox.east * inverseGridSize).toLong()
-        val cellYMin = floor(bbox.south * inverseGridSize).toLong()
-        val cellYMax = floor(bbox.north * inverseGridSize).toLong()
+        val cellXMin = floor(lonToM(bbox.west) / gridSize).toLong()
+        val cellXMax = floor(lonToM(bbox.east) / gridSize).toLong()
+        val cellYMin = floor(latToM(bbox.south) / gridSize).toLong()
+        val cellYMax = floor(latToM(bbox.north) / gridSize).toLong()
 
-        val totalCells = (cellXMax - cellXMin + 1) * (cellYMax - cellYMin + 1)
-
-        if (totalCells > MAX_CELLS_FOR_CELL_CACHE || cache == null) {
-            return queryDirectly(zoom, bbox, gridSize, coupleId, albumId)
-        }
-
-        val cachedResponses = mutableListOf<ClusterResponse>()
-        val uncachedCells = mutableListOf<Pair<Long, Long>>()
-
+        val keyToCoord = mutableMapOf<String, Pair<Long, Long>>()
         for (cx in cellXMin..cellXMax) {
             for (cy in cellYMin..cellYMax) {
-                val key = buildCellKey(zoom, cx, cy, coupleId, albumId)
-                val cached = cache.nativeCache.getIfPresent(key) as? CachedCell
-                if (cached != null) {
-                    cached.response?.let { cachedResponses.add(it) }
-                } else {
-                    uncachedCells.add(cx to cy)
-                }
+                val key = buildCellKey(zoom, cx, cy, coupleId, albumId, version)
+                keyToCoord[key] = cx to cy
             }
         }
 
-        if (uncachedCells.isEmpty()) {
-            return MapPhotosResponse(clusters = cachedResponses)
+        if (keyToCoord.size > MAX_CELLS_FOR_CELL_CACHE) {
+            return queryDirectly(zoom, bbox, gridSize, coupleId, albumId)
         }
 
-        // 미캐싱 셀의 최소 bbox 계산
-        val uncachedWest = uncachedCells.minOf { it.first } * gridSize
-        val uncachedSouth = uncachedCells.minOf { it.second } * gridSize
-        val uncachedEast = (uncachedCells.maxOf { it.first } + 1) * gridSize
-        val uncachedNorth = (uncachedCells.maxOf { it.second } + 1) * gridSize
+        return StructuredConcurrency.run { scope ->
+            val cachedTask =
+                scope.fork {
+                    cache.nativeCache.getAllPresent(keyToCoord.keys)
+                }
 
-        val dbResults =
-            mapQueryPort.findClustersWithinBBox(
-                west = uncachedWest,
-                south = uncachedSouth,
-                east = uncachedEast,
-                north = uncachedNorth,
-                gridSize = gridSize,
-                coupleId = coupleId,
-                albumId = albumId,
-            )
+            scope.join().throwIfFailed()
 
-        val dbCellMap = dbResults.associateBy { it.cellX to it.cellY }
-        val newResponses = mutableListOf<ClusterResponse>()
+            val cachedMap = cachedTask.get()
+            val cachedResponses = cachedMap.values.mapNotNull { (it as CachedCell).response }
+            val uncachedKeys = keyToCoord.keys.filter { !cachedMap.containsKey(it) }
 
-        for ((cx, cy) in uncachedCells) {
-            val key = buildCellKey(zoom, cx, cy, coupleId, albumId)
-            val projection = dbCellMap[cx to cy]
-            val response = projection?.toResponse(zoom)
-            cache.nativeCache.put(key, CachedCell(response))
-            if (response != null) newResponses.add(response)
+            if (uncachedKeys.isEmpty()) {
+                return@run MapPhotosResponse(clusters = cachedResponses)
+            }
+
+            val uncachedCoords = uncachedKeys.mapNotNull { keyToCoord[it] }
+            val dbResultsTask =
+                scope.fork {
+                    mapQueryPort.findClustersWithinBBox(
+                        west = uncachedCoords.minOf { it.first } * gridSize,
+                        south = uncachedCoords.minOf { it.second } * gridSize,
+                        east = (uncachedCoords.maxOf { it.first } + 1) * gridSize,
+                        north = (uncachedCoords.maxOf { it.second } + 1) * gridSize,
+                        gridSize = gridSize,
+                        coupleId = coupleId,
+                        albumId = albumId,
+                    )
+                }
+
+            scope.join().throwIfFailed()
+
+            val dbResults = dbResultsTask.get()
+            val dbCellMap = dbResults.groupBy { it.cellX to it.cellY }
+                .mapValues { (_, projections) ->
+                    val latest = projections.maxByOrNull { it.takenAt ?: LocalDateTime.MIN }!!
+                    ClusterProjection(
+                        cellX = projections.first().cellX,
+                        cellY = projections.first().cellY,
+                        count = projections.sumOf { it.count },
+                        thumbnailUrl = latest.thumbnailUrl,
+                        centerLongitude = projections.map { it.centerLongitude }.average(),
+                        centerLatitude = projections.map { it.centerLatitude }.average(),
+                        takenAt = latest.takenAt,
+                    )
+                }
+            val newResponses = mutableListOf<ClusterResponse>()
+            val bulkInsertMap = mutableMapOf<String, CachedCell>()
+
+            for (key in uncachedKeys) {
+                val coord = keyToCoord[key] ?: continue
+                val projection = dbCellMap[coord.first to coord.second]
+                val response = projection?.toResponse(zoom)
+
+                bulkInsertMap[key] = CachedCell(response)
+                response?.let { newResponses.add(it) }
+            }
+
+            scope.fork {
+                cache.nativeCache.putAll(bulkInsertMap)
+            }
+
+            MapPhotosResponse(clusters = cachedResponses + newResponses)
         }
-
-        return MapPhotosResponse(clusters = cachedResponses + newResponses)
     }
 
     @Transactional(readOnly = true)
     @Cacheable(
         cacheNames = ["mapPhotos"],
-        key = "#cacheKey",
-        unless = "(#result.clusters == null || #result.clusters.isEmpty()) && (#result.photos == null || #result.photos.isEmpty())",
+        key =
+            "T(kr.co.lokit.api.domain.map.application.MapPhotosCacheServiceKt)" +
+                ".buildIndividualKey(#bbox, #zoom, #coupleId, #albumId, @mapPhotosCacheService.getVersion(#coupleId))",
+        unless = "#result.photos == null || #result.photos.isEmpty()",
     )
     fun getIndividualPhotos(
+        zoom: Int,
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
-        cacheKey: String,
     ): MapPhotosResponse {
         val photos =
             mapQueryPort.findPhotosWithinBBox(
@@ -138,29 +159,7 @@ class MapPhotosCacheService(
                 coupleId = coupleId,
                 albumId = albumId,
             )
-
-        return MapPhotosResponse(
-            photos = photos.map { it.toMapPhotoResponse() },
-        )
-    }
-
-    fun buildCacheKey(
-        zoom: Int,
-        bbox: BBox,
-        coupleId: Long?,
-        albumId: Long?,
-    ): String {
-        val precision = 10000
-        val w = floor(bbox.west * precision) / precision
-        val s = floor(bbox.south * precision) / precision
-        val e = floor(bbox.east * precision) / precision
-        val n = floor(bbox.north * precision) / precision
-        return buildString {
-            append("z$zoom")
-            append("_${w}_${s}_${e}_$n")
-            if (coupleId != null) append("_c$coupleId")
-            if (albumId != null) append("_a$albumId")
-        }
+        return MapPhotosResponse(photos = photos.map { it.toMapPhotoResponse() })
     }
 
     private fun queryDirectly(
@@ -172,10 +171,10 @@ class MapPhotosCacheService(
     ): MapPhotosResponse {
         val clusters =
             mapQueryPort.findClustersWithinBBox(
-                west = bbox.west,
-                south = bbox.south,
-                east = bbox.east,
-                north = bbox.north,
+                west = lonToM(bbox.west),
+                south = latToM(bbox.south),
+                east = lonToM(bbox.east),
+                north = latToM(bbox.north),
                 gridSize = gridSize,
                 coupleId = coupleId,
                 albumId = albumId,
@@ -183,20 +182,30 @@ class MapPhotosCacheService(
         return MapPhotosResponse(clusters = clusters.map { it.toResponse(zoom) })
     }
 
-    private fun buildCellKey(
+    fun buildCellKey(
         zoom: Int,
-        cellX: Long,
-        cellY: Long,
-        coupleId: Long?,
-        albumId: Long?,
-    ): String =
-        buildString {
-            append("z${zoom}_${cellX}_$cellY")
-            if (coupleId != null) append("_c$coupleId")
-            if (albumId != null) append("_a$albumId")
-        }
+        cx: Long,
+        cy: Long,
+        cid: Long?,
+        aid: Long?,
+        v: Long,
+    ): String = "z${zoom}_x${cx}_y${cy}_c${cid ?: 0}_a${aid ?: 0}_v$v"
 
     companion object {
-        private const val MAX_CELLS_FOR_CELL_CACHE = 5000
+        private const val MAX_CELLS_FOR_CELL_CACHE = 500
+        private val coupleVersions = ConcurrentHashMap<Long, AtomicLong>()
+        private const val EARTH_RADIUS = 6378137.0
     }
+}
+
+fun buildIndividualKey(
+    bbox: BBox,
+    zoom: Int,
+    cid: Long?,
+    aid: Long?,
+    v: Long,
+): String {
+    val gs = GridValues.getGridSize(zoom)
+    val nx = (floor(bbox.west * 1000000 / gs)).toLong()
+    return "ind_z${zoom}_x${nx}_c${cid ?: 0}_v$v"
 }

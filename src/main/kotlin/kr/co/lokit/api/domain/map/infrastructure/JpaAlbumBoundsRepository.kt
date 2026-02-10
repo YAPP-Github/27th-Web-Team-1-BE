@@ -3,6 +3,7 @@ package kr.co.lokit.api.domain.map.infrastructure
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
+import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.mapping.toDomain
 import kr.co.lokit.api.domain.map.mapping.toEntity
 import org.springframework.data.repository.findByIdOrNull
@@ -20,8 +21,8 @@ class JpaAlbumBoundsRepository(
     }
 
     @Transactional(readOnly = true)
-    override fun findByAlbumId(albumId: Long): AlbumBounds? =
-        jpaRepository.findByStandardIdForRead(albumId)?.toDomain()
+    override fun findByStandardIdAndIdType(standardId: Long, idType: BoundsIdType): AlbumBounds? =
+        jpaRepository.findByStandardIdAndIdType(standardId, idType)?.toDomain()
 
     @Transactional
     override fun apply(bounds: AlbumBounds): AlbumBounds {

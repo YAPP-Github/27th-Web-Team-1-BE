@@ -6,6 +6,7 @@ import kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity
 fun Couple.toEntity(): CoupleEntity =
     CoupleEntity(
         name = this.name,
+        inviteCode = this.inviteCode,
     )
 
 fun CoupleEntity.toDomain(): Couple =
