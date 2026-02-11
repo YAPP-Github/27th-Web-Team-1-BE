@@ -14,12 +14,13 @@ object ClusteringPipeline {
     fun calculateClusterStats(grouped: Map<GridKey, List<UniquePhotoRecord>>): List<ClusterData> =
         grouped.map { (key, photos) ->
             val representative = photos.maxByOrNull { it.takenAt }!!
+            val first = photos.first()
 
             ClusterData(
                 gridKey = key,
-                count = photos.size,
-                centerLongitude = photos.firstOrNull()?.avgLongitude ?: photos.map { it.longitude }.average(),
-                centerLatitude = photos.firstOrNull()?.avgLatitude ?: photos.map { it.latitude }.average(),
+                count = first.count.takeIf { it > 0 } ?: photos.size,
+                centerLongitude = first.avgLongitude ?: photos.map { it.longitude }.average(),
+                centerLatitude = first.avgLatitude ?: photos.map { it.latitude }.average(),
                 photosByRank =
                     photos.sortedByDescending { it.takenAt }.mapIndexed { index, photo ->
                         RankedPhoto(url = photo.url, rank = index + 1)
@@ -50,7 +51,7 @@ object ClusteringPipeline {
                             ClusterProjection(
                                 cellX = cluster.gridKey.cellX,
                                 cellY = cluster.gridKey.cellY,
-                                count = cluster.photosByRank.size,
+                                count = cluster.count,
                                 thumbnailUrl = selectedUrl,
                                 centerLongitude = cluster.centerLongitude,
                                 centerLatitude = cluster.centerLatitude,
