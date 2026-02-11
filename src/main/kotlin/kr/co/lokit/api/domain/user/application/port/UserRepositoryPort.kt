@@ -7,16 +7,10 @@ interface UserRepositoryPort {
 
     fun findById(id: Long): User?
 
-    fun lockWithEmail(email: String)
-
     fun findByEmail(
         email: String,
         name: String,
     ): User
 
-    fun apply(
-        user: User,
-        name: String,
-        profileImageUrl: String?,
-    )
+    fun apply(user: User): User
 }

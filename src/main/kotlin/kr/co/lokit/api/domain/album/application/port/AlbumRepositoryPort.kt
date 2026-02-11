@@ -8,7 +8,7 @@ interface AlbumRepositoryPort {
     fun findAllByUserId(userId: Long): List<Album>
     fun findAllByCoupleId(coupleId: Long): List<Album>
     fun findAllByIds(ids: List<Long>): List<Album>
-    fun applyTitle(id: Long, title: String): Album
+    fun apply(album: Album): Album
     fun deleteById(id: Long)
     fun findAllWithPhotos(): List<Album>
     fun findByIdWithPhotos(id: Long): List<Album>

@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -35,20 +36,30 @@ class SecurityConfig(
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .authorizeHttpRequests { auth ->
+            .headers { headers ->
+                headers
+                    .contentSecurityPolicy { csp ->
+                        csp.policyDirectives(buildCspPolicy())
+                    }.httpStrictTransportSecurity { hsts ->
+                        hsts
+                            .includeSubDomains(true)
+                            .maxAgeInSeconds(31536000)
+                    }.referrerPolicy { referrer ->
+                        referrer.policy(
+                            ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+                        )
+                    }.frameOptions { it.deny() }
+                    .xssProtection { it.disable() }
+            }.authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers("/actuator/**")
+                    .permitAll()
                     .requestMatchers(
-                        "/auth/register",
-                        "/auth/login",
                         "/auth/kakao",
                         "/auth/kakao/callback",
                     ).permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/prometheus")
-                    .permitAll()
-                    .requestMatchers("/admin/**")
-                    .permitAll()
                     .requestMatchers(
                         "/swagger/**",
                         "/swagger-ui/**",
@@ -64,18 +75,59 @@ class SecurityConfig(
             }.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
 
+    private fun buildCspPolicy(): String {
+        val allowedOrigins =
+            corsProperties.allowedOrigins
+                .split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+
+        val connectSrc =
+            buildString {
+                append("'self'")
+                allowedOrigins.forEach { origin ->
+                    append(" ").append(origin)
+                }
+            }
+
+        return """
+            default-src 'self';
+            script-src 'self';
+            style-src 'self';
+            img-src 'self' data: https:;
+            font-src 'self' data:;
+            connect-src $connectSrc;
+            frame-ancestors 'none';
+            """.trimIndent().replace("\n", " ")
+    }
+
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
+        val origins =
+            corsProperties.allowedOrigins
+                .split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+
+        require(origins.isNotEmpty()) {
+            "CORS allowedOrigins must not be empty"
+        }
+
         val configuration =
             CorsConfiguration().apply {
-                allowedOriginPatterns = listOf("*")
+                allowedOrigins = origins
                 allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 allowedHeaders = listOf("*")
+                exposedHeaders = listOf("Authorization")
                 allowCredentials = true
-                exposedHeaders = listOf("*")
-                maxAge = 3600L
+                maxAge = 3600
             }
-        logger.info("allowedOrigins: {}", configuration.allowedOriginPatterns?.joinToString { "[$it], " })
+
+        logger.info("CORS configured origins={}", origins.joinToString(","))
+        logger.info("CSP connect-src={}", buildCspPolicy())
+
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", configuration)
         }

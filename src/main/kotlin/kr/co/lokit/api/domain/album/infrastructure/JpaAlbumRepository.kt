@@ -105,10 +105,10 @@ class JpaAlbumRepository(
         }
     }
 
-    override fun applyTitle(id: Long, title: String): Album {
-        val albumEntity = albumJpaRepository.findByIdOrNull(id)
-            ?: throw entityNotFound<Album>(id)
-        albumEntity.updateTitle(title)
+    override fun apply(album: Album): Album {
+        val albumEntity = albumJpaRepository.findByIdOrNull(album.id)
+            ?: throw entityNotFound<Album>(album.id)
+        albumEntity.updateTitle(album.title)
         return albumEntity.toDomain()
     }
 

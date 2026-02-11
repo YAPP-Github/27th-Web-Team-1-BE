@@ -50,7 +50,7 @@ object ClusteringPipeline {
                             ClusterProjection(
                                 cellX = cluster.gridKey.cellX,
                                 cellY = cluster.gridKey.cellY,
-                                count = cluster.count,
+                                count = cluster.photosByRank.size,
                                 thumbnailUrl = selectedUrl,
                                 centerLongitude = cluster.centerLongitude,
                                 centerLatitude = cluster.centerLatitude,

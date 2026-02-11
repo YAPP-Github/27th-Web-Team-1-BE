@@ -21,16 +21,16 @@ class CacheConfig {
                     "reverseGeocode",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(1, TimeUnit.HOURS)
-                        .maximumSize(500)
+                        .expireAfterWrite(3, TimeUnit.MINUTES)
+                        .maximumSize(100)
                         .build(),
                 ),
                 CaffeineCache(
                     "searchPlaces",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(1, TimeUnit.HOURS)
-                        .maximumSize(100)
+                        .expireAfterWrite(3, TimeUnit.MINUTES)
+                        .maximumSize(50)
                         .build(),
                 ),
                 CaffeineCache(
@@ -38,7 +38,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .maximumSize(200)
+                        .maximumSize(100)
                         .build(),
                 ),
                 CaffeineCache(
@@ -46,7 +46,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .maximumSize(200)
+                        .maximumSize(300)
                         .build(),
                 ),
                 CaffeineCache(
@@ -61,23 +61,23 @@ class CacheConfig {
                     "albumCouple",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(3, TimeUnit.HOURS)
-                        .maximumSize(500)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .maximumSize(200)
                         .build(),
                 ),
                 CaffeineCache(
                     "userCouple",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(1, TimeUnit.HOURS)
-                        .maximumSize(500)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .maximumSize(200)
                         .build(),
                 ),
                 CaffeineCache(
                     "coupleAlbums",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(1, TimeUnit.MINUTES)
+                        .expireAfterWrite(3, TimeUnit.MINUTES)
                         .maximumSize(200)
                         .build(),
                 ),
@@ -85,23 +85,23 @@ class CacheConfig {
                     "mapPhotos",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(1, TimeUnit.MINUTES)
-                        .maximumSize(500)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .maximumSize(400)
                         .build(),
                 ),
                 CaffeineCache(
                     "mapCells",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(3, TimeUnit.MINUTES)
-                        .maximumSize(300)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .maximumSize(400)
                         .build(),
                 ),
                 CaffeineCache(
                     "presignedUrl",
                     Caffeine
                         .newBuilder()
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .expireAfterWrite(3, TimeUnit.MINUTES)
                         .maximumSize(100)
                         .build(),
                 ),

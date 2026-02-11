@@ -6,6 +6,8 @@ import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
 import kr.co.lokit.api.domain.photo.dto.CreatePhotoRequest
 import kr.co.lokit.api.domain.photo.dto.PresignedUrlRequest
 import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
+import kr.co.lokit.api.domain.user.dto.UpdateNicknameRequest
+import kr.co.lokit.api.domain.user.dto.UpdateProfileImageRequest
 import java.time.LocalDateTime
 
 fun createAlbumRequest(
@@ -52,3 +54,11 @@ fun createCoupleRequest(
 fun createJoinCoupleRequest(
     inviteCode: String = "12345678",
 ) = JoinCoupleRequest(inviteCode = inviteCode)
+
+fun createUpdateNicknameRequest(
+    nickname: String = "새닉네임",
+) = UpdateNicknameRequest(nickname = nickname)
+
+fun createUpdateProfileImageRequest(
+    profileImageUrl: String = "https://example.com/profile.jpg",
+) = UpdateProfileImageRequest(profileImageUrl = profileImageUrl)

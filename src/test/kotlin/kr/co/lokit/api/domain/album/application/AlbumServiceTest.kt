@@ -19,7 +19,6 @@ import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class AlbumServiceTest {
-
     @Mock
     lateinit var albumRepository: AlbumRepositoryPort
 
@@ -65,10 +64,11 @@ class AlbumServiceTest {
 
     @Test
     fun `사용자의 선택 가능한 앨범 목록을 조회할 수 있다`() {
-        val albums = listOf(
-            createAlbum(id = 1L, title = "앨범1"),
-            createAlbum(id = 2L, title = "앨범2"),
-        )
+        val albums =
+            listOf(
+                createAlbum(id = 1L, title = "앨범1"),
+                createAlbum(id = 2L, title = "앨범2"),
+            )
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(albums)
 
@@ -85,7 +85,7 @@ class AlbumServiceTest {
         val updatedAlbum = createAlbum(id = 1L, title = "새 제목", coupleId = 1L, createdById = 1L)
         `when`(albumRepository.findById(1L)).thenReturn(album)
         `when`(albumRepository.existsByCoupleIdAndTitle(1L, "새 제목")).thenReturn(false)
-        `when`(albumRepository.applyTitle(1L, "새 제목")).thenReturn(updatedAlbum)
+        `when`(albumRepository.apply(album.copy(title = "새 제목"))).thenReturn(updatedAlbum)
 
         val result = albumCommandService.updateTitle(1L, "새 제목", 1L)
 

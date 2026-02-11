@@ -151,9 +151,6 @@ jobs:
                             --log-opt awslogs-group=/docker/lokit-api-dev \
                             --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
                             --log-opt awslogs-create-group=true \
-                            --memory="1024m" \
-                            --memory-swap="1536m" \
-                            --cpus="1" \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
 
                         docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"

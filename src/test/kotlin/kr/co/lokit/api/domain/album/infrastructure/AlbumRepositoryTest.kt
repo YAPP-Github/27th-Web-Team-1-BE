@@ -25,7 +25,6 @@ import kotlin.test.assertTrue
 @DataJpaTest
 @Import(JpaAlbumRepository::class)
 class AlbumRepositoryTest {
-
     @Autowired
     lateinit var albumRepository: AlbumRepositoryPort
 
@@ -83,7 +82,7 @@ class AlbumRepositoryTest {
     fun `앨범 제목을 수정할 수 있다`() {
         val saved = albumRepository.save(createAlbum(title = "여행", coupleId = couple.nonNullId()), user.nonNullId())
 
-        val updated = albumRepository.applyTitle(saved.id, "새 제목")
+        val updated = albumRepository.apply(saved.copy(title = "새 제목"))
 
         assertEquals("새 제목", updated.title)
         assertEquals(saved.id, updated.id)
@@ -92,7 +91,7 @@ class AlbumRepositoryTest {
     @Test
     fun `존재하지 않는 앨범 제목을 수정하면 예외가 발생한다`() {
         assertThrows<BusinessException.ResourceNotFoundException> {
-            albumRepository.applyTitle(999L, "새 제목")
+            albumRepository.apply(createAlbum().copy(id = 9999999L))
         }
     }
 

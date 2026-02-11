@@ -19,19 +19,23 @@ class AlbumCommandService(
     private val albumRepository: AlbumRepositoryPort,
     private val mapPhotosCacheService: MapPhotosCacheService,
     private val cacheManager: CacheManager,
-) : CreateAlbumUseCase, UpdateAlbumUseCase {
-
+) : CreateAlbumUseCase,
+    UpdateAlbumUseCase {
     @OptimisticRetry
     @Transactional
-    override fun create(album: Album, userId: Long): Album {
-        val coupleId = albumRepository.findDefaultByUserId(userId)?.coupleId
-            ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
-                errors = mapOf("userId" to userId.toString())
-            )
+    override fun create(
+        album: Album,
+        userId: Long,
+    ): Album {
+        val coupleId =
+            albumRepository.findDefaultByUserId(userId)?.coupleId
+                ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
+                    errors = mapOf("userId" to userId.toString()),
+                )
 
         if (albumRepository.existsByCoupleIdAndTitle(coupleId, album.title)) {
             throw BusinessException.AlbumAlreadyExistsException(
-                errors = mapOf("title" to album.title)
+                errors = mapOf("title" to album.title),
             )
         }
         val saved = albumRepository.save(album, userId)
@@ -41,9 +45,14 @@ class AlbumCommandService(
 
     @OptimisticRetry
     @Transactional
-    override fun updateTitle(id: Long, title: String, userId: Long): Album {
-        val album = albumRepository.findById(id)
-            ?: throw entityNotFound<Album>(id)
+    override fun updateTitle(
+        id: Long,
+        title: String,
+        userId: Long,
+    ): Album {
+        val album =
+            albumRepository.findById(id)
+                ?: throw entityNotFound<Album>(id)
         if (album.isDefault) {
             throw BusinessException.DefaultAlbumTitleChangeNotAllowedException(
                 errors = mapOf("albumId" to id.toString()),
@@ -51,10 +60,10 @@ class AlbumCommandService(
         }
         if (album.title != title && albumRepository.existsByCoupleIdAndTitle(album.coupleId, title)) {
             throw BusinessException.AlbumAlreadyExistsException(
-                errors = mapOf("title" to title)
+                errors = mapOf("title" to title),
             )
         }
-        val updated = albumRepository.applyTitle(id, title)
+        val updated = albumRepository.apply(album.copy(title = title))
         cacheManager.getCache("coupleAlbums")?.evict(album.coupleId)
         return updated
     }
@@ -67,9 +76,13 @@ class AlbumCommandService(
             CacheEvict(cacheNames = ["album"], key = "#userId + ':' + #id"),
         ],
     )
-    override fun delete(id: Long, userId: Long) {
-        val album = albumRepository.findById(id)
-            ?: throw entityNotFound<Album>(id)
+    override fun delete(
+        id: Long,
+        userId: Long,
+    ) {
+        val album =
+            albumRepository.findById(id)
+                ?: throw entityNotFound<Album>(id)
         if (album.isDefault) {
             throw BusinessException.DefaultAlbumDeletionNotAllowedException(
                 errors = mapOf("albumId" to id.toString()),

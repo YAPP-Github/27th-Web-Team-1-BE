@@ -124,7 +124,13 @@ class MapQueryService(
 
     @Transactional(readOnly = true)
     override fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse {
-        val bounds = albumBoundsRepository.findByStandardIdAndIdType(albumId, BoundsIdType.ALBUM)
+        val album = albumRepository.findById(albumId)
+        val (standardId, idType) = if (album?.isDefault == true) {
+            album.coupleId to BoundsIdType.COUPLE
+        } else {
+            albumId to BoundsIdType.ALBUM
+        }
+        val bounds = albumBoundsRepository.findByStandardIdAndIdType(standardId, idType)
         return bounds.toAlbumMapInfoResponse(albumId)
     }
 

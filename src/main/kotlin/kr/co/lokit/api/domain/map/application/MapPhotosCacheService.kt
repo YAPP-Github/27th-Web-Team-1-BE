@@ -9,12 +9,12 @@ import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
-import java.time.LocalDateTime
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCache
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.PI
@@ -103,19 +103,21 @@ class MapPhotosCacheService(
             scope.join().throwIfFailed()
 
             val dbResults = dbResultsTask.get()
-            val dbCellMap = dbResults.groupBy { it.cellX to it.cellY }
-                .mapValues { (_, projections) ->
-                    val latest = projections.maxByOrNull { it.takenAt ?: LocalDateTime.MIN }!!
-                    ClusterProjection(
-                        cellX = projections.first().cellX,
-                        cellY = projections.first().cellY,
-                        count = projections.sumOf { it.count },
-                        thumbnailUrl = latest.thumbnailUrl,
-                        centerLongitude = projections.map { it.centerLongitude }.average(),
-                        centerLatitude = projections.map { it.centerLatitude }.average(),
-                        takenAt = latest.takenAt,
-                    )
-                }
+            val dbCellMap =
+                dbResults
+                    .groupBy { it.cellX to it.cellY }
+                    .mapValues { (_, projections) ->
+                        val latest = projections.maxByOrNull { it.takenAt ?: LocalDateTime.MIN }!!
+                        ClusterProjection(
+                            cellX = projections.first().cellX,
+                            cellY = projections.first().cellY,
+                            count = projections.first().count,
+                            thumbnailUrl = latest.thumbnailUrl,
+                            centerLongitude = projections.map { it.centerLongitude }.average(),
+                            centerLatitude = projections.map { it.centerLatitude }.average(),
+                            takenAt = latest.takenAt,
+                        )
+                    }
             val newResponses = mutableListOf<ClusterResponse>()
             val bulkInsertMap = mutableMapOf<String, CachedCell>()
 
