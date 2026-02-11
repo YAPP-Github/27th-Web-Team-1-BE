@@ -23,6 +23,7 @@ enum class ErrorCode(
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_005", "이미 등록된 이메일입니다"),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_006", "유효하지 않은 리프레시 토큰입니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AUTH_007", "사용자를 찾을 수 없습니다"),
+    USER_WITHDRAWN(HttpStatus.FORBIDDEN, "USER_001", "탈퇴한 사용자입니다"),
 
     // Kakao OAuth
     KAKAO_API_ERROR(HttpStatus.BAD_GATEWAY, "KAKAO_001", "카카오 API 호출에 실패했습니다"),
@@ -46,6 +47,10 @@ enum class ErrorCode(
 
     // Photo
     DEFAULT_ALBUM_NOT_FOUND_FOR_USER(HttpStatus.INTERNAL_SERVER_ERROR, "PHOTO_001", "사용자의 기본 앨범을 찾을 수 없습니다"),
+
+    // Comment
+    COMMENT_MAX_EMOTICONS_EXCEEDED(HttpStatus.BAD_REQUEST, "COMMENT_001", "댓글당 최대 10개의 이모지만 추가할 수 있습니다"),
+    EMOTICON_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_002", "이모지를 찾을 수 없습니다"),
 
     // Couple
     COUPLE_MAX_MEMBERS_EXCEEDED(HttpStatus.BAD_REQUEST, "COUPLE_001", "커플 최대 인원을 초과했습니다"),
