@@ -22,7 +22,7 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=80 \
     -XX:+UseStringDeduplication \
     -XX:+ExitOnOutOfMemoryError \
-    -- enable-preview \
+    --enable-preview \
     -Dfile.encoding=UTF-8"
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
