@@ -11,6 +11,7 @@ spring:
             initialization-fail-timeout: 60000
             connection-timeout: 5000
             validation-timeout: 2000
+            connection-test-query: "SELECT 1"
     jpa:
         hibernate:
             ddl-auto: update
@@ -39,8 +40,12 @@ spring:
 server:
     tomcat:
         threads:
-            max: 25
-            min-spare: 4
+            max: 50
+            min-spare: 10
+        max-connections: 500
+        accept-count: 100
+        connection-timeout: 10s
+        keep-alive-timeout: 10s
 
 logging:
     request:
@@ -54,7 +59,7 @@ management:
     endpoints:
         web:
             exposure:
-                include: "health,prometheus"
+                include: "*"
             base-path: /actuator
     endpoint:
         health:
