@@ -152,7 +152,9 @@ jobs:
                             --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
                             --log-opt awslogs-create-group=true \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
-                        docker restart caddy
+
+                        docker rm -f caddy
+                        docker compose -f compose.yaml up -d
 
                         docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"
 
