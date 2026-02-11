@@ -39,21 +39,17 @@ class SecurityConfig(
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers("/api/actuator/**")
+                    .permitAll()
                     .requestMatchers(
-                        "/auth/register",
-                        "/auth/login",
-                        "/auth/kakao",
-                        "/auth/kakao/callback",
+                        "/api/auth/kakao",
+                        "/api/auth/kakao/callback",
                     ).permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/prometheus")
-                    .permitAll()
-                    .requestMatchers("/admin/**")
-                    .permitAll()
                     .requestMatchers(
-                        "/swagger/**",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/docs/**",
+                        "/api/swagger/**",
+                        "/api/swagger-ui/**",
+                        "/api/v3/api-docs/**",
+                        "/api/docs/**",
                     ).permitAll()
                     .anyRequest()
                     .authenticated()
@@ -72,10 +68,15 @@ class SecurityConfig(
                 allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 allowedHeaders = listOf("*")
                 allowCredentials = true
-                exposedHeaders = listOf("*")
+                exposedHeaders = listOf("Authorization", "Content-Type")
                 maxAge = 3600L
             }
-        logger.info("allowedOrigins: {}", configuration.allowedOriginPatterns?.joinToString { "[$it], " })
+        logger.info(
+            "CORS enabled: origins={}, methods={}",
+            configuration.allowedOriginPatterns?.joinToString(),
+            configuration.allowedMethods?.joinToString(),
+        )
+
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", configuration)
         }
