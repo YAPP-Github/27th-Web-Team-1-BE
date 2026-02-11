@@ -39,17 +39,17 @@ class SecurityConfig(
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers("/api/actuator/**")
+                    .requestMatchers("/actuator/**")
                     .permitAll()
                     .requestMatchers(
-                        "/api/auth/kakao",
-                        "/api/auth/kakao/callback",
+                        "/auth/kakao",
+                        "/auth/kakao/callback",
                     ).permitAll()
                     .requestMatchers(
-                        "/api/swagger/**",
-                        "/api/swagger-ui/**",
-                        "/api/v3/api-docs/**",
-                        "/api/docs/**",
+                        "/swagger/**",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/docs/**",
                     ).permitAll()
                     .anyRequest()
                     .authenticated()
