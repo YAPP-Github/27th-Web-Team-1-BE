@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.user.application
 
 import jakarta.persistence.EntityManager
+import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -26,6 +27,8 @@ import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
+import org.springframework.cache.Cache
+import org.springframework.cache.CacheManager
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -53,6 +56,9 @@ class OAuthServiceTest {
     @Mock
     lateinit var entityManager: EntityManager
 
+    @Mock
+    lateinit var cacheManager: CacheManager
+
     lateinit var oAuthService: OAuthService
 
     @BeforeEach
@@ -65,6 +71,7 @@ class OAuthServiceTest {
                 refreshTokenJpaRepository,
                 jwtTokenProvider,
                 createCoupleUseCase,
+                cacheManager,
             )
     }
 
@@ -163,5 +170,28 @@ class OAuthServiceTest {
         oAuthService.login(OAuthProvider.KAKAO, "auth-code")
 
         verify(refreshTokenJpaRepository).save(any<RefreshTokenEntity>())
+    }
+
+    @Test
+    fun `탈퇴한 사용자가 다시 로그인하면 계정이 복구된다`() {
+        setupOAuthClient()
+        val withdrawnUser =
+            User(id = 1L, email = "test@test.com", name = "테스트", status = AccountStatus.WITHDRAWN)
+        val existingUserEntity = createUserEntity(id = 1L, email = withdrawnUser.email)
+
+        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(withdrawnUser)
+        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
+        setupTokenGeneration(withdrawnUser)
+
+        val userDetailsCache = mock(Cache::class.java)
+        val userCoupleCache = mock(Cache::class.java)
+        whenever(cacheManager.getCache("userDetails")).thenReturn(userDetailsCache)
+        whenever(cacheManager.getCache("userCouple")).thenReturn(userCoupleCache)
+
+        oAuthService.login(OAuthProvider.KAKAO, "auth-code")
+
+        verify(userRepository).reactivate(1L)
+        verify(userDetailsCache).evict("test@test.com")
+        verify(userCoupleCache).evict(1L)
     }
 }

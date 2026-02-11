@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.user.application
 
+import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -12,6 +13,7 @@ import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
+import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -24,6 +26,7 @@ class OAuthService(
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val createCoupleUseCase: CreateCoupleUseCase,
+    private val cacheManager: CacheManager,
 ) {
     @Transactional
     fun login(
@@ -46,6 +49,13 @@ class OAuthService(
 
         val user =
             userRepository.findByEmail(email, name)
+
+        // 탈퇴한 사용자가 다시 로그인하면 계정 복구
+        if (user.status == AccountStatus.WITHDRAWN) {
+            userRepository.reactivate(user.id)
+            cacheManager.getCache("userDetails")?.evict(user.email)
+            cacheManager.getCache("userCouple")?.evict(user.id)
+        }
 
         user.profileImageUrl = userInfo.profileImageUrl
 
