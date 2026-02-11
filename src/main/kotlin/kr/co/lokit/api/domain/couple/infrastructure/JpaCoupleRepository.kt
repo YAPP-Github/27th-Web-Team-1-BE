@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 @Repository
 class JpaCoupleRepository(
     private val coupleJpaRepository: CoupleJpaRepository,
+    private val coupleUserJpaRepository: CoupleUserJpaRepository,
     private val userJpaRepository: UserJpaRepository,
     private val albumJpaRepository: AlbumJpaRepository,
 ) : CoupleRepositoryPort {
@@ -87,6 +88,11 @@ class JpaCoupleRepository(
     @Transactional
     override fun deleteById(id: Long) {
         coupleJpaRepository.deleteById(id)
+    }
+
+    @Transactional
+    override fun removeCoupleUser(userId: Long) {
+        coupleUserJpaRepository.deleteByUserId(userId)
     }
 
     companion object {

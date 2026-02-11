@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.user.infrastructure
 
+import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
@@ -8,6 +9,7 @@ import kr.co.lokit.api.domain.user.mapping.toEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Repository
 class JpaUserRepository(
@@ -48,5 +50,23 @@ class JpaUserRepository(
                 profileImageUrl = profileImageUrl,
             ) ?: throw entityNotFound<UserEntity>(user.id)
         save(updatedUser)
+    }
+
+    @Transactional
+    override fun withdraw(userId: Long) {
+        val entity =
+            userJpaRepository.findByIdOrNull(userId)
+                ?: throw entityNotFound<UserEntity>(userId)
+        entity.status = AccountStatus.WITHDRAWN
+        entity.withdrawnAt = LocalDateTime.now()
+    }
+
+    @Transactional
+    override fun reactivate(userId: Long) {
+        val entity =
+            userJpaRepository.findByIdOrNull(userId)
+                ?: throw entityNotFound<UserEntity>(userId)
+        entity.status = AccountStatus.ACTIVE
+        entity.withdrawnAt = null
     }
 }

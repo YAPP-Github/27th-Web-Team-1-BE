@@ -19,4 +19,8 @@ interface UserRepositoryPort {
         name: String,
         profileImageUrl: String?,
     )
+
+    fun withdraw(userId: Long)
+
+    fun reactivate(userId: Long)
 }
