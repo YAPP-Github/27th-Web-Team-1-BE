@@ -141,6 +141,8 @@ jobs:
                             --name $CONTAINER_NAME \
                             --restart unless-stopped \
                             --network lokit-net \
+                            --memory="768m" \
+                            --memory-swap="1024m" \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
                             -e TZ=Asia/Seoul \
