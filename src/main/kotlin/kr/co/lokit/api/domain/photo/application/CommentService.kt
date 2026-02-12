@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.photo.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -32,7 +31,7 @@ class CommentService(
         val comments = commentRepository.findAllByPhotoIdWithEmoticons(photoId, currentUserId)
 
         val couple = coupleRepository.findByUserId(currentUserId)
-        val deIdentifyUserId = if (couple != null && couple.status == CoupleStatus.DISCONNECTED) {
+        val deIdentifyUserId = if (couple != null && couple.status.isDisconnectedOrExpired) {
             couple.disconnectedByUserId
         } else {
             null

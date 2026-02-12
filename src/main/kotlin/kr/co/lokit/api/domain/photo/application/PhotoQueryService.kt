@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.photo.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
@@ -37,7 +36,7 @@ class PhotoQueryService(
 
         val couple = coupleRepository.findByUserId(userId)
         val shouldDeIdentify = couple != null &&
-            couple.status == CoupleStatus.DISCONNECTED &&
+            couple.status.isDisconnectedOrExpired &&
             photoDetail.uploadedById == couple.disconnectedByUserId
 
         val uploaderName = if (shouldDeIdentify) DeIdentification.DEFAULT_NAME else photoDetail.uploaderName
