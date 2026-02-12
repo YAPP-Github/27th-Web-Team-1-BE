@@ -50,4 +50,17 @@ interface CoupleApi {
         request: JoinCoupleRequest,
         @Parameter(hidden = true) userId: Long,
     ): IdResponse
+
+    @Operation(
+        summary = "커플 연결 끊기",
+        description = "현재 커플 연결을 해제합니다. 31일 이내 재연결이 가능합니다.",
+        responses = [
+            ApiResponse(responseCode = "204", description = "연결 끊기 성공"),
+            ApiResponse(responseCode = "404", description = "커플을 찾을 수 없음"),
+            ApiResponse(responseCode = "409", description = "이미 연결이 해제된 커플"),
+        ],
+    )
+    fun disconnect(
+        @Parameter(hidden = true) userId: Long,
+    )
 }

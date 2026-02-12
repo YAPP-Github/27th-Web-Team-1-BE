@@ -3,10 +3,14 @@ package kr.co.lokit.api.domain.couple.infrastructure
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.OneToMany
+import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
+import java.time.LocalDateTime
 
 @Entity(name = "Couple")
 class CoupleEntity(
@@ -14,6 +18,11 @@ class CoupleEntity(
     val name: String,
     @Column(unique = true, length = 8)
     var inviteCode: String,
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var status: CoupleStatus = CoupleStatus.CONNECTED,
+    var disconnectedAt: LocalDateTime? = null,
+    var disconnectedByUserId: Long? = null,
 ) : BaseEntity() {
     @OneToMany(
         fetch = FetchType.LAZY,
@@ -38,5 +47,11 @@ class CoupleEntity(
 
     fun addAlbum(album: AlbumEntity) {
         albums.add(album)
+    }
+
+    fun disconnect(userId: Long) {
+        status = CoupleStatus.DISCONNECTED
+        disconnectedAt = LocalDateTime.now()
+        disconnectedByUserId = userId
     }
 }

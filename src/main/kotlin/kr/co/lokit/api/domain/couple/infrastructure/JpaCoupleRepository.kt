@@ -95,6 +95,13 @@ class JpaCoupleRepository(
         coupleUserJpaRepository.deleteByUserId(userId)
     }
 
+    @Transactional
+    override fun disconnect(coupleId: Long, userId: Long) {
+        val entity = coupleJpaRepository.findByIdOrNull(coupleId)
+            ?: throw entityNotFound<Couple>(coupleId)
+        entity.disconnect(userId)
+    }
+
     companion object {
         private const val MAX_COUPLE_MEMBERS = 2
     }

@@ -90,6 +90,18 @@ sealed class BusinessException(
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.COUPLE_ALREADY_CONNECTED, message, cause, errors)
 
+    class CoupleNotFoundException(
+        message: String = ErrorCode.COUPLE_NOT_FOUND.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_NOT_FOUND, message, cause, errors)
+
+    class CoupleAlreadyDisconnectedException(
+        message: String = ErrorCode.COUPLE_ALREADY_DISCONNECTED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_ALREADY_DISCONNECTED, message, cause, errors)
+
     class UserNotFoundException(
         message: String = ErrorCode.USER_NOT_FOUND.message,
         cause: Throwable? = null,

@@ -55,4 +55,6 @@ enum class ErrorCode(
     // Couple
     COUPLE_MAX_MEMBERS_EXCEEDED(HttpStatus.BAD_REQUEST, "COUPLE_001", "커플 최대 인원을 초과했습니다"),
     COUPLE_ALREADY_CONNECTED(HttpStatus.CONFLICT, "COUPLE_002", "이미 다른 사용자와 커플로 연결되어 있습니다"),
+    COUPLE_NOT_FOUND(HttpStatus.NOT_FOUND, "COUPLE_003", "커플을 찾을 수 없습니다"),
+    COUPLE_ALREADY_DISCONNECTED(HttpStatus.CONFLICT, "COUPLE_004", "이미 연결이 해제된 커플입니다"),
 }

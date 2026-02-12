@@ -18,5 +18,7 @@ interface CoupleRepositoryPort {
     fun deleteById(id: Long)
 
     fun removeCoupleUser(userId: Long)
+
+    fun disconnect(coupleId: Long, userId: Long)
 }
 

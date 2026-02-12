@@ -5,12 +5,14 @@ import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.dto.CreateCoupleRequest
 import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
 import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController
 class CoupleController(
     private val createCoupleUseCase: CreateCoupleUseCase,
     private val joinCoupleUseCase: JoinCoupleUseCase,
+    private val disconnectCoupleUseCase: DisconnectCoupleUseCase,
 ) : CoupleApi {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,4 +50,12 @@ class CoupleController(
         joinCoupleUseCase
             .joinByInviteCode(request.inviteCode, userId)
             .toIdResponse(Couple::id)
+
+    @DeleteMapping("me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    override fun disconnect(
+        @CurrentUserId userId: Long,
+    ) {
+        disconnectCoupleUseCase.disconnect(userId)
+    }
 }
