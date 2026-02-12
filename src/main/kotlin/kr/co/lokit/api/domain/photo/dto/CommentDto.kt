@@ -45,6 +45,8 @@ data class CommentResponse(
     val userId: Long,
     @Schema(description = "작성자 이름", example = "홍길동")
     val userName: String,
+    @Schema(description = "작성자 프로필 이미지 URL")
+    val userProfileImageUrl: String?,
     @Schema(description = "댓글 내용", example = "멋진 사진이네요!")
     val content: String,
     @Schema(description = "작성일")

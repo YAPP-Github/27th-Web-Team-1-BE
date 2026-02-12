@@ -8,5 +8,8 @@ interface CommentRepositoryPort {
 
     fun findById(id: Long): Comment
 
-    fun findAllByPhotoIdWithEmoticons(photoId: Long, currentUserId: Long): List<CommentWithEmoticons>
+    fun findAllByPhotoIdWithEmoticons(
+        photoId: Long,
+        currentUserId: Long,
+    ): List<CommentWithEmoticons>
 }

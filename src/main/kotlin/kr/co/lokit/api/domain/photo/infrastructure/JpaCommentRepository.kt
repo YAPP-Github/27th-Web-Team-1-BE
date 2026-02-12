@@ -56,6 +56,7 @@ class JpaCommentRepository(
             CommentWithEmoticons(
                 comment = comment.toDomain(),
                 userName = comment.user.name,
+                userProfileImageUrl = comment.user.profileImageUrl,
                 emoticons = summaries,
             )
         }

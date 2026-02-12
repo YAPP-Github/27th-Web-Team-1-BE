@@ -46,7 +46,8 @@ fun createCouple(
     inviteCode: String = InviteCodeGenerator.generate(),
     userIds: List<Long> = emptyList(),
     status: CoupleStatus = CoupleStatus.CONNECTED,
-) = Couple(id = id, name = name, inviteCode = inviteCode, userIds = userIds, status = status)
+    disconnectedByUserId: Long? = null,
+) = Couple(id = id, name = name, inviteCode = inviteCode, userIds = userIds, status = status, disconnectedByUserId = disconnectedByUserId)
 
 fun createAlbum(
     id: Long = 0L,
@@ -96,7 +97,9 @@ fun createPhotoDetail(
     url: String = "https://example.com/photo.jpg",
     takenAt: LocalDateTime? = LocalDateTime.of(2026, 1, 1, 12, 0),
     albumName: String = "여행",
+    uploadedById: Long = 1L,
     uploaderName: String = "테스트",
+    uploaderProfileImageUrl: String? = null,
     location: Location = createLocation(),
     description: String? = null,
 ) = PhotoDetail(
@@ -104,7 +107,9 @@ fun createPhotoDetail(
     url = url,
     takenAt = takenAt,
     albumName = albumName,
+    uploadedById = uploadedById,
     uploaderName = uploaderName,
+    uploaderProfileImageUrl = uploaderProfileImageUrl,
     location = location,
     description = description,
 )

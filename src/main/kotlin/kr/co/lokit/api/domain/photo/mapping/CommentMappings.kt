@@ -47,6 +47,7 @@ fun CommentWithEmoticons.toResponse(): CommentResponse =
         id = this.comment.id,
         userId = this.comment.userId,
         userName = this.userName,
+        userProfileImageUrl = this.userProfileImageUrl,
         content = this.comment.content,
         commentedAt = this.comment.commentedAt,
         emoticons = this.emoticons.map { EmoticonSummaryResponse(it.emoji, it.count, it.reacted) },

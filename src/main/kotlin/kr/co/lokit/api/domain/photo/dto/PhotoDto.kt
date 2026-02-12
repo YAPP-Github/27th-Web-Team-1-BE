@@ -115,6 +115,8 @@ data class PhotoDetailResponse(
     val albumName: String,
     @Schema(description = "등록자 이름", example = "홍길동")
     val uploaderName: String,
+    @Schema(description = "등록자 프로필 이미지 URL")
+    val uploaderProfileImageUrl: String?,
     @Schema(description = "도로명 주소", example = "서울 강남구 테헤란로 123")
     val address: String?,
     @Schema(description = "사진 설명", example = "가족 여행 사진")

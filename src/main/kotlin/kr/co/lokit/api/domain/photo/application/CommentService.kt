@@ -1,6 +1,9 @@
 package kr.co.lokit.api.domain.photo.application
 
+import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.EmoticonRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.`in`.CommentUseCase
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 class CommentService(
     private val commentRepository: CommentRepositoryPort,
     private val emoticonRepository: EmoticonRepositoryPort,
+    private val coupleRepository: CoupleRepositoryPort,
 ) : CommentUseCase,
     EmoticonUseCase {
     @Transactional
@@ -24,8 +28,29 @@ class CommentService(
     }
 
     @Transactional(readOnly = true)
-    override fun getComments(photoId: Long, currentUserId: Long): List<CommentWithEmoticons> =
-        commentRepository.findAllByPhotoIdWithEmoticons(photoId, currentUserId)
+    override fun getComments(photoId: Long, currentUserId: Long): List<CommentWithEmoticons> {
+        val comments = commentRepository.findAllByPhotoIdWithEmoticons(photoId, currentUserId)
+
+        val couple = coupleRepository.findByUserId(currentUserId)
+        val deIdentifyUserId = if (couple != null && couple.status == CoupleStatus.DISCONNECTED) {
+            couple.disconnectedByUserId
+        } else {
+            null
+        }
+
+        if (deIdentifyUserId == null) return comments
+
+        return comments.map { commentWithEmoticons ->
+            if (commentWithEmoticons.comment.userId == deIdentifyUserId) {
+                commentWithEmoticons.copy(
+                    userName = DeIdentification.DEFAULT_NAME,
+                    userProfileImageUrl = DeIdentification.DEFAULT_PROFILE_IMAGE_URL,
+                )
+            } else {
+                commentWithEmoticons
+            }
+        }
+    }
 
     @Transactional
     override fun addEmoticon(commentId: Long, userId: Long, emoji: String): Emoticon {
