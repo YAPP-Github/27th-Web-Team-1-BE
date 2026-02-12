@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
+import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -35,6 +36,12 @@ class CoupleCommandService(
             coupleRepository.findByInviteCode(inviteCode)
                 ?: throw entityNotFound<Couple>("inviteCode", inviteCode)
 
+        if (targetCouple.status == CoupleStatus.EXPIRED) {
+            throw BusinessException.CoupleReconnectExpiredException(
+                errors = mapOf("coupleId" to targetCouple.id.toString()),
+            )
+        }
+
         val existingCouple = coupleRepository.findByUserId(userId)
         if (existingCouple != null) {
             val fullCouple = coupleRepository.findById(existingCouple.id)!!
@@ -44,6 +51,10 @@ class CoupleCommandService(
                 )
             }
             coupleRepository.deleteById(existingCouple.id)
+        }
+
+        if (targetCouple.status == CoupleStatus.DISCONNECTED) {
+            return coupleRepository.reconnect(targetCouple.id, userId)
         }
 
         return coupleRepository.addUser(targetCouple.id, userId)
