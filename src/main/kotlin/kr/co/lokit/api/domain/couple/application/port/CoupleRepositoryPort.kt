@@ -20,5 +20,7 @@ interface CoupleRepositoryPort {
     fun removeCoupleUser(userId: Long)
 
     fun disconnect(coupleId: Long, userId: Long)
+
+    fun reconnect(coupleId: Long, userId: Long): Couple
 }
 

@@ -102,6 +102,17 @@ class JpaCoupleRepository(
         entity.disconnect(userId)
     }
 
+    @Transactional
+    override fun reconnect(coupleId: Long, userId: Long): Couple {
+        val entity = coupleJpaRepository.findByIdFetchUsers(coupleId)
+            ?: throw entityNotFound<Couple>(coupleId)
+        val userEntity = userJpaRepository.findByIdOrNull(userId)
+            ?: throw entityNotFound<User>(userId)
+        entity.reconnect()
+        entity.addUser(CoupleUserEntity(couple = entity, user = userEntity))
+        return entity.toDomain()
+    }
+
     companion object {
         private const val MAX_COUPLE_MEMBERS = 2
     }

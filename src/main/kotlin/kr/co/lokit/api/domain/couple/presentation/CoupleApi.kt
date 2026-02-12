@@ -52,6 +52,21 @@ interface CoupleApi {
     ): IdResponse
 
     @Operation(
+        summary = "커플 재연결",
+        description = "연결 해제된 커플에 초대 코드를 통해 재연결합니다. 연결 해제 후 31일 이내에만 가능합니다.",
+        responses = [
+            ApiResponse(responseCode = "200", description = "재연결 성공"),
+            ApiResponse(responseCode = "400", description = "연결 해제 상태가 아닌 커플"),
+            ApiResponse(responseCode = "403", description = "재연결 권한 없음"),
+            ApiResponse(responseCode = "410", description = "재연결 가능 기간 만료"),
+        ],
+    )
+    fun reconnect(
+        request: JoinCoupleRequest,
+        @Parameter(hidden = true) userId: Long,
+    ): IdResponse
+
+    @Operation(
         summary = "커플 연결 끊기",
         description = "현재 커플 연결을 해제합니다. 31일 이내 재연결이 가능합니다.",
         responses = [

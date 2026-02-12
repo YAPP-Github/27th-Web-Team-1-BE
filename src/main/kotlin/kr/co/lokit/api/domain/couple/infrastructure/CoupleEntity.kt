@@ -54,4 +54,10 @@ class CoupleEntity(
         disconnectedAt = LocalDateTime.now()
         disconnectedByUserId = userId
     }
+
+    fun reconnect() {
+        status = CoupleStatus.CONNECTED
+        disconnectedAt = null
+        disconnectedByUserId = null
+    }
 }

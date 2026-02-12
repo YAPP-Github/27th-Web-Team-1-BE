@@ -7,6 +7,7 @@ import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.ReconnectCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.dto.CreateCoupleRequest
 import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
@@ -26,6 +27,7 @@ class CoupleController(
     private val createCoupleUseCase: CreateCoupleUseCase,
     private val joinCoupleUseCase: JoinCoupleUseCase,
     private val disconnectCoupleUseCase: DisconnectCoupleUseCase,
+    private val reconnectCoupleUseCase: ReconnectCoupleUseCase,
 ) : CoupleApi {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -49,6 +51,16 @@ class CoupleController(
     ): IdResponse =
         joinCoupleUseCase
             .joinByInviteCode(request.inviteCode, userId)
+            .toIdResponse(Couple::id)
+
+    @PostMapping("reconnect")
+    @ResponseStatus(HttpStatus.OK)
+    override fun reconnect(
+        @RequestBody @Valid request: JoinCoupleRequest,
+        @CurrentUserId userId: Long,
+    ): IdResponse =
+        reconnectCoupleUseCase
+            .reconnect(request.inviteCode, userId)
             .toIdResponse(Couple::id)
 
     @DeleteMapping("me")
