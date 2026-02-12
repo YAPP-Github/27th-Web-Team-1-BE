@@ -21,9 +21,9 @@ class CoupleReconnectService(
 
     @OptimisticRetry
     @Transactional
-    override fun reconnect(inviteCode: String, userId: Long): Couple {
-        val targetCouple = coupleRepository.findByInviteCode(inviteCode)
-            ?: throw entityNotFound<Couple>("inviteCode", inviteCode)
+    override fun reconnect(userId: Long): Couple {
+        val targetCouple = coupleRepository.findByDisconnectedByUserId(userId)
+            ?: throw entityNotFound<Couple>("disconnectedByUserId", userId.toString())
 
         if (targetCouple.status != CoupleStatus.DISCONNECTED) {
             throw BusinessException.CoupleNotDisconnectedException(
@@ -39,12 +39,6 @@ class CoupleReconnectService(
         if (disconnectedAt.plusDays(GracePeriodPolicy.RECONNECT_DAYS).isBefore(LocalDateTime.now())) {
             throw BusinessException.CoupleReconnectExpiredException(
                 errors = mapOf("coupleId" to targetCouple.id.toString()),
-            )
-        }
-
-        if (targetCouple.disconnectedByUserId != userId) {
-            throw BusinessException.CoupleReconnectNotAllowedException(
-                errors = mapOf("coupleId" to targetCouple.id.toString(), "userId" to userId.toString()),
             )
         }
 

@@ -56,11 +56,10 @@ class CoupleController(
     @PostMapping("reconnect")
     @ResponseStatus(HttpStatus.OK)
     override fun reconnect(
-        @RequestBody @Valid request: JoinCoupleRequest,
         @CurrentUserId userId: Long,
     ): IdResponse =
         reconnectCoupleUseCase
-            .reconnect(request.inviteCode, userId)
+            .reconnect(userId)
             .toIdResponse(Couple::id)
 
     @DeleteMapping("me")
