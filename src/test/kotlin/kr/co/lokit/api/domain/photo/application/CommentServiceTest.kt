@@ -2,20 +2,25 @@ package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.DeIdentification
+import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.EmoticonRepositoryPort
 import kr.co.lokit.api.domain.photo.domain.CommentWithEmoticons
 import kr.co.lokit.api.fixture.createComment
 import kr.co.lokit.api.fixture.createCouple
+import kr.co.lokit.api.fixture.createEmoticon
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 
 @ExtendWith(MockitoExtension::class)
 class CommentServiceTest {
@@ -31,6 +36,47 @@ class CommentServiceTest {
 
     @InjectMocks
     lateinit var commentService: CommentService
+
+    @Test
+    fun `댓글을 생성할 수 있다`() {
+        val savedComment = createComment(id = 1L, photoId = 10L, userId = 1L, content = "멋진 사진!")
+        `when`(commentRepository.save(any())).thenReturn(savedComment)
+
+        val result = commentService.createComment(10L, 1L, "멋진 사진!")
+
+        assertEquals(1L, result.id)
+        assertEquals(10L, result.photoId)
+        assertEquals(1L, result.userId)
+        assertEquals("멋진 사진!", result.content)
+    }
+
+    @Test
+    fun `이모지를 추가할 수 있다`() {
+        val savedEmoticon = createEmoticon(id = 1L, commentId = 1L, userId = 1L, emoji = "❤️")
+        `when`(emoticonRepository.countByCommentIdAndUserId(1L, 1L)).thenReturn(0)
+        `when`(emoticonRepository.save(any())).thenReturn(savedEmoticon)
+
+        val result = commentService.addEmoticon(1L, 1L, "❤️")
+
+        assertEquals(1L, result.id)
+        assertEquals("❤️", result.emoji)
+    }
+
+    @Test
+    fun `이모지가 최대 개수를 초과하면 예외가 발생한다`() {
+        `when`(emoticonRepository.countByCommentIdAndUserId(1L, 1L)).thenReturn(10)
+
+        assertThrows<BusinessException.CommentMaxEmoticonsExceededException> {
+            commentService.addEmoticon(1L, 1L, "❤️")
+        }
+    }
+
+    @Test
+    fun `이모지를 제거할 수 있다`() {
+        commentService.removeEmoticon(1L, 1L, "❤️")
+
+        verify(emoticonRepository).delete(1L, 1L, "❤️")
+    }
 
     @Test
     fun `커플 연결 해제 시 끊은 사용자의 댓글이 비식별 처리된다`() {
@@ -66,10 +112,8 @@ class CommentServiceTest {
         val result = commentService.getComments(photoId, viewerUserId)
 
         assertEquals(2, result.size)
-        // 끊은 사용자의 댓글은 비식별 처리
         assertEquals(DeIdentification.DEFAULT_NAME, result[0].userName)
         assertNull(result[0].userProfileImageUrl)
-        // 본인 댓글은 그대로
         assertEquals("나", result[1].userName)
         assertEquals("https://example.com/my-profile.jpg", result[1].userProfileImageUrl)
     }
