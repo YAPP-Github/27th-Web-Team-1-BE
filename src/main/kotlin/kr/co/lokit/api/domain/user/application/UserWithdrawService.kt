@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.user.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
@@ -27,12 +26,17 @@ class UserWithdrawService(
         // 1. Refresh Token 전부 삭제
         refreshTokenRepository.deleteByUserId(userId)
 
-        // 2. 커플이 CONNECTED 상태이면 disconnect 처리 후 CoupleUser 삭제
+        // 2. 회원 탈퇴는 반드시 연결 끊기 완료 후에만 허용
         val couple = coupleRepository.findByUserId(userId)
-        if (couple != null && couple.status == CoupleStatus.CONNECTED) {
-            coupleRepository.disconnect(couple.id, userId)
+        if (couple != null) {
+            throw BusinessException.UserDisconnectRequiredException(
+                errors = mapOf(
+                    "userId" to userId.toString(),
+                    "coupleId" to couple.id.toString(),
+                    "coupleStatus" to couple.status.name,
+                ),
+            )
         }
-        coupleRepository.removeCoupleUser(userId)
 
         // 3. User status → WITHDRAWN, withdrawnAt 설정
         userRepository.withdraw(userId)

@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.constant.AccountStatus
+import kr.co.lokit.api.common.constant.GracePeriodPolicy
 import kr.co.lokit.api.common.concurrency.LockManager
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
@@ -44,23 +45,44 @@ class OAuthService(
                 )
 
         val name = userInfo.name ?: "${provider.name} 사용자"
+        var recovered = false
         val user =
             lockManager.withLock(key = "email:$email", operation = {
                 val user =
                     userRepository.findByEmail(email, name)
 
-                userRepository.apply(user.copy(profileImageUrl = userInfo.profileImageUrl))
+                val updated = userRepository.apply(user.copy(profileImageUrl = userInfo.profileImageUrl))
+
+                if (updated.status == AccountStatus.WITHDRAWN) {
+                    val withdrawnAt = updated.withdrawnAt
+                        ?: throw BusinessException.ForbiddenException(
+                            message = "탈퇴 계정 정보가 유효하지 않습니다",
+                            errors = mapOf("userId" to updated.id.toString()),
+                        )
+                    if (withdrawnAt.plusDays(GracePeriodPolicy.RECONNECT_DAYS).isBefore(LocalDateTime.now())) {
+                        throw BusinessException.UserRecoveryExpiredException(
+                            errors = mapOf(
+                                "userId" to updated.id.toString(),
+                                "withdrawnAt" to withdrawnAt.toString(),
+                            ),
+                        )
+                    }
+                    userRepository.reactivate(updated.id)
+                    recovered = true
+                }
 
                 createCoupleUseCase.createIfNone(
                     Couple(name = "default"),
                     user.id,
                 )
-                user
+                if (recovered) {
+                    updated.copy(status = AccountStatus.ACTIVE, withdrawnAt = null)
+                } else {
+                    updated
+                }
             })
 
-        // 탈퇴한 사용자가 다시 로그인하면 계정 복구
-        if (user.status == AccountStatus.WITHDRAWN) {
-            userRepository.reactivate(user.id)
+        if (recovered) {
             cacheManager.getCache("userDetails")?.evict(user.email)
             cacheManager.getCache("userCouple")?.evict(user.id)
         }

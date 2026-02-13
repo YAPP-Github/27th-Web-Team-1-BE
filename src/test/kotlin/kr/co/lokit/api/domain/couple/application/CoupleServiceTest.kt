@@ -13,6 +13,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.cache.CacheManager
+import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
@@ -92,6 +93,8 @@ class CoupleServiceTest {
             inviteCode = "12345678",
             userIds = listOf(2L),
             status = CoupleStatus.DISCONNECTED,
+            disconnectedAt = LocalDateTime.now().minusDays(3),
+            disconnectedByUserId = 2L,
         )
         val reconnectedCouple = createCouple(
             id = 1L,
@@ -124,6 +127,25 @@ class CoupleServiceTest {
 
         assertThrows<BusinessException.CoupleReconnectExpiredException> {
             coupleCommandService.joinByInviteCode("12345678", 2L)
+        }
+    }
+
+    @Test
+    fun `DISCONNECTED 상태라도 잔존 멤버가 없으면 재연결할 수 없다`() {
+        val disconnectedCouple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            userIds = emptyList(),
+            status = CoupleStatus.DISCONNECTED,
+            disconnectedAt = LocalDateTime.now().minusDays(5),
+            disconnectedByUserId = 2L,
+        )
+        `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(disconnectedCouple)
+        `when`(coupleRepository.findByUserId(3L)).thenReturn(null)
+
+        assertThrows<BusinessException.CoupleReconnectNotAllowedException> {
+            coupleCommandService.joinByInviteCode("12345678", 3L)
         }
     }
 

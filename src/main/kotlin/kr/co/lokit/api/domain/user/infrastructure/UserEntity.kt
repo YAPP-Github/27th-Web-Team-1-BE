@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 class UserEntity(
     @NaturalId
     @Column(nullable = false)
-    val email: String,
+    var email: String,
     @Column(nullable = false)
     var name: String,
     @Enumerated(EnumType.STRING)

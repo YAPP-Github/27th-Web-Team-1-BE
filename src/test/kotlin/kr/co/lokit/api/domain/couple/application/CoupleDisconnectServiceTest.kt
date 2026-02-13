@@ -64,13 +64,33 @@ class CoupleDisconnectServiceTest {
             id = 1L,
             name = "우리 커플",
             inviteCode = "12345678",
-            userIds = listOf(2L),
+            userIds = listOf(1L),
             status = CoupleStatus.DISCONNECTED,
+            disconnectedByUserId = 1L,
         )
         `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
 
         assertThrows<BusinessException.CoupleAlreadyDisconnectedException> {
             coupleDisconnectService.disconnect(1L)
         }
+    }
+
+    @Test
+    fun `이미 연결 해제된 상태에서 남아있는 사용자는 추가 연결 끊기가 가능하다`() {
+        val couple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            userIds = listOf(2L),
+            status = CoupleStatus.DISCONNECTED,
+            disconnectedByUserId = 1L,
+        )
+        `when`(coupleRepository.findByUserId(2L)).thenReturn(couple)
+        `when`(cacheManager.getCache("userCouple")).thenReturn(cache)
+
+        coupleDisconnectService.disconnect(2L)
+
+        verify(coupleRepository).removeCoupleUser(2L)
+        verify(cache).evict(2L)
     }
 }

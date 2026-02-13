@@ -24,6 +24,8 @@ enum class ErrorCode(
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_006", "유효하지 않은 리프레시 토큰입니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AUTH_007", "사용자를 찾을 수 없습니다"),
     USER_WITHDRAWN(HttpStatus.FORBIDDEN, "USER_001", "탈퇴한 사용자입니다"),
+    USER_DISCONNECT_REQUIRED(HttpStatus.BAD_REQUEST, "USER_002", "회원 탈퇴 전 반드시 커플 연결 끊기를 완료해야 합니다"),
+    USER_RECOVERY_EXPIRED(HttpStatus.GONE, "USER_003", "탈퇴 계정의 복구 가능 기간이 만료되었습니다"),
 
     // Kakao OAuth
     KAKAO_API_ERROR(HttpStatus.BAD_GATEWAY, "KAKAO_001", "카카오 API 호출에 실패했습니다"),

@@ -143,4 +143,22 @@ class CoupleReconnectServiceTest {
             coupleReconnectService.reconnect(1L)
         }
     }
+
+    @Test
+    fun `잔존 사용자가 없으면 재연결할 수 없다`() {
+        val disconnectedCouple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            userIds = emptyList(),
+            status = CoupleStatus.DISCONNECTED,
+            disconnectedAt = LocalDateTime.now().minusDays(2),
+            disconnectedByUserId = 1L,
+        )
+        `when`(coupleRepository.findByDisconnectedByUserId(1L)).thenReturn(disconnectedCouple)
+
+        assertThrows<BusinessException.CoupleReconnectNotAllowedException> {
+            coupleReconnectService.reconnect(1L)
+        }
+    }
 }

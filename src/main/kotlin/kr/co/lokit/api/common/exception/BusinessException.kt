@@ -108,6 +108,18 @@ sealed class BusinessException(
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.USER_NOT_FOUND, message, cause, errors)
 
+    class UserDisconnectRequiredException(
+        message: String = ErrorCode.USER_DISCONNECT_REQUIRED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.USER_DISCONNECT_REQUIRED, message, cause, errors)
+
+    class UserRecoveryExpiredException(
+        message: String = ErrorCode.USER_RECOVERY_EXPIRED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.USER_RECOVERY_EXPIRED, message, cause, errors)
+
     class KakaoApiException(
         message: String = ErrorCode.KAKAO_API_ERROR.message,
         cause: Throwable? = null,

@@ -36,9 +36,18 @@ class CoupleReconnectService(
                 errors = mapOf("coupleId" to targetCouple.id.toString()),
             )
 
-        if (disconnectedAt.plusDays(GracePeriodPolicy.RECONNECT_DAYS).isBefore(LocalDateTime.now())) {
+        if (isReconnectWindowExpired(disconnectedAt)) {
             throw BusinessException.CoupleReconnectExpiredException(
                 errors = mapOf("coupleId" to targetCouple.id.toString()),
+            )
+        }
+
+        if (targetCouple.userIds.isEmpty()) {
+            throw BusinessException.CoupleReconnectNotAllowedException(
+                errors = mapOf(
+                    "coupleId" to targetCouple.id.toString(),
+                    "reason" to "no_remaining_member",
+                ),
             )
         }
 
@@ -63,6 +72,9 @@ class CoupleReconnectService(
 
         return reconnected
     }
+
+    private fun isReconnectWindowExpired(disconnectedAt: LocalDateTime): Boolean =
+        disconnectedAt.plusDays(GracePeriodPolicy.RECONNECT_DAYS).isBefore(LocalDateTime.now())
 
     private fun evictPermissionCaches() {
         cacheManager.getCache("album")?.clear()

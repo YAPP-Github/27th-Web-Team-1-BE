@@ -20,10 +20,20 @@ class CoupleDisconnectService(
                 errors = mapOf("userId" to userId.toString()),
             )
 
-        if (couple.status == CoupleStatus.DISCONNECTED) {
-            throw BusinessException.CoupleAlreadyDisconnectedException(
-                errors = mapOf("coupleId" to couple.id.toString()),
-            )
+        if (couple.status.isDisconnectedOrExpired) {
+            if (couple.disconnectedByUserId == userId) {
+                throw BusinessException.CoupleAlreadyDisconnectedException(
+                    errors = mapOf("coupleId" to couple.id.toString()),
+                )
+            }
+
+            coupleRepository.removeCoupleUser(userId)
+            cacheManager.getCache("userCouple")?.evict(userId)
+            couple.userIds.filter { it != userId }.forEach { partnerId ->
+                cacheManager.getCache("userCouple")?.evict(partnerId)
+            }
+            evictPermissionCaches()
+            return
         }
 
         // 1. 커플 상태를 DISCONNECTED로 변경

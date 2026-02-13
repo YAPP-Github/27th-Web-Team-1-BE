@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.user.application.port.OAuthClientPort
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
+import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthUserInfo
@@ -26,6 +27,7 @@ import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import org.springframework.cache.Cache
 import org.springframework.cache.CacheManager
+import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -64,6 +66,7 @@ class OAuthServiceTest {
                 lockManager = kr.co.lokit.api.common.concurrency.LockManager(),
                 cacheManager,
             )
+        whenever(createCoupleUseCase.createIfNone(any(), any())).thenReturn(createCouple(id = 1L, userIds = listOf(1L)))
     }
 
     private fun setupOAuthClient(
@@ -87,8 +90,8 @@ class OAuthServiceTest {
         }
     }
 
-    private fun setupTokenGeneration(user: User) {
-        whenever(jwtTokenProvider.generateAccessToken(user)).thenReturn("access-token")
+    private fun setupTokenGeneration() {
+        whenever(jwtTokenProvider.generateAccessToken(any())).thenReturn("access-token")
         whenever(jwtTokenProvider.generateRefreshToken()).thenReturn("refresh-token")
         whenever(jwtTokenProvider.getRefreshTokenExpirationMillis()).thenReturn(604800000L)
     }
@@ -100,7 +103,7 @@ class OAuthServiceTest {
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
         whenever(userRepository.apply(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
-        setupTokenGeneration(existingUser)
+        setupTokenGeneration()
 
         val result = oAuthService.login(OAuthProvider.KAKAO, "auth-code")
 
@@ -125,7 +128,7 @@ class OAuthServiceTest {
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
         whenever(userRepository.apply(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
-        setupTokenGeneration(existingUser)
+        setupTokenGeneration()
 
         oAuthService.login(OAuthProvider.KAKAO, "auth-code")
 
@@ -136,11 +139,17 @@ class OAuthServiceTest {
     fun `탈퇴한 사용자가 다시 로그인하면 계정이 복구된다`() {
         setupOAuthClient()
         val withdrawnUser =
-            User(id = 1L, email = "test@test.com", name = "테스트", status = AccountStatus.WITHDRAWN)
+            User(
+                id = 1L,
+                email = "test@test.com",
+                name = "테스트",
+                status = AccountStatus.WITHDRAWN,
+                withdrawnAt = LocalDateTime.now().minusDays(3),
+            )
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(withdrawnUser)
         whenever(userRepository.apply(withdrawnUser.copy(profileImageUrl = null))).thenReturn(withdrawnUser)
-        setupTokenGeneration(withdrawnUser)
+        setupTokenGeneration()
 
         val userDetailsCache = mock(Cache::class.java)
         val userCoupleCache = mock(Cache::class.java)
@@ -152,5 +161,24 @@ class OAuthServiceTest {
         verify(userRepository).reactivate(1L)
         verify(userDetailsCache).evict("test@test.com")
         verify(userCoupleCache).evict(1L)
+    }
+
+    @Test
+    fun `탈퇴 복구 가능 기간이 만료된 사용자는 로그인 시 예외가 발생한다`() {
+        setupOAuthClient()
+        val withdrawnExpiredUser =
+            User(
+                id = 1L,
+                email = "test@test.com",
+                name = "테스트",
+                status = AccountStatus.WITHDRAWN,
+                withdrawnAt = LocalDateTime.now().minusDays(32),
+            )
+        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(withdrawnExpiredUser)
+        whenever(userRepository.apply(withdrawnExpiredUser.copy(profileImageUrl = null))).thenReturn(withdrawnExpiredUser)
+
+        assertThrows<BusinessException.UserRecoveryExpiredException> {
+            oAuthService.login(OAuthProvider.KAKAO, "auth-code")
+        }
     }
 }

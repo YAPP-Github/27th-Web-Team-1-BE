@@ -38,7 +38,8 @@ fun createUser(
     name: String = "테스트",
     role: UserRole = UserRole.USER,
     status: AccountStatus = AccountStatus.ACTIVE,
-) = User(id = id, email = email, name = name, role = role, status = status)
+    withdrawnAt: LocalDateTime? = null,
+) = User(id = id, email = email, name = name, role = role, status = status, withdrawnAt = withdrawnAt)
 
 fun createCouple(
     id: Long = 0L,

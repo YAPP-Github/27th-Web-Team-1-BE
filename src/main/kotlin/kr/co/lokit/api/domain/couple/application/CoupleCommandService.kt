@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constant.GracePeriodPolicy
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -12,6 +13,7 @@ import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CachePut
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Service
 class CoupleCommandService(
@@ -57,6 +59,23 @@ class CoupleCommandService(
 
         val joined =
             if (targetCouple.status == CoupleStatus.DISCONNECTED) {
+                val disconnectedAt = targetCouple.disconnectedAt
+                    ?: throw BusinessException.CoupleNotDisconnectedException(
+                        errors = mapOf("coupleId" to targetCouple.id.toString()),
+                    )
+                if (isReconnectWindowExpired(disconnectedAt)) {
+                    throw BusinessException.CoupleReconnectExpiredException(
+                        errors = mapOf("coupleId" to targetCouple.id.toString()),
+                    )
+                }
+                if (targetCouple.userIds.isEmpty()) {
+                    throw BusinessException.CoupleReconnectNotAllowedException(
+                        errors = mapOf(
+                            "coupleId" to targetCouple.id.toString(),
+                            "reason" to "no_remaining_member",
+                        ),
+                    )
+                }
                 coupleRepository.reconnect(targetCouple.id, userId)
             } else {
                 coupleRepository.addUser(targetCouple.id, userId)
@@ -79,4 +98,7 @@ class CoupleCommandService(
         cacheManager.getCache("photo")?.clear()
         cacheManager.getCache("albumCouple")?.clear()
     }
+
+    private fun isReconnectWindowExpired(disconnectedAt: LocalDateTime): Boolean =
+        disconnectedAt.plusDays(GracePeriodPolicy.RECONNECT_DAYS).isBefore(LocalDateTime.now())
 }
