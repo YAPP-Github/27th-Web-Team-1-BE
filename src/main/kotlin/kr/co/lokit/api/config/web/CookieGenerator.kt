@@ -11,30 +11,39 @@ class CookieGenerator(
     @Value("\${jwt.expiration}") private val accessTokenExpiration: Long,
     @Value("\${jwt.refresh-expiration}") private val refreshTokenExpiration: Long,
 ) {
+    fun createAccessTokenCookie(
+        request: HttpServletRequest,
+        value: String,
+    ): ResponseCookie = createCookie(request, "accessToken", value, accessTokenExpiration)
 
-    fun createAccessTokenCookie(request: HttpServletRequest, value: String): ResponseCookie =
-        createCookie(request, "accessToken", value, accessTokenExpiration)
+    fun createRefreshTokenCookie(
+        request: HttpServletRequest,
+        value: String,
+    ): ResponseCookie = createCookie(request, "refreshToken", value, refreshTokenExpiration)
 
-    fun createRefreshTokenCookie(request: HttpServletRequest, value: String): ResponseCookie =
-        createCookie(request, "refreshToken", value, refreshTokenExpiration)
+    fun clearAccessTokenCookie(request: HttpServletRequest): ResponseCookie =
+        createCookie(request, "accessToken", "", 0)
+
+    fun clearRefreshTokenCookie(request: HttpServletRequest): ResponseCookie =
+        createCookie(request, "refreshToken", "", 0)
 
     fun createCookie(
         request: HttpServletRequest,
         name: String,
         value: String,
-        maxAgeMillis: Long
+        maxAgeMillis: Long,
     ): ResponseCookie {
-
         val serverName = request.serverName
         val isLocal = isLocalhost(serverName)
 
-        val builder = ResponseCookie
-            .from(name, value)
-            .httpOnly(true)
-            .path("/")
-            .maxAge(maxAgeMillis / 1000)
-            .secure(!isLocal && cookieProperties.secure)
-            .sameSite(if (isLocal) "Lax" else "None")
+        val builder =
+            ResponseCookie
+                .from(name, value)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(maxAgeMillis / 1000)
+                .secure(!isLocal && cookieProperties.secure)
+                .sameSite(if (isLocal) "Lax" else "None")
 
         val domain = getCookieDomain(serverName)
         if (!isLocal && !domain.isNullOrBlank()) {
@@ -53,9 +62,9 @@ class CookieGenerator(
 
     private fun isLocalhost(host: String): Boolean {
         val normalizedHost = host.lowercase().substringBefore(":")
-        return normalizedHost == "localhost"
-            || normalizedHost.endsWith(".localhost")
-            || normalizedHost == "127.0.0.1"
-            || normalizedHost == "::1"
+        return normalizedHost == "localhost" ||
+            normalizedHost.endsWith(".localhost") ||
+            normalizedHost == "127.0.0.1" ||
+            normalizedHost == "::1"
     }
 }

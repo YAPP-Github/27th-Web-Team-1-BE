@@ -1,5 +1,7 @@
 package kr.co.lokit.api.fixture
 
+import kr.co.lokit.api.common.constant.AccountStatus
+import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.util.InviteCodeGenerator
 import kr.co.lokit.api.domain.album.domain.Album
@@ -35,14 +37,19 @@ fun createUser(
     email: String = "test@test.com",
     name: String = "테스트",
     role: UserRole = UserRole.USER,
-) = User(id = id, email = email, name = name, role = role)
+    status: AccountStatus = AccountStatus.ACTIVE,
+    withdrawnAt: LocalDateTime? = null,
+) = User(id = id, email = email, name = name, role = role, status = status, withdrawnAt = withdrawnAt)
 
 fun createCouple(
     id: Long = 0L,
     name: String = "테스트",
     inviteCode: String = InviteCodeGenerator.generate(),
     userIds: List<Long> = emptyList(),
-) = Couple(id = id, name = name, inviteCode = inviteCode, userIds = userIds)
+    status: CoupleStatus = CoupleStatus.CONNECTED,
+    disconnectedAt: LocalDateTime? = null,
+    disconnectedByUserId: Long? = null,
+) = Couple(id = id, name = name, inviteCode = inviteCode, userIds = userIds, status = status, disconnectedAt = disconnectedAt, disconnectedByUserId = disconnectedByUserId)
 
 fun createAlbum(
     id: Long = 0L,
@@ -92,7 +99,9 @@ fun createPhotoDetail(
     url: String = "https://example.com/photo.jpg",
     takenAt: LocalDateTime? = LocalDateTime.of(2026, 1, 1, 12, 0),
     albumName: String = "여행",
+    uploadedById: Long = 1L,
     uploaderName: String = "테스트",
+    uploaderProfileImageUrl: String? = null,
     location: Location = createLocation(),
     description: String? = null,
 ) = PhotoDetail(
@@ -100,7 +109,9 @@ fun createPhotoDetail(
     url = url,
     takenAt = takenAt,
     albumName = albumName,
+    uploadedById = uploadedById,
     uploaderName = uploaderName,
+    uploaderProfileImageUrl = uploaderProfileImageUrl,
     location = location,
     description = description,
 )

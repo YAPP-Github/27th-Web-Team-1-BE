@@ -1,7 +1,9 @@
 package kr.co.lokit.api.domain.photo.application
 
+import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.AddressFormatter
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
@@ -15,6 +17,7 @@ class PhotoQueryService(
     private val photoRepository: PhotoRepositoryPort,
     private val albumRepository: AlbumRepositoryPort,
     private val mapClientPort: MapClientPort,
+    private val coupleRepository: CoupleRepositoryPort,
 ) : GetPhotoDetailUseCase {
 
     @Transactional(readOnly = true)
@@ -23,7 +26,7 @@ class PhotoQueryService(
     }
 
     @Transactional(readOnly = true)
-    override fun getPhotoDetail(photoId: Long): PhotoDetailResponse {
+    override fun getPhotoDetail(photoId: Long, userId: Long): PhotoDetailResponse {
         val photoDetail = photoRepository.findDetailById(photoId)
 
         val locationInfo = mapClientPort.reverseGeocode(
@@ -31,12 +34,21 @@ class PhotoQueryService(
             photoDetail.location.latitude,
         )
 
+        val couple = coupleRepository.findByUserId(userId)
+        val shouldDeIdentify = couple != null &&
+            couple.status.isDisconnectedOrExpired &&
+            photoDetail.uploadedById == couple.disconnectedByUserId
+
+        val uploaderName = if (shouldDeIdentify) DeIdentification.DEFAULT_NAME else photoDetail.uploaderName
+        val uploaderProfileImageUrl = if (shouldDeIdentify) DeIdentification.DEFAULT_PROFILE_IMAGE_URL else photoDetail.uploaderProfileImageUrl
+
         return PhotoDetailResponse(
             id = photoDetail.id,
             url = photoDetail.url,
             takenAt = photoDetail.takenAt,
             albumName = photoDetail.albumName,
-            uploaderName = photoDetail.uploaderName,
+            uploaderName = uploaderName,
+            uploaderProfileImageUrl = uploaderProfileImageUrl,
             address = AddressFormatter.removeProvinceAndCity(locationInfo.address),
             description = photoDetail.description,
             longitude = photoDetail.location.longitude,

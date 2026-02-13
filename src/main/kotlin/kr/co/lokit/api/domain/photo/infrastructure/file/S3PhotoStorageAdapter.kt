@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class S3PhotoStorageAdapter(
     private val s3PresignedUrlGenerator: S3PresignedUrlGenerator,
     private val s3FileVerifier: S3FileVerifier,
@@ -21,14 +21,14 @@ class S3PhotoStorageAdapter(
     override fun generatePresignedUrl(
         key: String,
         contentType: String,
-    ): PresignedUrl = s3PresignedUrlGenerator.generate(key, contentType)
+    ): PresignedUrl = retryTransient { s3PresignedUrlGenerator.generate(key, contentType) }
 
     override fun verifyFileExists(objectUrl: String) {
-        s3FileVerifier.verify(objectUrl)
+        retryTransient { s3FileVerifier.verify(objectUrl) }
     }
 
     override fun verifyFileNotExists(key: String) {
-        s3FileVerifier.verifyNotExists(key)
+        retryTransient { s3FileVerifier.verifyNotExists(key) }
     }
 
     @Retryable(
@@ -48,5 +48,25 @@ class S3PhotoStorageAdapter(
     override fun deleteFileByUrl(url: String) {
         val key = s3FileVerifier.extractKey(url)
         deleteFileByKey(key)
+    }
+
+    private fun <T> retryTransient(
+        maxAttempts: Int = 3,
+        initialDelayMs: Long = 100L,
+        block: () -> T,
+    ): T {
+        var delayMs = initialDelayMs
+        var last: Throwable? = null
+        repeat(maxAttempts) { attempt ->
+            try {
+                return block()
+            } catch (e: Throwable) {
+                last = e
+                if (attempt == maxAttempts - 1) throw e
+                Thread.sleep(delayMs)
+                delayMs *= 2
+            }
+        }
+        throw last ?: IllegalStateException("S3 retry failed")
     }
 }

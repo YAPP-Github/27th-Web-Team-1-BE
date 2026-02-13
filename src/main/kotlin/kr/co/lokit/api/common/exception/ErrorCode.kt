@@ -23,6 +23,9 @@ enum class ErrorCode(
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_005", "이미 등록된 이메일입니다"),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_006", "유효하지 않은 리프레시 토큰입니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AUTH_007", "사용자를 찾을 수 없습니다"),
+    USER_WITHDRAWN(HttpStatus.FORBIDDEN, "USER_001", "탈퇴한 사용자입니다"),
+    USER_DISCONNECT_REQUIRED(HttpStatus.BAD_REQUEST, "USER_002", "회원 탈퇴 전 반드시 커플 연결 끊기를 완료해야 합니다"),
+    USER_RECOVERY_EXPIRED(HttpStatus.GONE, "USER_003", "탈퇴 계정의 복구 가능 기간이 만료되었습니다"),
 
     // Kakao OAuth
     KAKAO_API_ERROR(HttpStatus.BAD_GATEWAY, "KAKAO_001", "카카오 API 호출에 실패했습니다"),
@@ -47,7 +50,17 @@ enum class ErrorCode(
     // Photo
     DEFAULT_ALBUM_NOT_FOUND_FOR_USER(HttpStatus.INTERNAL_SERVER_ERROR, "PHOTO_001", "사용자의 기본 앨범을 찾을 수 없습니다"),
 
+    // Comment
+    COMMENT_MAX_EMOTICONS_EXCEEDED(HttpStatus.BAD_REQUEST, "COMMENT_001", "댓글당 최대 10개의 이모지만 추가할 수 있습니다"),
+    EMOTICON_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_002", "이모지를 찾을 수 없습니다"),
+    EMOTICON_ALREADY_EXISTS(HttpStatus.CONFLICT, "COMMENT_003", "이미 동일한 이모지를 추가했습니다"),
+
     // Couple
     COUPLE_MAX_MEMBERS_EXCEEDED(HttpStatus.BAD_REQUEST, "COUPLE_001", "커플 최대 인원을 초과했습니다"),
     COUPLE_ALREADY_CONNECTED(HttpStatus.CONFLICT, "COUPLE_002", "이미 다른 사용자와 커플로 연결되어 있습니다"),
+    COUPLE_NOT_FOUND(HttpStatus.NOT_FOUND, "COUPLE_003", "커플을 찾을 수 없습니다"),
+    COUPLE_ALREADY_DISCONNECTED(HttpStatus.CONFLICT, "COUPLE_004", "이미 연결이 해제된 커플입니다"),
+    COUPLE_RECONNECT_EXPIRED(HttpStatus.GONE, "COUPLE_005", "재연결 가능 기간이 만료되었습니다"),
+    COUPLE_NOT_DISCONNECTED(HttpStatus.BAD_REQUEST, "COUPLE_006", "연결 해제 상태가 아닌 커플입니다"),
+    COUPLE_RECONNECT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "COUPLE_007", "해당 커플에 대한 재연결 권한이 없습니다"),
 }

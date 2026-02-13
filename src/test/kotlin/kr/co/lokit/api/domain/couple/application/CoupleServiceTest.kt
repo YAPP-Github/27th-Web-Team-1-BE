@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.couple.application
 
+import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.fixture.createCouple
@@ -11,12 +12,17 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.cache.CacheManager
+import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class CoupleServiceTest {
     @Mock
     lateinit var coupleRepository: CoupleRepositoryPort
+
+    @Mock
+    lateinit var cacheManager: CacheManager
 
     @InjectMocks
     lateinit var coupleCommandService: CoupleCommandService
@@ -76,6 +82,70 @@ class CoupleServiceTest {
 
         assertThrows<BusinessException.CoupleAlreadyConnectedException> {
             coupleCommandService.joinByInviteCode("12345678", 2L)
+        }
+    }
+
+    @Test
+    fun `DISCONNECTED 커플에 새 상대가 합류하면 CONNECTED로 복원된다`() {
+        val disconnectedCouple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            userIds = listOf(2L),
+            status = CoupleStatus.DISCONNECTED,
+            disconnectedAt = LocalDateTime.now().minusDays(3),
+            disconnectedByUserId = 2L,
+        )
+        val reconnectedCouple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            userIds = listOf(2L, 3L),
+            status = CoupleStatus.CONNECTED,
+        )
+        `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(disconnectedCouple)
+        `when`(coupleRepository.findByUserId(3L)).thenReturn(null)
+        `when`(coupleRepository.reconnect(1L, 3L)).thenReturn(reconnectedCouple)
+
+        val result = coupleCommandService.joinByInviteCode("12345678", 3L)
+
+        assertEquals(1L, result.id)
+        assertEquals(CoupleStatus.CONNECTED, result.status)
+        assertEquals(listOf(2L, 3L), result.userIds)
+        Mockito.verify(coupleRepository).reconnect(1L, 3L)
+    }
+
+    @Test
+    fun `EXPIRED 상태의 커플에 합류하면 예외가 발생한다`() {
+        val expiredCouple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            status = CoupleStatus.EXPIRED,
+        )
+        `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(expiredCouple)
+
+        assertThrows<BusinessException.CoupleReconnectExpiredException> {
+            coupleCommandService.joinByInviteCode("12345678", 2L)
+        }
+    }
+
+    @Test
+    fun `DISCONNECTED 상태라도 잔존 멤버가 없으면 재연결할 수 없다`() {
+        val disconnectedCouple = createCouple(
+            id = 1L,
+            name = "우리 커플",
+            inviteCode = "12345678",
+            userIds = emptyList(),
+            status = CoupleStatus.DISCONNECTED,
+            disconnectedAt = LocalDateTime.now().minusDays(5),
+            disconnectedByUserId = 2L,
+        )
+        `when`(coupleRepository.findByInviteCode("12345678")).thenReturn(disconnectedCouple)
+        `when`(coupleRepository.findByUserId(3L)).thenReturn(null)
+
+        assertThrows<BusinessException.CoupleReconnectNotAllowedException> {
+            coupleCommandService.joinByInviteCode("12345678", 3L)
         }
     }
 

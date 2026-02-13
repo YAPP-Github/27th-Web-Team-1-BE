@@ -64,7 +64,7 @@ class PhotoController(
     override fun getPhotoDetail(
         @CurrentUserId userId: Long,
         @PathVariable id: Long,
-    ): PhotoDetailResponse = getPhotoDetailUseCase.getPhotoDetail(id)
+    ): PhotoDetailResponse = getPhotoDetailUseCase.getPhotoDetail(id, userId)
 
     @PutMapping("{id}")
     @PreAuthorize("@permissionService.canModifyPhoto(#userId, #id)")

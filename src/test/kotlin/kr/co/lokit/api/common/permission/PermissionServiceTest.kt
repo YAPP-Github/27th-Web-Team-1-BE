@@ -3,6 +3,7 @@ package kr.co.lokit.api.common.permission
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.fixture.createAlbum
@@ -27,6 +28,9 @@ class PermissionServiceTest {
 
     @Mock
     lateinit var photoRepository: PhotoRepositoryPort
+
+    @Mock
+    lateinit var commentRepository: CommentRepositoryPort
 
     @Mock
     lateinit var userRepository: UserRepositoryPort

@@ -102,12 +102,13 @@ class PhotoControllerTest {
             takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),
             albumName = "여행",
             uploaderName = "테스트",
+            uploaderProfileImageUrl = null,
             address = "서울 강남구",
             description = "테스트",
             longitude = 127.0276,
             latitude = 37.4979,
         )
-        doReturn(response).`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong())
+        doReturn(response).`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong(), anyLong())
 
         mockMvc.perform(
             get("/photos/1")
@@ -119,7 +120,7 @@ class PhotoControllerTest {
     @Test
     fun `존재하지 않는 사진 상세 조회 실패`() {
         doThrow(BusinessException.ResourceNotFoundException("Photo(id=999)을(를) 찾을 수 없습니다"))
-            .`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong())
+            .`when`(getPhotoDetailUseCase).getPhotoDetail(anyLong(), anyLong())
 
         mockMvc.perform(
             get("/photos/999")

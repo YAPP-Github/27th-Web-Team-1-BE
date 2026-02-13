@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class OrphanPhotoCleanupScheduler(
     private val s3Client: S3Client,
     private val photoJpaRepository: PhotoJpaRepository,
@@ -47,16 +47,18 @@ class OrphanPhotoCleanupScheduler(
         }
 
         orphanKeys.chunked(MAX_BATCH_DELETE_SIZE).forEach { chunk ->
-            val delete = Delete.builder()
-                .objects(chunk.map { key -> ObjectIdentifier.builder().key(key).build() })
-                .quiet(true)
-                .build()
-            s3Client.deleteObjects(
-                DeleteObjectsRequest.builder()
-                    .bucket(bucket)
-                    .delete(delete)
+            retry(actionName = "orphan-delete", context = "chunkSize=${chunk.size}") {
+                val delete = Delete.builder()
+                    .objects(chunk.map { key -> ObjectIdentifier.builder().key(key).build() })
+                    .quiet(true)
                     .build()
-            )
+                s3Client.deleteObjects(
+                    DeleteObjectsRequest.builder()
+                        .bucket(bucket)
+                        .delete(delete)
+                        .build()
+                )
+            }
         }
 
         if (orphanKeys.isNotEmpty()) {
@@ -75,7 +77,9 @@ class OrphanPhotoCleanupScheduler(
                 .apply { continuationToken?.let { continuationToken(it) } }
                 .build()
 
-            val response = s3Client.listObjectsV2(request)
+            val response = retry(actionName = "orphan-list-objects", context = "prefix=$PREFIX") {
+                s3Client.listObjectsV2(request)
+            }
             response.contents()
                 .filter { it.lastModified().isAfter(cutoff) }
                 .forEach { keys.add(it.key()) }
@@ -83,6 +87,29 @@ class OrphanPhotoCleanupScheduler(
         } while (continuationToken != null)
 
         return keys
+    }
+
+    private fun <T> retry(
+        actionName: String,
+        context: String,
+        maxAttempts: Int = 3,
+        initialDelayMs: Long = 200L,
+        block: () -> T,
+    ): T {
+        var delayMs = initialDelayMs
+        var last: Throwable? = null
+        repeat(maxAttempts) { attempt ->
+            try {
+                return block()
+            } catch (e: Throwable) {
+                last = e
+                if (attempt == maxAttempts - 1) throw e
+                log.warn("{} 재시도: attempt={}/{}, context={}", actionName, attempt + 1, maxAttempts, context, e)
+                Thread.sleep(delayMs)
+                delayMs *= 2
+            }
+        }
+        throw last ?: IllegalStateException("retry failed: $actionName")
     }
 
     companion object {

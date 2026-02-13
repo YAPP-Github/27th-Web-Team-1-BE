@@ -111,7 +111,7 @@ class MapPhotosCacheService(
                         ClusterProjection(
                             cellX = projections.first().cellX,
                             cellY = projections.first().cellY,
-                            count = projections.first().count,
+                            count = projections.sumOf { it.count },
                             thumbnailUrl = latest.thumbnailUrl,
                             centerLongitude = projections.map { it.centerLongitude }.average(),
                             centerLatitude = projections.map { it.centerLatitude }.average(),
@@ -207,7 +207,9 @@ fun buildIndividualKey(
     aid: Long?,
     v: Long,
 ): String {
-    val gs = GridValues.getGridSize(zoom)
-    val nx = (floor(bbox.west * 1000000 / gs)).toLong()
-    return "ind_z${zoom}_x${nx}_c${cid ?: 0}_v$v"
+    val west = (bbox.west * 1_000_000).toLong()
+    val south = (bbox.south * 1_000_000).toLong()
+    val east = (bbox.east * 1_000_000).toLong()
+    val north = (bbox.north * 1_000_000).toLong()
+    return "ind_z${zoom}_w${west}_s${south}_e${east}_n${north}_c${cid ?: 0}_a${aid ?: 0}_v$v"
 }

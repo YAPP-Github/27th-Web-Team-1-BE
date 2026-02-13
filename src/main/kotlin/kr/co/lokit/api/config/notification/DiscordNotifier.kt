@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Async
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -54,6 +53,7 @@ class DiscordNotifier(
         private const val STACKTRACE_MAX_LENGTH = 800
         private const val BATCH_WINDOW_SECONDS = 10L
         private const val MAX_EMBEDS_PER_MESSAGE = 10
+        private const val WEBHOOK_MAX_ATTEMPTS = 3
         private val BACKOFF_DURATIONS = listOf(
             Duration.ofMinutes(5),
             Duration.ofMinutes(15),
@@ -78,41 +78,32 @@ class DiscordNotifier(
                     ),
                 ),
             )
-            restClient.post()
-                .uri(webhookUrl)
-                .header("Content-Type", "application/json")
-                .body(payload)
-                .retrieve()
-                .toBodilessEntity()
+            sendWebhookWithRetry(payload, "shutdown")
         } catch (e: Exception) {
             log.warn("Discord 종료 알림 전송 실패: ${e.message}")
         }
     }
 
-    @Async
     @EventListener(ApplicationReadyEvent::class)
     fun notifyDeployment() {
-        try {
-            val timestamp = KST_FORMATTER.format(Instant.now())
-            val payload = mapOf(
-                "embeds" to listOf(
-                    mapOf(
-                        "title" to "서버 배포 완료",
-                        "color" to 0x00FF00,
-                        "fields" to listOf(
-                            mapOf("name" to "Timestamp", "value" to timestamp, "inline" to false),
+        Thread.startVirtualThread {
+            try {
+                val timestamp = KST_FORMATTER.format(Instant.now())
+                val payload = mapOf(
+                    "embeds" to listOf(
+                        mapOf(
+                            "title" to "서버 배포 완료",
+                            "color" to 0x00FF00,
+                            "fields" to listOf(
+                                mapOf("name" to "Timestamp", "value" to timestamp, "inline" to false),
+                            ),
                         ),
                     ),
-                ),
-            )
-            restClient.post()
-                .uri(webhookUrl)
-                .header("Content-Type", "application/json")
-                .body(payload)
-                .retrieve()
-                .toBodilessEntity()
-        } catch (e: Exception) {
-            log.warn("Discord 배포 알림 전송 실패: ${e.message}")
+                )
+                sendWebhookWithRetry(payload, "deployment")
+            } catch (e: Exception) {
+                log.warn("Discord 배포 알림 전송 실패: ${e.message}")
+            }
         }
     }
 
@@ -161,17 +152,47 @@ class DiscordNotifier(
         }
         if (batch.isEmpty()) return
 
-        pendingErrors.clear()
-
         val embeds = batch.map { it.toEmbed() }
         val payload = mapOf("embeds" to embeds)
+        runCatching { sendWebhookWithRetry(payload, "error-batch:${batch.size}") }
+            .onFailure {
+                batch.forEach { pendingErrors.add(it) }
+                throw it
+            }
+    }
 
-        restClient.post()
-            .uri(webhookUrl)
-            .header("Content-Type", "application/json")
-            .body(payload)
-            .retrieve()
-            .toBodilessEntity()
+    private fun sendWebhookWithRetry(
+        payload: Map<String, Any>,
+        context: String,
+    ) {
+        var delayMs = 200L
+        var last: Throwable? = null
+        repeat(WEBHOOK_MAX_ATTEMPTS) { attempt ->
+            try {
+                restClient.post()
+                    .uri(webhookUrl)
+                    .header("Content-Type", "application/json")
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity()
+                return
+            } catch (e: Exception) {
+                last = e
+                if (attempt == WEBHOOK_MAX_ATTEMPTS - 1) {
+                    throw e
+                }
+                log.warn(
+                    "Discord webhook 재시도: attempt={}/{}, context={}",
+                    attempt + 1,
+                    WEBHOOK_MAX_ATTEMPTS,
+                    context,
+                    e,
+                )
+                Thread.sleep(delayMs)
+                delayMs *= 2
+            }
+        }
+        throw last ?: IllegalStateException("Discord webhook 전송 실패: context=$context")
     }
 
     private data class ErrorSnapshot(

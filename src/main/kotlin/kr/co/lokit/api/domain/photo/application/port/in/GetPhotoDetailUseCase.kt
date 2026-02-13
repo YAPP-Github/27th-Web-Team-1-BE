@@ -5,5 +5,5 @@ import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
 
 interface GetPhotoDetailUseCase {
     fun getPhotosByAlbum(albumId: Long, userId: Long): List<Album>
-    fun getPhotoDetail(photoId: Long): PhotoDetailResponse
+    fun getPhotoDetail(photoId: Long, userId: Long): PhotoDetailResponse
 }

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 @Repository
 class JpaCoupleRepository(
     private val coupleJpaRepository: CoupleJpaRepository,
+    private val coupleUserJpaRepository: CoupleUserJpaRepository,
     private val userJpaRepository: UserJpaRepository,
     private val albumJpaRepository: AlbumJpaRepository,
 ) : CoupleRepositoryPort {
@@ -54,6 +55,10 @@ class JpaCoupleRepository(
     override fun findByInviteCode(inviteCode: String): Couple? =
         coupleJpaRepository.findByInviteCode(inviteCode)?.toDomain()
 
+    @Transactional(readOnly = true)
+    override fun findByDisconnectedByUserId(userId: Long): Couple? =
+        coupleJpaRepository.findByDisconnectedByUserId(userId)?.toDomain()
+
     @Transactional
     override fun addUser(coupleId: Long, userId: Long): Couple {
         val coupleEntity = coupleJpaRepository.findByIdFetchUsers(coupleId)
@@ -87,6 +92,29 @@ class JpaCoupleRepository(
     @Transactional
     override fun deleteById(id: Long) {
         coupleJpaRepository.deleteById(id)
+    }
+
+    @Transactional
+    override fun removeCoupleUser(userId: Long) {
+        coupleUserJpaRepository.deleteByUserId(userId)
+    }
+
+    @Transactional
+    override fun disconnect(coupleId: Long, userId: Long) {
+        val entity = coupleJpaRepository.findByIdOrNull(coupleId)
+            ?: throw entityNotFound<Couple>(coupleId)
+        entity.disconnect(userId)
+    }
+
+    @Transactional
+    override fun reconnect(coupleId: Long, userId: Long): Couple {
+        val entity = coupleJpaRepository.findByIdFetchUsers(coupleId)
+            ?: throw entityNotFound<Couple>(coupleId)
+        val userEntity = userJpaRepository.findByIdOrNull(userId)
+            ?: throw entityNotFound<User>(userId)
+        entity.reconnect()
+        entity.addUser(CoupleUserEntity(couple = entity, user = userEntity))
+        return entity.toDomain()
     }
 
     companion object {

@@ -9,7 +9,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class S3FileVerifier(
     private val s3Client: S3Client,
     @Value("\${aws.s3.bucket}") private val bucket: String,

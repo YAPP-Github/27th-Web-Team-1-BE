@@ -4,15 +4,19 @@ import kr.co.lokit.api.domain.map.application.AddressFormatter
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.client.SimpleClientHttpRequestFactory
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestClientException
 
 @Component
-@ConditionalOnProperty(name = ["kakao.api.key"])
+@ConditionalOnExpression("'\${kakao.api.key:}'.trim().length() > 0")
 class KakaoMapClient(
     @Value("\${kakao.api.key}")
     private val apiKey: String,
@@ -27,22 +31,49 @@ class KakaoMapClient(
         })
         .build()
 
+    @Retryable(
+        retryFor = [kr.co.lokit.api.common.exception.BusinessException.KakaoApiException::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, multiplier = 2.0, random = true),
+    )
     @Cacheable(
         cacheNames = ["reverseGeocode"],
         key = "T(java.lang.Math).round(#longitude * 10000) + ',' + T(java.lang.Math).round(#latitude * 10000)",
         unless = "#result.address == null && #result.placeName == null",
     )
     override fun reverseGeocode(longitude: Double, latitude: Double): LocationInfoResponse {
-        val response = restClient.get()
-            .uri { uriBuilder ->
-                uriBuilder
-                    .path("/v2/local/geo/coord2address.json")
-                    .queryParam("x", longitude)
-                    .queryParam("y", latitude)
-                    .build()
+        val response =
+            try {
+                restClient.get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .path("/v2/local/geo/coord2address.json")
+                            .queryParam("x", longitude)
+                            .queryParam("y", latitude)
+                            .build()
+                    }
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError) { _, res ->
+                        throw kr.co.lokit.api.common.exception.BusinessException.InvalidInputException(
+                            message = "카카오 좌표변환 요청이 올바르지 않습니다 (status: ${res.statusCode})",
+                            errors = mapOf("statusCode" to res.statusCode.value().toString()),
+                        )
+                    }
+                    .onStatus(HttpStatusCode::is5xxServerError) { _, res ->
+                        throw kr.co.lokit.api.common.exception.BusinessException.KakaoApiException(
+                            message = "카카오 좌표변환 서버 오류가 발생했습니다 (status: ${res.statusCode})",
+                            errors = mapOf("statusCode" to res.statusCode.value().toString()),
+                        )
+                    }
+                    .body(KakaoGeocodingResponse::class.java)
+            } catch (e: kr.co.lokit.api.common.exception.BusinessException.InvalidInputException) {
+                throw e
+            } catch (e: RestClientException) {
+                throw kr.co.lokit.api.common.exception.BusinessException.KakaoApiException(
+                    message = "카카오 좌표변환 API 호출이 실패했습니다",
+                    cause = e,
+                )
             }
-            .retrieve()
-            .body(KakaoGeocodingResponse::class.java)
 
         val document = response?.documents?.firstOrNull()
         val roadAddress = document?.roadAddress
@@ -75,18 +106,45 @@ class KakaoMapClient(
         )
     }
 
+    @Retryable(
+        retryFor = [kr.co.lokit.api.common.exception.BusinessException.KakaoApiException::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, multiplier = 2.0, random = true),
+    )
     @Cacheable(cacheNames = ["searchPlaces"], key = "#query", unless = "#result.isEmpty()")
     override fun searchPlaces(query: String): List<PlaceResponse> {
-        val response = restClient.get()
-            .uri { uriBuilder ->
-                uriBuilder
-                    .path("/v2/local/search/keyword.json")
-                    .queryParam("query", query)
-                    .queryParam("size", MAX_SEARCH_RESULTS)
-                    .build()
+        val response =
+            try {
+                restClient.get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .path("/v2/local/search/keyword.json")
+                            .queryParam("query", query)
+                            .queryParam("size", MAX_SEARCH_RESULTS)
+                            .build()
+                    }
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError) { _, res ->
+                        throw kr.co.lokit.api.common.exception.BusinessException.InvalidInputException(
+                            message = "카카오 장소검색 요청이 올바르지 않습니다 (status: ${res.statusCode})",
+                            errors = mapOf("statusCode" to res.statusCode.value().toString()),
+                        )
+                    }
+                    .onStatus(HttpStatusCode::is5xxServerError) { _, res ->
+                        throw kr.co.lokit.api.common.exception.BusinessException.KakaoApiException(
+                            message = "카카오 장소검색 서버 오류가 발생했습니다 (status: ${res.statusCode})",
+                            errors = mapOf("statusCode" to res.statusCode.value().toString()),
+                        )
+                    }
+                    .body(KakaoPlaceSearchResponse::class.java)
+            } catch (e: kr.co.lokit.api.common.exception.BusinessException.InvalidInputException) {
+                throw e
+            } catch (e: RestClientException) {
+                throw kr.co.lokit.api.common.exception.BusinessException.KakaoApiException(
+                    message = "카카오 장소검색 API 호출이 실패했습니다",
+                    cause = e,
+                )
             }
-            .retrieve()
-            .body(KakaoPlaceSearchResponse::class.java)
 
         return response?.documents?.map { doc ->
             PlaceResponse(

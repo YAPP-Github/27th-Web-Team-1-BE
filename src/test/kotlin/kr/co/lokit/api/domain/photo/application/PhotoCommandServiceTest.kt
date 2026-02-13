@@ -193,9 +193,6 @@ class PhotoCommandServiceTest {
         val photo = createPhoto(albumId = 0L, location = createLocation(127.0, 37.5))
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
         `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(null)
-        `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
-        )
 
         val exception =
             assertThrows<ExecutionException> {

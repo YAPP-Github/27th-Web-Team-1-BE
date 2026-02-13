@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class MapRepositoryImplTest {
-
     private fun candidate(
         cellX: Long,
         cellY: Long,
@@ -48,12 +47,13 @@ class MapRepositoryImplTest {
 
     @Test
     fun `클러스터 간 썸네일 URL이 중복되지 않는다`() {
-        val candidates = listOf(
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "b.jpg", rank = 2),
-            candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "c.jpg", rank = 2),
-        )
+        val candidates =
+            listOf(
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "b.jpg", rank = 2),
+                candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "c.jpg", rank = 2),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnailsFromCandidates(candidates)
 
@@ -63,12 +63,13 @@ class MapRepositoryImplTest {
 
     @Test
     fun `count가 높은 클러스터가 우선적으로 썸네일을 선점한다`() {
-        val candidates = listOf(
-            candidate(cellX = 1, cellY = 1, count = 10, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 1, cellY = 1, count = 10, thumbnailUrl = "b.jpg", rank = 2),
-            candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "c.jpg", rank = 2),
-        )
+        val candidates =
+            listOf(
+                candidate(cellX = 1, cellY = 1, count = 10, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 1, cellY = 1, count = 10, thumbnailUrl = "b.jpg", rank = 2),
+                candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "c.jpg", rank = 2),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnailsFromCandidates(candidates)
 
@@ -80,10 +81,11 @@ class MapRepositoryImplTest {
 
     @Test
     fun `모든 후보가 이미 사용된 경우 첫 번째 후보로 폴백한다`() {
-        val candidates = listOf(
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "a.jpg", rank = 1),
-        )
+        val candidates =
+            listOf(
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 2, cellY = 2, count = 3, thumbnailUrl = "a.jpg", rank = 1),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnailsFromCandidates(candidates)
 
@@ -95,11 +97,12 @@ class MapRepositoryImplTest {
 
     @Test
     fun `결과는 count 내림차순으로 정렬된다`() {
-        val candidates = listOf(
-            candidate(cellX = 1, cellY = 1, count = 3, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 2, cellY = 2, count = 10, thumbnailUrl = "b.jpg", rank = 1),
-            candidate(cellX = 3, cellY = 3, count = 7, thumbnailUrl = "c.jpg", rank = 1),
-        )
+        val candidates =
+            listOf(
+                candidate(cellX = 1, cellY = 1, count = 3, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 2, cellY = 2, count = 10, thumbnailUrl = "b.jpg", rank = 1),
+                candidate(cellX = 3, cellY = 3, count = 7, thumbnailUrl = "c.jpg", rank = 1),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnailsFromCandidates(candidates)
 
@@ -108,16 +111,17 @@ class MapRepositoryImplTest {
 
     @Test
     fun `여러 클러스터가 동일한 URL을 공유할 때 각각 다른 썸네일을 선택한다`() {
-        val candidates = listOf(
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "b.jpg", rank = 2),
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "c.jpg", rank = 3),
-            candidate(cellX = 2, cellY = 2, count = 4, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 2, cellY = 2, count = 4, thumbnailUrl = "d.jpg", rank = 2),
-            candidate(cellX = 3, cellY = 3, count = 3, thumbnailUrl = "a.jpg", rank = 1),
-            candidate(cellX = 3, cellY = 3, count = 3, thumbnailUrl = "b.jpg", rank = 2),
-            candidate(cellX = 3, cellY = 3, count = 3, thumbnailUrl = "e.jpg", rank = 3),
-        )
+        val candidates =
+            listOf(
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "b.jpg", rank = 2),
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "c.jpg", rank = 3),
+                candidate(cellX = 2, cellY = 2, count = 4, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 2, cellY = 2, count = 4, thumbnailUrl = "d.jpg", rank = 2),
+                candidate(cellX = 3, cellY = 3, count = 3, thumbnailUrl = "a.jpg", rank = 1),
+                candidate(cellX = 3, cellY = 3, count = 3, thumbnailUrl = "b.jpg", rank = 2),
+                candidate(cellX = 3, cellY = 3, count = 3, thumbnailUrl = "e.jpg", rank = 3),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnailsFromCandidates(candidates)
 
@@ -130,9 +134,10 @@ class MapRepositoryImplTest {
 
     @Test
     fun `클러스터가 하나일 때 정상 동작한다`() {
-        val candidates = listOf(
-            candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
-        )
+        val candidates =
+            listOf(
+                candidate(cellX = 1, cellY = 1, count = 5, thumbnailUrl = "a.jpg", rank = 1),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnailsFromCandidates(candidates)
 
@@ -151,11 +156,12 @@ class MapRepositoryImplTest {
 
     @Test
     fun `groupByGridCell은 같은 셀의 사진을 그룹화한다`() {
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1),
-            uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1),
+                uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1),
+                uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2),
+            )
 
         val result = ClusteringPipeline.groupByGridCell(photos)
 
@@ -167,10 +173,11 @@ class MapRepositoryImplTest {
     @Test
     fun `calculateClusterStats는 올바른 통계를 계산한다`() {
         val now = LocalDateTime.now()
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
+                uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
+            )
 
         val grouped = ClusteringPipeline.groupByGridCell(photos)
         val result = ClusteringPipeline.calculateClusterStats(grouped)
@@ -185,11 +192,12 @@ class MapRepositoryImplTest {
     @Test
     fun `toClusterProjections 확장함수가 전체 파이프라인을 실행한다`() {
         val now = LocalDateTime.now()
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
-            uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2, takenAt = now),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
+                uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
+                uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2, takenAt = now),
+            )
 
         val result = photos.toClusterProjections()
 
@@ -199,28 +207,31 @@ class MapRepositoryImplTest {
 
     @Test
     fun `ClusterData로부터 썸네일 중복 제거가 동작한다`() {
-        val clusters = listOf(
-            ClusterData(
-                gridKey = GridKey(1, 1),
-                count = 5,
-                centerLongitude = 127.0,
-                centerLatitude = 37.5,
-                photosByRank = listOf(
-                    RankedPhoto("shared.jpg", 1),
-                    RankedPhoto("unique1.jpg", 2),
+        val clusters =
+            listOf(
+                ClusterData(
+                    gridKey = GridKey(1, 1),
+                    count = 5,
+                    centerLongitude = 127.0,
+                    centerLatitude = 37.5,
+                    photosByRank =
+                        listOf(
+                            RankedPhoto("shared.jpg", 1),
+                            RankedPhoto("unique1.jpg", 2),
+                        ),
                 ),
-            ),
-            ClusterData(
-                gridKey = GridKey(2, 2),
-                count = 3,
-                centerLongitude = 127.0,
-                centerLatitude = 37.5,
-                photosByRank = listOf(
-                    RankedPhoto("shared.jpg", 1),
-                    RankedPhoto("unique2.jpg", 2),
+                ClusterData(
+                    gridKey = GridKey(2, 2),
+                    count = 3,
+                    centerLongitude = 127.0,
+                    centerLatitude = 37.5,
+                    photosByRank =
+                        listOf(
+                            RankedPhoto("shared.jpg", 1),
+                            RankedPhoto("unique2.jpg", 2),
+                        ),
                 ),
-            ),
-        )
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnails(clusters)
 
@@ -239,9 +250,10 @@ class MapRepositoryImplTest {
 
     @Test
     fun `groupByGridCell에 사진이 하나일 때 정상 동작한다`() {
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 5, cellY = 10),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 5, cellY = 10),
+            )
 
         val result = ClusteringPipeline.groupByGridCell(photos)
 
@@ -251,13 +263,14 @@ class MapRepositoryImplTest {
 
     @Test
     fun `groupByGridCell에서 같은 셀에 여러 사진이 있으면 하나의 그룹으로 묶인다`() {
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1),
-            uniquePhoto(id = 3, url = "c.jpg", cellX = 1, cellY = 1),
-            uniquePhoto(id = 4, url = "d.jpg", cellX = 1, cellY = 1),
-            uniquePhoto(id = 5, url = "e.jpg", cellX = 1, cellY = 1),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1),
+                uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1),
+                uniquePhoto(id = 3, url = "c.jpg", cellX = 1, cellY = 1),
+                uniquePhoto(id = 4, url = "d.jpg", cellX = 1, cellY = 1),
+                uniquePhoto(id = 5, url = "e.jpg", cellX = 1, cellY = 1),
+            )
 
         val result = ClusteringPipeline.groupByGridCell(photos)
 
@@ -280,11 +293,12 @@ class MapRepositoryImplTest {
         val middle = LocalDateTime.of(2025, 6, 1, 0, 0)
         val newest = LocalDateTime.of(2026, 1, 1, 0, 0)
 
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "old.jpg", cellX = 1, cellY = 1, takenAt = oldest),
-            uniquePhoto(id = 2, url = "mid.jpg", cellX = 1, cellY = 1, takenAt = middle),
-            uniquePhoto(id = 3, url = "new.jpg", cellX = 1, cellY = 1, takenAt = newest),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "old.jpg", cellX = 1, cellY = 1, takenAt = oldest),
+                uniquePhoto(id = 2, url = "mid.jpg", cellX = 1, cellY = 1, takenAt = middle),
+                uniquePhoto(id = 3, url = "new.jpg", cellX = 1, cellY = 1, takenAt = newest),
+            )
 
         val grouped = ClusteringPipeline.groupByGridCell(photos)
         val result = ClusteringPipeline.calculateClusterStats(grouped)
@@ -301,11 +315,12 @@ class MapRepositoryImplTest {
         val t2 = LocalDateTime.of(2025, 1, 1, 0, 0)
         val t3 = LocalDateTime.of(2026, 1, 1, 0, 0)
 
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "c.jpg", cellX = 1, cellY = 1, takenAt = t1),
-            uniquePhoto(id = 2, url = "a.jpg", cellX = 1, cellY = 1, takenAt = t3),
-            uniquePhoto(id = 3, url = "b.jpg", cellX = 1, cellY = 1, takenAt = t2),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "c.jpg", cellX = 1, cellY = 1, takenAt = t1),
+                uniquePhoto(id = 2, url = "a.jpg", cellX = 1, cellY = 1, takenAt = t3),
+                uniquePhoto(id = 3, url = "b.jpg", cellX = 1, cellY = 1, takenAt = t2),
+            )
 
         val grouped = ClusteringPipeline.groupByGridCell(photos)
         val result = ClusteringPipeline.calculateClusterStats(grouped)
@@ -322,11 +337,12 @@ class MapRepositoryImplTest {
     @Test
     fun `calculateClusterStats에서 여러 그룹은 각각 독립적으로 통계를 계산한다`() {
         val now = LocalDateTime.now()
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
-            uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2, takenAt = now.minusHours(1)),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 1, cellY = 1, takenAt = now),
+                uniquePhoto(id = 2, url = "b.jpg", cellX = 1, cellY = 1, takenAt = now.minusDays(1)),
+                uniquePhoto(id = 3, url = "c.jpg", cellX = 2, cellY = 2, takenAt = now.minusHours(1)),
+            )
 
         val grouped = ClusteringPipeline.groupByGridCell(photos)
         val result = ClusteringPipeline.calculateClusterStats(grouped)
@@ -341,26 +357,27 @@ class MapRepositoryImplTest {
     @Test
     fun `calculateClusterStats에서 클러스터 중심 좌표는 모든 포인트의 평균 위치이다`() {
         val now = LocalDateTime.now()
-        val photos = listOf(
-            UniquePhotoRecord(
-                id = 1,
-                url = "old.jpg",
-                longitude = 126.0,
-                latitude = 36.0,
-                cellX = 1,
-                cellY = 1,
-                takenAt = now.minusDays(1),
-            ),
-            UniquePhotoRecord(
-                id = 2,
-                url = "new.jpg",
-                longitude = 128.0,
-                latitude = 38.0,
-                cellX = 1,
-                cellY = 1,
-                takenAt = now,
-            ),
-        )
+        val photos =
+            listOf(
+                UniquePhotoRecord(
+                    id = 1,
+                    url = "old.jpg",
+                    longitude = 126.0,
+                    latitude = 36.0,
+                    cellX = 1,
+                    cellY = 1,
+                    takenAt = now.minusDays(1),
+                ),
+                UniquePhotoRecord(
+                    id = 2,
+                    url = "new.jpg",
+                    longitude = 128.0,
+                    latitude = 38.0,
+                    cellX = 1,
+                    cellY = 1,
+                    takenAt = now,
+                ),
+            )
 
         val grouped = ClusteringPipeline.groupByGridCell(photos)
         val result = ClusteringPipeline.calculateClusterStats(grouped)
@@ -380,15 +397,16 @@ class MapRepositoryImplTest {
 
     @Test
     fun `deduplicateThumbnails에서 사진이 없는 클러스터는 빈 문자열 URL을 반환한다`() {
-        val clusters = listOf(
-            ClusterData(
-                gridKey = GridKey(1, 1),
-                count = 0,
-                centerLongitude = 127.0,
-                centerLatitude = 37.5,
-                photosByRank = emptyList(),
-            ),
-        )
+        val clusters =
+            listOf(
+                ClusterData(
+                    gridKey = GridKey(1, 1),
+                    count = 0,
+                    centerLongitude = 127.0,
+                    centerLatitude = 37.5,
+                    photosByRank = emptyList(),
+                ),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnails(clusters)
 
@@ -398,22 +416,23 @@ class MapRepositoryImplTest {
 
     @Test
     fun `deduplicateThumbnails에서 모든 클러스터의 URL이 고유하면 각자 첫 번째 URL을 사용한다`() {
-        val clusters = listOf(
-            ClusterData(
-                gridKey = GridKey(1, 1),
-                count = 5,
-                centerLongitude = 127.0,
-                centerLatitude = 37.5,
-                photosByRank = listOf(RankedPhoto("unique1.jpg", 1)),
-            ),
-            ClusterData(
-                gridKey = GridKey(2, 2),
-                count = 3,
-                centerLongitude = 127.1,
-                centerLatitude = 37.6,
-                photosByRank = listOf(RankedPhoto("unique2.jpg", 1)),
-            ),
-        )
+        val clusters =
+            listOf(
+                ClusterData(
+                    gridKey = GridKey(1, 1),
+                    count = 5,
+                    centerLongitude = 127.0,
+                    centerLatitude = 37.5,
+                    photosByRank = listOf(RankedPhoto("unique1.jpg", 1)),
+                ),
+                ClusterData(
+                    gridKey = GridKey(2, 2),
+                    count = 3,
+                    centerLongitude = 127.1,
+                    centerLatitude = 37.6,
+                    photosByRank = listOf(RankedPhoto("unique2.jpg", 1)),
+                ),
+            )
 
         val result = ClusteringPipeline.deduplicateThumbnails(clusters)
 
@@ -433,9 +452,10 @@ class MapRepositoryImplTest {
     @Test
     fun `toClusterProjections에서 단일 사진은 하나의 클러스터 프로젝션을 반환한다`() {
         val now = LocalDateTime.now()
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "only.jpg", cellX = 1, cellY = 1, takenAt = now),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "only.jpg", cellX = 1, cellY = 1, takenAt = now),
+            )
 
         val result = photos.toClusterProjections()
 
@@ -449,11 +469,12 @@ class MapRepositoryImplTest {
     @Test
     fun `toClusterProjections에서 같은 셀의 여러 사진은 하나의 클러스터로 합쳐진다`() {
         val now = LocalDateTime.now()
-        val photos = listOf(
-            uniquePhoto(id = 1, url = "a.jpg", cellX = 3, cellY = 4, takenAt = now),
-            uniquePhoto(id = 2, url = "b.jpg", cellX = 3, cellY = 4, takenAt = now.minusDays(1)),
-            uniquePhoto(id = 3, url = "c.jpg", cellX = 3, cellY = 4, takenAt = now.minusDays(2)),
-        )
+        val photos =
+            listOf(
+                uniquePhoto(id = 1, url = "a.jpg", cellX = 3, cellY = 4, takenAt = now),
+                uniquePhoto(id = 2, url = "b.jpg", cellX = 3, cellY = 4, takenAt = now.minusDays(1)),
+                uniquePhoto(id = 3, url = "c.jpg", cellX = 3, cellY = 4, takenAt = now.minusDays(2)),
+            )
 
         val result = photos.toClusterProjections()
 

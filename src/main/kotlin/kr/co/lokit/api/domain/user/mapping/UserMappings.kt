@@ -11,6 +11,8 @@ fun UserEntity.toDomain(): User =
         name = name,
         role = role,
         profileImageUrl = profileImageUrl,
+        status = status,
+        withdrawnAt = withdrawnAt,
     )
 
 fun User.toEntity(): UserEntity =
@@ -19,6 +21,8 @@ fun User.toEntity(): UserEntity =
         name = name,
         role = role,
         profileImageUrl = profileImageUrl,
+        status = status,
+        withdrawnAt = withdrawnAt,
     )
 
 fun JwtTokenResponse.toJwtTokenResponse(): JwtTokenResponse =

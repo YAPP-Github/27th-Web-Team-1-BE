@@ -16,4 +16,7 @@ interface PhotoJpaRepository : JpaRepository<PhotoEntity, Long> {
             + " WHERE p.uploadedBy.id = :userId ORDER BY p.takenAt DESC"
     )
     fun findAllByUploadedById(userId: Long): List<PhotoEntity>
+
+    @Query("SELECT p.url FROM Photo p WHERE p.album.couple.id = :coupleId")
+    fun findUrlsByCoupleId(coupleId: Long): List<String>
 }

@@ -1,5 +1,6 @@
 package kr.co.lokit.api.fixture
 
+import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.common.util.InviteCodeGenerator
@@ -36,8 +37,9 @@ fun createUserEntity(
     email: String = "test@test.com",
     name: String = "테스트",
     role: UserRole = UserRole.USER,
+    status: AccountStatus = AccountStatus.ACTIVE,
 ): UserEntity {
-    val entity = UserEntity(email = email, name = name, role = role)
+    val entity = UserEntity(email = email, name = name, role = role, status = status)
     id?.let { setEntityId(entity, it) }
     return entity
 }
@@ -45,8 +47,9 @@ fun createUserEntity(
 fun createCoupleEntity(
     id: Long? = null,
     name: String = "테스트",
+    status: kr.co.lokit.api.common.constant.CoupleStatus = kr.co.lokit.api.common.constant.CoupleStatus.CONNECTED,
 ): CoupleEntity {
-    val entity = CoupleEntity(name = name, inviteCode = InviteCodeGenerator.generate())
+    val entity = CoupleEntity(name = name, inviteCode = InviteCodeGenerator.generate(), status = status)
     id?.let { setEntityId(entity, it) }
     return entity
 }

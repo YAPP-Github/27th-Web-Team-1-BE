@@ -6,12 +6,11 @@ spring:
         driver-class-name: org.postgresql.Driver
         hikari:
             leak-detection-threshold: 2000
-            maximum-pool-size: 8
-            minimum-idle: 2
+            maximum-pool-size: 12
+            minimum-idle: 3
             initialization-fail-timeout: 60000
             connection-timeout: 5000
             validation-timeout: 2000
-            connection-test-query: "SELECT 1"
     jpa:
         hibernate:
             ddl-auto: update
@@ -31,7 +30,7 @@ spring:
         defer-datasource-initialization: true
     sql:
         init:
-            mode: always
+            mode: never
     task:
         execution:
             pool:
@@ -64,6 +63,9 @@ management:
     endpoint:
         health:
             show-details: when-authorized
+    health:
+        db:
+            enabled: false
 
 jwt:
     secret: ${JWT_SECRET}

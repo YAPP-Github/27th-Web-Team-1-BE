@@ -7,7 +7,9 @@ import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.ReconnectCoupleUseCase
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createCoupleRequest
@@ -58,6 +60,12 @@ class CoupleControllerTest {
 
     @MockitoBean
     lateinit var joinCoupleUseCase: JoinCoupleUseCase
+
+    @MockitoBean
+    lateinit var disconnectCoupleUseCase: DisconnectCoupleUseCase
+
+    @MockitoBean
+    lateinit var reconnectCoupleUseCase: ReconnectCoupleUseCase
 
     @Test
     fun `커플 생성 성공`() {
@@ -127,6 +135,19 @@ class CoupleControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(createJoinCoupleRequest(inviteCode = "1234"))),
             ).andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `재연결 성공`() {
+        val couple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L, 2L))
+        doReturn(couple).`when`(reconnectCoupleUseCase).reconnect(anyLong())
+
+        mockMvc
+            .perform(
+                post("/couples/reconnect")
+                    .with(authentication(userAuth()))
+                    .with(csrf()),
+            ).andExpect(status().isOk)
     }
 
     @Test

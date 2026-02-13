@@ -90,11 +90,35 @@ sealed class BusinessException(
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.COUPLE_ALREADY_CONNECTED, message, cause, errors)
 
+    class CoupleNotFoundException(
+        message: String = ErrorCode.COUPLE_NOT_FOUND.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_NOT_FOUND, message, cause, errors)
+
+    class CoupleAlreadyDisconnectedException(
+        message: String = ErrorCode.COUPLE_ALREADY_DISCONNECTED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_ALREADY_DISCONNECTED, message, cause, errors)
+
     class UserNotFoundException(
         message: String = ErrorCode.USER_NOT_FOUND.message,
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.USER_NOT_FOUND, message, cause, errors)
+
+    class UserDisconnectRequiredException(
+        message: String = ErrorCode.USER_DISCONNECT_REQUIRED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.USER_DISCONNECT_REQUIRED, message, cause, errors)
+
+    class UserRecoveryExpiredException(
+        message: String = ErrorCode.USER_RECOVERY_EXPIRED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.USER_RECOVERY_EXPIRED, message, cause, errors)
 
     class KakaoApiException(
         message: String = ErrorCode.KAKAO_API_ERROR.message,
@@ -126,6 +150,37 @@ sealed class BusinessException(
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.ALBUM_ALREADY_EXISTS, message, cause, errors)
+
+    // Comment
+    class CommentMaxEmoticonsExceededException(
+        message: String = ErrorCode.COMMENT_MAX_EMOTICONS_EXCEEDED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COMMENT_MAX_EMOTICONS_EXCEEDED, message, cause, errors)
+
+    class EmoticonAlreadyExistsException(
+        message: String = ErrorCode.EMOTICON_ALREADY_EXISTS.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.EMOTICON_ALREADY_EXISTS, message, cause, errors)
+
+    class CoupleReconnectExpiredException(
+        message: String = ErrorCode.COUPLE_RECONNECT_EXPIRED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_RECONNECT_EXPIRED, message, cause, errors)
+
+    class CoupleNotDisconnectedException(
+        message: String = ErrorCode.COUPLE_NOT_DISCONNECTED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_NOT_DISCONNECTED, message, cause, errors)
+
+    class CoupleReconnectNotAllowedException(
+        message: String = ErrorCode.COUPLE_RECONNECT_NOT_ALLOWED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.COUPLE_RECONNECT_NOT_ALLOWED, message, cause, errors)
 }
 
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =

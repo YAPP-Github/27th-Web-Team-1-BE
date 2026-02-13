@@ -3,8 +3,12 @@ name: Dev CI/CD
 on:
     push:
         branches: [ develop ]
+        paths-ignore:
+            - "**/*.md"
     pull_request:
         branches: [ develop ]
+        paths-ignore:
+            - "**/*.md"
 
 concurrency:
     group: lokit-dev-${{ github.ref }}
@@ -32,7 +36,7 @@ jobs:
                     cache: gradle
 
             -   name: Test
-                run: ./gradlew test --no-daemon --parallel --build-cache
+                run: ./gradlew test --no-daemon --parallel --build-cache -PtestMaxParallelForks=2
 
     cd:
         if: github.event_name == 'push'
@@ -72,8 +76,11 @@ jobs:
                         --cidr ${{ steps.setup.outputs.runner_ip }}/32 \
                         --region ${{ env.AWS_REGION }} 2>/dev/null || true
 
+            -   name: Wait for SG propagation
+                run: sleep 15
+
             -   name: Build with Gradle
-                run: ./gradlew build -x test --no-daemon --parallel --build-cache
+                run: ./gradlew bootJar -x test --no-daemon --parallel --build-cache
 
             -   name: Login to Amazon ECR
                 id: login-ecr
@@ -104,6 +111,10 @@ jobs:
                     username: ${{ secrets.DEV_EC2_USERNAME }}
                     key: ${{ secrets.DEV_EC2_SSH_KEY }}
                     envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION
+                    proxy_timeout: 30s
+                    command_timeout: 10m
+                    script_stop: true
+                    debug: true
                     script: |
                         set -e
 
@@ -141,6 +152,8 @@ jobs:
                             --name $CONTAINER_NAME \
                             --restart unless-stopped \
                             --network lokit-net \
+                            --memory="768m" \
+                            --memory-swap="1024m" \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
                             -e TZ=Asia/Seoul \
@@ -152,6 +165,9 @@ jobs:
                             --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
                             --log-opt awslogs-create-group=true \
                             $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+
+                        docker rm -f caddy
+                        docker compose -f compose.yaml up -d
 
                         docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"
 

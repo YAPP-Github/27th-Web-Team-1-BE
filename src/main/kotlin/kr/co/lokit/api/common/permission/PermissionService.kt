@@ -5,7 +5,7 @@ import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
-import kr.co.lokit.api.domain.couple.domain.Couple
+import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
@@ -19,44 +19,57 @@ class PermissionService(
     private val coupleRepository: CoupleRepositoryPort,
     private val albumRepository: AlbumRepositoryPort,
     private val photoRepository: PhotoRepositoryPort,
+    private val commentRepository: CommentRepositoryPort,
     private val userRepository: UserRepositoryPort,
 ) {
-    fun isAdmin(userId: Long): Boolean =
-        getUserRole(userId) == UserRole.ADMIN
+    fun isAdmin(userId: Long): Boolean = getUserRole(userId) == UserRole.ADMIN
 
-    fun isCoupleMember(userId: Long, coupleId: Long): Boolean {
+    fun isCoupleMember(
+        userId: Long,
+        coupleId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
         val couple = coupleRepository.findByUserId(userId) ?: return false
         return couple.id == coupleId
     }
 
     @Cacheable(cacheNames = ["albumCouple"], key = "#albumId", sync = true)
-    fun getAlbumCoupleId(albumId: Long): Long {
-        return getAlbumOrThrow(albumId).coupleId
-    }
+    fun getAlbumCoupleId(albumId: Long): Long = getAlbumOrThrow(albumId).coupleId
 
     @Cacheable(cacheNames = ["album"], key = "#userId + ':' + #albumId", sync = true)
-    fun canAccessAlbum(userId: Long, albumId: Long): Boolean {
+    fun canAccessAlbum(
+        userId: Long,
+        albumId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
 
         val coupleId = getAlbumCoupleId(albumId)
         return isCoupleMember(userId, coupleId)
     }
 
-    fun canModifyAlbum(userId: Long, albumId: Long): Boolean {
+    fun canModifyAlbum(
+        userId: Long,
+        albumId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
 
         return getAlbumOrThrow(albumId).createdById == userId
     }
 
-    fun canDeleteAlbum(userId: Long, albumId: Long): Boolean {
+    fun canDeleteAlbum(
+        userId: Long,
+        albumId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
 
         return getAlbumOrThrow(albumId).createdById == userId
     }
 
     @Cacheable(cacheNames = ["photo"], key = "#userId + ':' + #photoId", sync = true)
-    fun canReadPhoto(userId: Long, photoId: Long): Boolean {
+    fun canReadPhoto(
+        userId: Long,
+        photoId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
 
         val photo = photoRepository.findById(photoId)
@@ -65,18 +78,37 @@ class PermissionService(
         return isCoupleMember(userId, album.coupleId)
     }
 
-    fun canModifyPhoto(userId: Long, photoId: Long): Boolean {
+    fun canModifyPhoto(
+        userId: Long,
+        photoId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
 
         val photo = photoRepository.findById(photoId)
         return photo.uploadedById == userId
     }
 
-    fun canDeletePhoto(userId: Long, photoId: Long): Boolean {
+    fun canDeletePhoto(
+        userId: Long,
+        photoId: Long,
+    ): Boolean {
         if (isAdmin(userId)) return true
 
         val photo = photoRepository.findById(photoId)
         return photo.uploadedById == userId
+    }
+
+    fun canAccessComment(
+        userId: Long,
+        commentId: Long,
+    ): Boolean {
+        if (isAdmin(userId)) return true
+
+        val comment = commentRepository.findById(commentId)
+        val photo = photoRepository.findById(comment.photoId)
+        val album = getAlbumOrThrow(photo.albumId!!)
+
+        return isCoupleMember(userId, album.coupleId)
     }
 
     private fun getUserRole(userId: Long): UserRole =
