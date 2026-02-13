@@ -37,5 +37,12 @@ class CoupleDisconnectService(
         couple.userIds.filter { it != userId }.forEach { partnerId ->
             cacheManager.getCache("userCouple")?.evict(partnerId)
         }
+        evictPermissionCaches()
+    }
+
+    private fun evictPermissionCaches() {
+        cacheManager.getCache("album")?.clear()
+        cacheManager.getCache("photo")?.clear()
+        cacheManager.getCache("albumCouple")?.clear()
     }
 }

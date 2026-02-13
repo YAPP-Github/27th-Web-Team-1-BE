@@ -82,6 +82,12 @@ class MapQueryService(
         albumId: Long?,
     ): MapPhotosResponse {
         val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
+        if (userId != null && coupleId == null) {
+            return MapPhotosResponse(
+                clusters = if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
+                photos = if (zoom >= GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
+            )
+        }
 
         val effectiveAlbumId =
             if (isValidId(albumId) && isValidId(userId)) {
@@ -109,6 +115,9 @@ class MapQueryService(
         userId: Long?,
     ): List<ClusterPhotoResponse> {
         val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
+        if (userId != null && coupleId == null) {
+            return emptyList()
+        }
         val gridCell = ClusterId.parse(clusterId)
         val bbox = gridCell.toBBox()
 

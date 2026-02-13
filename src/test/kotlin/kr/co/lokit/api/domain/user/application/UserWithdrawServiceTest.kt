@@ -2,8 +2,8 @@ package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
-import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
 import kr.co.lokit.api.fixture.createUser
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,7 +26,7 @@ class UserWithdrawServiceTest {
     lateinit var coupleRepository: CoupleRepositoryPort
 
     @Mock
-    lateinit var refreshTokenJpaRepository: RefreshTokenJpaRepository
+    lateinit var refreshTokenRepository: RefreshTokenRepositoryPort
 
     @Mock
     lateinit var cacheManager: CacheManager
@@ -39,7 +39,7 @@ class UserWithdrawServiceTest {
             UserWithdrawService(
                 userRepository,
                 coupleRepository,
-                refreshTokenJpaRepository,
+                refreshTokenRepository,
                 cacheManager,
             )
     }
@@ -51,7 +51,7 @@ class UserWithdrawServiceTest {
 
         userWithdrawService.withdraw(1L)
 
-        verify(refreshTokenJpaRepository).deleteByUserId(1L)
+        verify(refreshTokenRepository).deleteByUserId(1L)
     }
 
     @Test

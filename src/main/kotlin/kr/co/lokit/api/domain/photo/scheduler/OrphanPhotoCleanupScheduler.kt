@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class OrphanPhotoCleanupScheduler(
     private val s3Client: S3Client,
     private val photoJpaRepository: PhotoJpaRepository,

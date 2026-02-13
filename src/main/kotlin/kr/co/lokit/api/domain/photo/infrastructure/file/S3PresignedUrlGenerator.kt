@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.time.Duration
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class S3PresignedUrlGenerator(
     private val s3Presigner: S3Presigner,
     private val s3FileVerifier: S3FileVerifier,

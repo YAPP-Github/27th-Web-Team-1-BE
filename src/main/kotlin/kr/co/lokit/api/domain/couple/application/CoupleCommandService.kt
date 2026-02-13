@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
+import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CachePut
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CoupleCommandService(
     private val coupleRepository: CoupleRepositoryPort,
+    private val cacheManager: CacheManager,
 ) : CreateCoupleUseCase,
     JoinCoupleUseCase {
     @OptimisticRetry
@@ -53,13 +55,28 @@ class CoupleCommandService(
             coupleRepository.deleteById(existingCouple.id)
         }
 
-        if (targetCouple.status == CoupleStatus.DISCONNECTED) {
-            return coupleRepository.reconnect(targetCouple.id, userId)
-        }
+        val joined =
+            if (targetCouple.status == CoupleStatus.DISCONNECTED) {
+                coupleRepository.reconnect(targetCouple.id, userId)
+            } else {
+                coupleRepository.addUser(targetCouple.id, userId)
+            }
 
-        return coupleRepository.addUser(targetCouple.id, userId)
+        cacheManager.getCache("userCouple")?.evict(userId)
+        joined.userIds.forEach { memberId ->
+            cacheManager.getCache("userCouple")?.evict(memberId)
+        }
+        evictPermissionCaches()
+
+        return joined
     }
 
     override fun getInviteCode(userId: Long): String =
         (coupleRepository.findByUserId(userId) ?: throw entityNotFound<Couple>(userId)).inviteCode
+
+    private fun evictPermissionCaches() {
+        cacheManager.getCache("album")?.clear()
+        cacheManager.getCache("photo")?.clear()
+        cacheManager.getCache("albumCouple")?.clear()
+    }
 }

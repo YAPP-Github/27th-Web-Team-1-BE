@@ -6,12 +6,10 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
+import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
-import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenEntity
-import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
-import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
 import org.springframework.cache.CacheManager
@@ -23,8 +21,7 @@ import java.time.LocalDateTime
 class OAuthService(
     private val oAuthClientRegistry: OAuthClientRegistry,
     private val userRepository: UserRepositoryPort,
-    private val userJpaRepository: UserJpaRepository,
-    private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
+    private val refreshTokenRepository: RefreshTokenRepositoryPort,
     private val jwtTokenProvider: JwtTokenProvider,
     private val createCoupleUseCase: CreateCoupleUseCase,
     private val lockManager: LockManager,
@@ -69,11 +66,6 @@ class OAuthService(
         }
 
         user.profileImageUrl = userInfo.profileImageUrl
-
-        createCoupleUseCase.createIfNone(
-            Couple(name = "default"),
-            user.id,
-        )
         return generateTokens(user)
     }
 
@@ -81,25 +73,15 @@ class OAuthService(
         val accessToken = jwtTokenProvider.generateAccessToken(user)
         val refreshToken = jwtTokenProvider.generateRefreshToken()
 
-        val userEntity =
-            userJpaRepository.findByEmail(user.email)
-                ?: throw BusinessException.UserNotFoundException(
-                    errors = mapOf("email" to user.email),
-                )
-
-        refreshTokenJpaRepository.deleteByUser(userEntity)
-
         val expiresAt =
             LocalDateTime.now().plusSeconds(
                 jwtTokenProvider.getRefreshTokenExpirationMillis() / 1000,
             )
 
-        refreshTokenJpaRepository.save(
-            RefreshTokenEntity(
-                token = refreshToken,
-                user = userEntity,
-                expiresAt = expiresAt,
-            ),
+        refreshTokenRepository.replace(
+            userId = user.id,
+            token = refreshToken,
+            expiresAt = expiresAt,
         )
 
         return JwtTokenResponse(

@@ -1,21 +1,16 @@
 package kr.co.lokit.api.domain.user.application
 
-import jakarta.persistence.EntityManager
-import kr.co.lokit.api.common.concurrency.LockManager
 import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.user.application.port.OAuthClientPort
+import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
-import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenEntity
-import kr.co.lokit.api.domain.user.infrastructure.RefreshTokenJpaRepository
-import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthClientRegistry
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthProvider
 import kr.co.lokit.api.domain.user.infrastructure.oauth.OAuthUserInfo
-import kr.co.lokit.api.fixture.createUserEntity
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -26,6 +21,7 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import org.springframework.cache.Cache
@@ -43,19 +39,13 @@ class OAuthServiceTest {
     lateinit var userRepository: UserRepositoryPort
 
     @Mock
-    lateinit var userJpaRepository: UserJpaRepository
-
-    @Mock
-    lateinit var refreshTokenJpaRepository: RefreshTokenJpaRepository
+    lateinit var refreshTokenRepository: RefreshTokenRepositoryPort
 
     @Mock
     lateinit var jwtTokenProvider: JwtTokenProvider
 
     @Mock
     lateinit var createCoupleUseCase: CreateCoupleUseCase
-
-    @Mock
-    lateinit var entityManager: EntityManager
 
     @Mock
     lateinit var cacheManager: CacheManager
@@ -68,11 +58,10 @@ class OAuthServiceTest {
             OAuthService(
                 oAuthClientRegistry,
                 userRepository,
-                userJpaRepository,
-                refreshTokenJpaRepository,
+                refreshTokenRepository,
                 jwtTokenProvider,
                 createCoupleUseCase,
-                lockManager = LockManager(),
+                lockManager = kr.co.lokit.api.common.concurrency.LockManager(),
                 cacheManager,
             )
     }
@@ -108,10 +97,9 @@ class OAuthServiceTest {
     fun `기존 사용자로 로그인하면 토큰을 발급한다`() {
         setupOAuthClient()
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
-        val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
+        whenever(userRepository.apply(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
         setupTokenGeneration(existingUser)
 
         val result = oAuthService.login(OAuthProvider.KAKAO, "auth-code")
@@ -131,47 +119,17 @@ class OAuthServiceTest {
     }
 
     @Test
-    fun `토큰 생성 시 사용자를 찾을 수 없으면 UserNotFoundException이 발생한다`() {
+    fun `토큰 생성 시 기존 리프레시 토큰을 교체한다`() {
         setupOAuthClient()
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(null)
-        setupTokenGeneration(existingUser)
-
-        assertThrows<BusinessException.UserNotFoundException> {
-            oAuthService.login(OAuthProvider.KAKAO, "auth-code")
-        }
-    }
-
-    @Test
-    fun `토큰 생성 시 기존 리프레시 토큰을 삭제한다`() {
-        setupOAuthClient()
-        val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
-        val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
-
-        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
+        whenever(userRepository.apply(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
         setupTokenGeneration(existingUser)
 
         oAuthService.login(OAuthProvider.KAKAO, "auth-code")
 
-        verify(refreshTokenJpaRepository).deleteByUser(existingUserEntity)
-    }
-
-    @Test
-    fun `토큰 생성 시 새 리프레시 토큰이 저장된다`() {
-        setupOAuthClient()
-        val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
-        val existingUserEntity = createUserEntity(id = 1L, email = existingUser.email)
-
-        whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
-        setupTokenGeneration(existingUser)
-
-        oAuthService.login(OAuthProvider.KAKAO, "auth-code")
-
-        verify(refreshTokenJpaRepository).save(any<RefreshTokenEntity>())
+        verify(refreshTokenRepository).replace(eq(1L), eq("refresh-token"), any())
     }
 
     @Test
@@ -179,10 +137,9 @@ class OAuthServiceTest {
         setupOAuthClient()
         val withdrawnUser =
             User(id = 1L, email = "test@test.com", name = "테스트", status = AccountStatus.WITHDRAWN)
-        val existingUserEntity = createUserEntity(id = 1L, email = withdrawnUser.email)
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(withdrawnUser)
-        whenever(userJpaRepository.findByEmail("test@test.com")).thenReturn(existingUserEntity)
+        whenever(userRepository.apply(withdrawnUser.copy(profileImageUrl = null))).thenReturn(withdrawnUser)
         setupTokenGeneration(withdrawnUser)
 
         val userDetailsCache = mock(Cache::class.java)

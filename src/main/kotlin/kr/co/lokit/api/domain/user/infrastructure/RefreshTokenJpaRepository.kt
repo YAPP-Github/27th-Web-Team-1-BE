@@ -9,6 +9,8 @@ interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenEntity, Long> {
 
     fun deleteByUser(user: UserEntity)
 
+    fun deleteByToken(token: String)
+
     @Modifying
     @Query("DELETE FROM RefreshToken rt WHERE rt.user.id = :userId")
     fun deleteByUserId(userId: Long)

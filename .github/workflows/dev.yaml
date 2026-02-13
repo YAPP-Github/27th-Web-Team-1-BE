@@ -3,8 +3,12 @@ name: Dev CI/CD
 on:
     push:
         branches: [ develop ]
+        paths-ignore:
+            - "**/*.md"
     pull_request:
         branches: [ develop ]
+        paths-ignore:
+            - "**/*.md"
 
 concurrency:
     group: lokit-dev-${{ github.ref }}
@@ -32,7 +36,7 @@ jobs:
                     cache: gradle
 
             -   name: Test
-                run: ./gradlew test --no-daemon --parallel --build-cache
+                run: ./gradlew test --no-daemon --parallel --build-cache -PtestMaxParallelForks=2
 
     cd:
         if: github.event_name == 'push'
@@ -76,7 +80,7 @@ jobs:
                 run: sleep 15
 
             -   name: Build with Gradle
-                run: ./gradlew build -x test --no-daemon --parallel --build-cache
+                run: ./gradlew bootJar -x test --no-daemon --parallel --build-cache
 
             -   name: Login to Amazon ECR
                 id: login-ecr

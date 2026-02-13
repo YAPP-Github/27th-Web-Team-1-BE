@@ -84,8 +84,9 @@ class MapPhotosCacheServiceTest {
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
         val key = buildIndividualKey(bbox, 14, 1L, 2L, 0L)
 
-        assertTrue(key.startsWith("ind_z14_x"))
+        assertTrue(key.startsWith("ind_z14_w"))
         assertTrue(key.contains("_c1_"))
+        assertTrue(key.contains("_a2_"))
         assertTrue(key.endsWith("_v0"))
     }
 

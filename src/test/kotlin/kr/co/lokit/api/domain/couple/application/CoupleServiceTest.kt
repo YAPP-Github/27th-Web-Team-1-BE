@@ -12,12 +12,16 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.cache.CacheManager
 import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class CoupleServiceTest {
     @Mock
     lateinit var coupleRepository: CoupleRepositoryPort
+
+    @Mock
+    lateinit var cacheManager: CacheManager
 
     @InjectMocks
     lateinit var coupleCommandService: CoupleCommandService

@@ -91,10 +91,15 @@ tasks.withType<Test> {
     useJUnitPlatform()
     jvmArgs("--enable-preview", "-Xmx512m", "-XX:+UseZGC")
 
-    maxParallelForks = 5
+    val defaultForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    maxParallelForks =
+        providers
+            .gradleProperty("testMaxParallelForks")
+            .map { it.toInt() }
+            .getOrElse(defaultForks)
 
     testLogging {
-        events("passed", "skipped", "failed")
+        events("skipped", "failed")
         showStandardStreams = false
     }
 }

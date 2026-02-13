@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class S3PhotoStorageAdapter(
     private val s3PresignedUrlGenerator: S3PresignedUrlGenerator,
     private val s3FileVerifier: S3FileVerifier,

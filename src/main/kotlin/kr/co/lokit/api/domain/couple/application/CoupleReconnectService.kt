@@ -59,7 +59,14 @@ class CoupleReconnectService(
         reconnected.userIds.filter { it != userId }.forEach { partnerId ->
             cacheManager.getCache("userCouple")?.evict(partnerId)
         }
+        evictPermissionCaches()
 
         return reconnected
+    }
+
+    private fun evictPermissionCaches() {
+        cacheManager.getCache("album")?.clear()
+        cacheManager.getCache("photo")?.clear()
+        cacheManager.getCache("albumCouple")?.clear()
     }
 }

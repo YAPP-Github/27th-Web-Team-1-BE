@@ -4,7 +4,7 @@ import kr.co.lokit.api.domain.map.application.AddressFormatter
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpHeaders
 import org.springframework.http.client.SimpleClientHttpRequestFactory
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 
 @Component
-@ConditionalOnProperty(name = ["kakao.api.key"])
+@ConditionalOnExpression("'\${kakao.api.key:}'.trim().length() > 0")
 class KakaoMapClient(
     @Value("\${kakao.api.key}")
     private val apiKey: String,

@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 import jakarta.persistence.EntityManager
 
 @Component
-@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true", matchIfMissing = false)
 class CoupleGracePeriodScheduler(
     private val coupleJpaRepository: CoupleJpaRepository,
     private val albumJpaRepository: AlbumJpaRepository,
