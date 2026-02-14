@@ -1,21 +1,9 @@
-${domain} {
-    tls ${email}
+domain {
+    encode zstd gzip
 
-    log {
-        output file ${path}
-        format json
-    }
-
-    reverse_proxy ${api-path} ${ip} {
-        health_uri ${health-path}
-        health_interval 10s
-        health_timeout 5s
-
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-    }
-
-    handle_path ${etc-path}* {
-        reverse_proxy ${ip}
-    }
+    reverse_proxy ip:8080 {
+                              transport http {
+                                                 read_timeout 10s
+                                             }
+                          }
 }

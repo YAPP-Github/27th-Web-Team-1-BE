@@ -1,0 +1,84 @@
+spring:
+    application:
+        name: api
+    jackson:
+        time-zone: Asia/Seoul
+
+    datasource:
+        url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+
+    jpa:
+        hibernate:
+            ddl-auto: create-drop
+        properties:
+            hibernate:
+                format_sql: false
+                show_sql: false
+        open-in-view: false
+        defer-datasource-initialization: false
+    sql:
+        init:
+            mode: never
+    docker:
+        compose:
+            enabled: false
+
+    h2:
+        console:
+            enabled: false
+
+logging:
+    request:
+        verbose: false
+    level:
+        org.hibernate.SQL: WARN
+        org.hibernate.orm.jdbc.bind: WARN
+
+server:
+    servlet:
+        context-path: /api
+
+jwt:
+    secret: test-jwt-secret-key-minimum-32-characters-long
+    expiration: 86400000
+    refresh-expiration: 604800000
+
+springdoc:
+    api-docs:
+        enabled: false
+    swagger-ui:
+        enabled: false
+
+aws:
+    s3:
+        enabled: false
+        region: ap-northeast-2
+        bucket: test-bucket
+
+kakao:
+    api:
+        key: test-key
+    client-id: test-client-id
+    client-secret: test-client-secret
+    redirect-uri: http://localhost:8080/api/auth/kakao/callback
+    front-redirect-uri: http://localhost:3000
+
+cookie:
+    secure: false
+
+admin.key: ""
+
+cors:
+    allowed-origins: http://localhost:8080
+
+redirect:
+    local-host: localhost:3000
+    allowed-domain: localhost
+
+map:
+    cluster:
+        boundary-merge:
+            strategy: distance

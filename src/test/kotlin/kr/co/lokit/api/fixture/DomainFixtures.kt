@@ -1,0 +1,133 @@
+package kr.co.lokit.api.fixture
+
+import kr.co.lokit.api.common.constant.AccountStatus
+import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.domain.album.domain.Album
+import kr.co.lokit.api.domain.couple.domain.Couple
+import kr.co.lokit.api.domain.map.domain.AlbumBounds
+import kr.co.lokit.api.domain.map.domain.BoundsIdType
+import kr.co.lokit.api.domain.photo.domain.Comment
+import kr.co.lokit.api.domain.photo.domain.Emoticon
+import kr.co.lokit.api.domain.photo.domain.Location
+import kr.co.lokit.api.domain.photo.domain.Photo
+import kr.co.lokit.api.domain.photo.domain.PhotoDetail
+import kr.co.lokit.api.domain.user.domain.User
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+fun createComment(
+    id: Long = 0L,
+    photoId: Long = 1L,
+    userId: Long = 1L,
+    content: String = "테스트 댓글",
+    commentedAt: LocalDate = LocalDate.of(2025, 1, 1),
+) = Comment(id = id, photoId = photoId, userId = userId, content = content)
+
+fun createEmoticon(
+    id: Long = 0L,
+    commentId: Long = 1L,
+    userId: Long = 1L,
+    emoji: String = "😀",
+) = Emoticon(id = id, commentId = commentId, userId = userId, emoji = emoji)
+
+fun createUser(
+    id: Long = 0L,
+    email: String = "test@test.com",
+    name: String = "테스트",
+    role: UserRole = UserRole.USER,
+    status: AccountStatus = AccountStatus.ACTIVE,
+    withdrawnAt: LocalDateTime? = null,
+) = User(id = id, email = email, name = name, role = role, status = status, withdrawnAt = withdrawnAt)
+
+fun createCouple(
+    id: Long = 0L,
+    name: String = "테스트",
+    userIds: List<Long> = emptyList(),
+    status: CoupleStatus = CoupleStatus.CONNECTED,
+    disconnectedAt: LocalDateTime? = null,
+    disconnectedByUserId: Long? = null,
+) = Couple(id = id, name = name, userIds = userIds, status = status, disconnectedAt = disconnectedAt, disconnectedByUserId = disconnectedByUserId)
+
+fun createAlbum(
+    id: Long = 0L,
+    title: String = "여행",
+    coupleId: Long = 1L,
+    createdById: Long = 1L,
+    photoCount: Int = 0,
+    isDefault: Boolean = false,
+) = Album(
+    id = id,
+    title = title,
+    coupleId = coupleId,
+    createdById = createdById,
+    photoCount = photoCount,
+    isDefault = isDefault,
+)
+
+fun createPhoto(
+    id: Long = 0L,
+    albumId: Long = 1L,
+    coupleId: Long? = null,
+    location: Location = createLocation(),
+    description: String? = null,
+    url: String = "https://example.com/photo.jpg",
+    uploadedById: Long = 1L,
+    takenAt: LocalDateTime = LocalDateTime.of(2025, 1, 1, 12, 0),
+    address: String? = null,
+) = Photo(
+    id = id,
+    albumId = albumId,
+    coupleId = coupleId,
+    location = location,
+    description = description,
+    url = url,
+    uploadedById = uploadedById,
+    takenAt = takenAt,
+    address = address,
+)
+
+fun createLocation(
+    longitude: Double = 127.0,
+    latitude: Double = 37.5,
+) = Location(longitude = longitude, latitude = latitude)
+
+fun createPhotoDetail(
+    id: Long = 1L,
+    url: String = "https://example.com/photo.jpg",
+    takenAt: LocalDateTime? = LocalDateTime.of(2026, 1, 1, 12, 0),
+    albumName: String = "여행",
+    uploadedById: Long = 1L,
+    uploaderName: String = "테스트",
+    uploaderProfileImageUrl: String? = null,
+    location: Location = createLocation(),
+    description: String? = null,
+) = PhotoDetail(
+    id = id,
+    url = url,
+    takenAt = takenAt,
+    albumName = albumName,
+    uploadedById = uploadedById,
+    uploaderName = uploaderName,
+    uploaderProfileImageUrl = uploaderProfileImageUrl,
+    location = location,
+    description = description,
+)
+
+fun createAlbumBounds(
+    id: Long = 0L,
+    albumId: Long = 1L,
+    idType: BoundsIdType = BoundsIdType.ALBUM,
+    minLongitude: Double = 127.0,
+    maxLongitude: Double = 127.0,
+    minLatitude: Double = 37.5,
+    maxLatitude: Double = 37.5,
+) = AlbumBounds(
+    id = id,
+    standardId = albumId,
+    idType = idType,
+    minLongitude = minLongitude,
+    maxLongitude = maxLongitude,
+    minLatitude = minLatitude,
+    maxLatitude = maxLatitude,
+)

@@ -1,0 +1,365 @@
+name: Dev CI/CD
+
+on:
+    push:
+        branches: [ develop ]
+        paths-ignore:
+            - "**/*.md"
+    pull_request:
+        branches: [ develop ]
+        paths-ignore:
+            - "**/*.md"
+
+concurrency:
+    group: lokit-dev-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    AWS_REGION: ap-northeast-2
+    ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
+    CONTAINER_NAME: dev-lokit-api
+
+jobs:
+    ci:
+        runs-on: ubuntu-latest
+        env:
+            DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        permissions:
+            contents: read
+            pull-requests: write
+
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Set up JDK 24
+                uses: actions/setup-java@v4
+                with:
+                    java-version: '24'
+                    distribution: 'temurin'
+                    cache: gradle
+
+            -   name: Test & Coverage
+                run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon --parallel --build-cache -PtestMaxParallelForks=2 -PcoverageVerification=true
+
+            -   name: Upload JaCoCo report
+                if: always()
+                uses: actions/upload-artifact@v4
+                with:
+                    name: jacoco-report
+                    path: |
+                        build/reports/jacoco/test/html/**
+                        build/reports/jacoco/test/jacocoTestReport.xml
+
+            -   name: Build coverage summary
+                id: coverage
+                if: always()
+                shell: bash
+                run: |
+                    set -euo pipefail
+
+                    XML_PATH="build/reports/jacoco/test/jacocoTestReport.xml"
+
+                    write_outputs_zero() {
+                        echo "line_rate=0.00" >> "$GITHUB_OUTPUT"
+                        echo "branch_rate=0.00" >> "$GITHUB_OUTPUT"
+                        echo "line_covered=0" >> "$GITHUB_OUTPUT"
+                        echo "line_total=0" >> "$GITHUB_OUTPUT"
+                        echo "branch_covered=0" >> "$GITHUB_OUTPUT"
+                        echo "branch_total=0" >> "$GITHUB_OUTPUT"
+                    }
+
+                    summary_fail() {
+                        local msg="$1"
+                        {
+                            echo "### JaCoCo Coverage"
+                            echo ""
+                            echo "- ${msg}"
+                        } >> "$GITHUB_STEP_SUMMARY"
+                    }
+
+                    is_int() { [[ "${1:-}" =~ ^[0-9]+$ ]]; }
+
+                    if [ ! -f "$XML_PATH" ]; then
+                        write_outputs_zero
+                        summary_fail "리포트 생성 실패 (XML 없음: \`$XML_PATH\`)"
+                        exit 0
+                    fi
+
+                    LINE_COUNTER="$(tac "$XML_PATH" | grep -m1 '<counter type="LINE"' || true)"
+                    BRANCH_COUNTER="$(tac "$XML_PATH" | grep -m1 '<counter type="BRANCH"' || true)"
+
+                    if [ -z "$LINE_COUNTER" ] || [ -z "$BRANCH_COUNTER" ]; then
+                        write_outputs_zero
+                        summary_fail "XML 파싱 실패 (counter 없음)"
+                        exit 0
+                    fi
+
+                    LINE_MISSED="$(sed -nE 's/.*missed="([0-9]+)".*/\1/p' <<<"$LINE_COUNTER")"
+                    LINE_COVERED="$(sed -nE 's/.*covered="([0-9]+)".*/\1/p' <<<"$LINE_COUNTER")"
+                    BRANCH_MISSED="$(sed -nE 's/.*missed="([0-9]+)".*/\1/p' <<<"$BRANCH_COUNTER")"
+                    BRANCH_COVERED="$(sed -nE 's/.*covered="([0-9]+)".*/\1/p' <<<"$BRANCH_COUNTER")"
+
+                    if ! is_int "$LINE_MISSED" || ! is_int "$LINE_COVERED" || ! is_int "$BRANCH_MISSED" || ! is_int "$BRANCH_COVERED"; then
+                        write_outputs_zero
+                        summary_fail "XML 파싱 실패 (missed/covered 추출 실패)"
+                        exit 0
+                    fi
+
+                    LINE_TOTAL=$((LINE_MISSED + LINE_COVERED))
+                    BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+
+                    if [ "$LINE_TOTAL" -eq 0 ]; then
+                        LINE_RATE="0.00"
+                    else
+                        LINE_RATE="$(awk -v c="$LINE_COVERED" -v t="$LINE_TOTAL" 'BEGIN { printf "%.2f", (c/t)*100 }')"
+                    fi
+
+                    if [ "$BRANCH_TOTAL" -eq 0 ]; then
+                        BRANCH_RATE="0.00"
+                    else
+                        BRANCH_RATE="$(awk -v c="$BRANCH_COVERED" -v t="$BRANCH_TOTAL" 'BEGIN { printf "%.2f", (c/t)*100 }')"
+                    fi
+
+                    echo "line_rate=$LINE_RATE" >> "$GITHUB_OUTPUT"
+                    echo "branch_rate=$BRANCH_RATE" >> "$GITHUB_OUTPUT"
+                    echo "line_covered=$LINE_COVERED" >> "$GITHUB_OUTPUT"
+                    echo "line_total=$LINE_TOTAL" >> "$GITHUB_OUTPUT"
+                    echo "branch_covered=$BRANCH_COVERED" >> "$GITHUB_OUTPUT"
+                    echo "branch_total=$BRANCH_TOTAL" >> "$GITHUB_OUTPUT"
+
+                    {
+                        echo "### JaCoCo Coverage"
+                        echo ""
+                        echo "- Line: ${LINE_RATE}% (${LINE_COVERED}/${LINE_TOTAL})"
+                        echo "- Branch: ${BRANCH_RATE}% (${BRANCH_COVERED}/${BRANCH_TOTAL})"
+                        echo "- HTML Report: workflow artifact \`jacoco-report\`"
+                    } >> "$GITHUB_STEP_SUMMARY"
+
+            -   name: Comment coverage on PR
+                if: always() && github.event_name == 'pull_request'
+                uses: actions/github-script@v7
+                with:
+                    script: |
+                        const marker = "<!-- jacoco-coverage-comment -->";
+                        const lineRate = "${{ steps.coverage.outputs.line_rate }}";
+                        const branchRate = "${{ steps.coverage.outputs.branch_rate }}";
+                        const lineCovered = "${{ steps.coverage.outputs.line_covered }}";
+                        const lineTotal = "${{ steps.coverage.outputs.line_total }}";
+                        const branchCovered = "${{ steps.coverage.outputs.branch_covered }}";
+                        const branchTotal = "${{ steps.coverage.outputs.branch_total }}";
+
+                        const body = `${marker}
+                        ### JaCoCo Coverage
+                        - Line: ${lineRate}% (${lineCovered}/${lineTotal})
+                        - Branch: ${branchRate}% (${branchCovered}/${branchTotal})
+                        - 상세 리포트: workflow artifact \`jacoco-report\``;
+
+                        const { data: comments } = await github.rest.issues.listComments({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            issue_number: context.issue.number,
+                        });
+                        const existing = comments.find((c) => c.user.type === "Bot" && c.body.includes(marker));
+                        if (existing) {
+                            await github.rest.issues.updateComment({
+                                owner: context.repo.owner,
+                                repo: context.repo.repo,
+                                comment_id: existing.id,
+                                body,
+                            });
+                        } else {
+                            await github.rest.issues.createComment({
+                                owner: context.repo.owner,
+                                repo: context.repo.repo,
+                                issue_number: context.issue.number,
+                                body,
+                            });
+                        }
+
+            -   name: Notify Discord (CI)
+                if: always() && env.DISCORD_WEBHOOK_URL != ''
+                env:
+                    LINE_RATE: ${{ steps.coverage.outputs.line_rate }}
+                    BRANCH_RATE: ${{ steps.coverage.outputs.branch_rate }}
+                    GITHUB_EVENT_NAME: ${{ github.event_name }}
+                    GITHUB_REF_NAME: ${{ github.ref_name }}
+                    GITHUB_REPOSITORY: ${{ github.repository }}
+                    GITHUB_SERVER_URL: ${{ github.server_url }}
+                    GITHUB_RUN_ID: ${{ github.run_id }}
+                shell: bash
+                run: |
+                    set -euo pipefail
+
+                    RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+                    MSG=$'CI 완료 ('"${GITHUB_EVENT_NAME}"$')\n'"- Branch: ${GITHUB_REF_NAME}"$'\n'"- Line Coverage: ${LINE_RATE:-N/A}%"$'\n'"- Branch Coverage: ${BRANCH_RATE:-N/A}%"$'\n'"- Run: ${RUN_URL}"
+
+                    payload="$(jq -n --arg username "GitHub" --arg content "$MSG" '{username:$username, content:$content}')"
+
+                    echo "Discord payload bytes: $(printf %s "$payload" | wc -c)"
+                    echo "Discord message bytes: $(printf %s "$MSG" | wc -c)"
+
+                    http_code="$(
+                        curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
+                            -H "Content-Type: application/json" \
+                            -d "$payload" \
+                            -o /tmp/discord_resp.json \
+                            -w "%{http_code}" || true
+                    )"
+
+                    echo "Discord HTTP: $http_code"
+                    if [ -s /tmp/discord_resp.json ]; then
+                        echo "Discord response:"
+                        cat /tmp/discord_resp.json
+                        echo ""
+                    fi
+
+                    if [ "$http_code" != "204" ]; then
+                        exit 1
+                    fi
+
+
+
+    cd:
+        if: github.event_name == 'push'
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Set up JDK 24
+                uses: actions/setup-java@v4
+                with:
+                    java-version: '24'
+                    distribution: 'temurin'
+                    cache: gradle
+
+            -   name: Configure AWS credentials
+                uses: aws-actions/configure-aws-credentials@v4
+                with:
+                    aws-access-key-id: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+                    aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+                    aws-region: ${{ env.AWS_REGION }}
+
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
+            -   name: Get Runner IP
+                id: setup
+                run: echo "runner_ip=$(curl -s https://checkip.amazonaws.com)" >> $GITHUB_OUTPUT
+
+            -   name: Add Runner IP to Security Group
+                run: |
+                    aws ec2 authorize-security-group-ingress \
+                        --group-id ${{ secrets.DEV_SECURITY_GROUP_ID }} \
+                        --protocol tcp \
+                        --port 22 \
+                        --cidr ${{ steps.setup.outputs.runner_ip }}/32 \
+                        --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
+            -   name: Wait for SG propagation
+                run: sleep 15
+
+            -   name: Build with Gradle
+                run: ./gradlew bootJar -x test --no-daemon --parallel --build-cache
+
+            -   name: Login to Amazon ECR
+                id: login-ecr
+                uses: aws-actions/amazon-ecr-login@v2
+
+            -   name: Build & Push Docker Image
+                uses: docker/build-push-action@v6
+                with:
+                    context: .
+                    file: infra/Dockerfile
+                    push: true
+                    tags: |
+                        ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-latest
+                        ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+                    cache-from: type=gha
+                    cache-to: type=gha,mode=max
+                    provenance: false
+
+            -   name: Deploy to EC2
+                uses: appleboy/ssh-action@master
+                env:
+                    ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                    ECR_REPOSITORY: ${{ secrets.DEV_ECR_REPOSITORY }}
+                    CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+                    AWS_REGION: ${{ env.AWS_REGION }}
+                with:
+                    host: ${{ secrets.DEV_EC2_HOST }}
+                    username: ${{ secrets.DEV_EC2_USERNAME }}
+                    key: ${{ secrets.DEV_EC2_SSH_KEY }}
+                    envs: ECR_REGISTRY,ECR_REPOSITORY,CONTAINER_NAME,AWS_REGION
+                    proxy_timeout: 30s
+                    command_timeout: 10m
+                    script_stop: true
+                    debug: true
+                    script: |
+                        set -e
+
+                        SSM_PREFIX="/lokit/dev"
+
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+                        docker stop $CONTAINER_NAME 2>/dev/null || true
+                        docker rm -f $CONTAINER_NAME 2>/dev/null || true
+
+                        for i in {1..10}; do
+                            if ! netstat -tuln 2>/dev/null | grep -q ':8080 ' && ! ss -tuln 2>/dev/null | grep -q ':8080 '; then
+                                break
+                            fi
+                            echo "Waiting for port 8080 to be released... ($i/10)"
+                            sleep 2
+                        done
+
+                        docker image prune -af --filter "until=1h"
+
+                        docker pull $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+
+                        ENV_ARGS=""
+                        while IFS= read -r line; do
+                            key=$(echo "$line" | jq -r '.Name' | sed "s|${SSM_PREFIX}/||")
+                            value=$(echo "$line" | jq -r '.Value')
+                            ENV_ARGS="$ENV_ARGS -e $key=$value"
+                        done < <(aws ssm get-parameters-by-path \
+                            --path "$SSM_PREFIX" \
+                            --with-decryption \
+                            --region $AWS_REGION \
+                            --query "Parameters[]" \
+                            --output json | jq -c '.[]')
+
+                        docker run -d \
+                            --name $CONTAINER_NAME \
+                            --restart unless-stopped \
+                            --network lokit-net \
+                            --memory="768m" \
+                            --memory-swap="1024m" \
+                            -p 8080:8080 \
+                            -e SPRING_PROFILES_ACTIVE=dev \
+                            -e TZ=Asia/Seoul \
+                            -e AWS_REGION=$AWS_REGION \
+                            $ENV_ARGS \
+                            --log-driver=awslogs \
+                            --log-opt awslogs-region=$AWS_REGION \
+                            --log-opt awslogs-group=/docker/lokit-api-dev \
+                            --log-opt awslogs-stream=$CONTAINER_NAME-$(date +%Y%m%d-%H%M%S) \
+                            --log-opt awslogs-create-group=true \
+                            $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+
+                        docker rm -f caddy
+                        docker compose -f compose.yaml up -d
+
+                        docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"
+
+            -   name: Remove Runner IP from Security Group
+                if: always()
+                run: |
+                    aws ec2 revoke-security-group-ingress \
+                        --group-id ${{ secrets.DEV_SECURITY_GROUP_ID }} \
+                        --protocol tcp \
+                        --port 22 \
+                        --cidr ${{ steps.setup.outputs.runner_ip }}/32 \
+                        --region ${{ env.AWS_REGION }} 2>/dev/null || true
