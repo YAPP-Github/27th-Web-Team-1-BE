@@ -22,6 +22,8 @@ env:
 jobs:
     ci:
         runs-on: ubuntu-latest
+        env:
+            DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         permissions:
             contents: read
             pull-requests: write
@@ -136,9 +138,8 @@ jobs:
                         }
 
             -   name: Notify Discord (CI)
-                if: always() && secrets.DISCORD_WEBHOOK_URL != ''
+                if: always() && env.DISCORD_WEBHOOK_URL != ''
                 env:
-                    DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
                     LINE_RATE: ${{ steps.coverage.outputs.line_rate }}
                     BRANCH_RATE: ${{ steps.coverage.outputs.branch_rate }}
                     GITHUB_EVENT_NAME: ${{ github.event_name }}
