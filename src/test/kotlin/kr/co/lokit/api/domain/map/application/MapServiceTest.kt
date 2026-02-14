@@ -1,11 +1,13 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
+import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
@@ -27,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -328,6 +331,50 @@ class MapServiceTest {
 
         verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), eq(albumId))
         verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any(), any())
+    }
+
+    @Test
+    fun `getMe(v1_1)은 요청 바운딩 박스로 조회한다`() {
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
+        `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(3L)
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), any())).thenReturn(
+            MapPhotosResponse(clusters = emptyList()),
+        )
+        `when`(mapClientPort.reverseGeocode(eq(127.0), eq(37.5))).thenReturn(
+            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+        )
+        `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
+        `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
+
+        mapService.getMe(
+            userId = 1L,
+            west = 126.9,
+            south = 37.4,
+            east = 127.1,
+            north = 37.6,
+            zoom = 14.0,
+            albumId = null,
+            lastDataVersion = null,
+        )
+
+        verify(mapPhotosCacheService).getDataVersion(any(), eq(BBox(126.9, 37.4, 127.1, 37.6)), eq(1L), anyOrNull())
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), eq(BBox(126.9, 37.4, 127.1, 37.6)), eq(1L), anyOrNull(), any(), any())
+    }
+
+    @Test
+    fun `getMe(v1_1)은 KOREA_BOUNDS 범위 밖 BBox를 거부한다`() {
+        assertFailsWith<BusinessException.InvalidInputException> {
+            mapService.getMe(
+                userId = 1L,
+                west = 123.9,
+                south = 37.4,
+                east = 127.1,
+                north = 37.6,
+                zoom = 14.0,
+                albumId = null,
+                lastDataVersion = null,
+            )
+        }
     }
 
     @Test

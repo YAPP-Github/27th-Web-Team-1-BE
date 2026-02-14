@@ -14,6 +14,17 @@ interface GetMapUseCase {
         lastDataVersion: Long? = null,
     ): MapMeResponse
 
+    fun getMe(
+        userId: Long,
+        west: Double,
+        south: Double,
+        east: Double,
+        north: Double,
+        zoom: Double,
+        albumId: Long? = null,
+        lastDataVersion: Long? = null,
+    ): MapMeResponse
+
     fun getClusterPhotos(
         clusterId: String,
         userId: Long?,

@@ -13,6 +13,12 @@ data class BBox(
     val east: Double,
     val north: Double,
 ) {
+    fun isWithin(other: BBox): Boolean =
+        west >= other.west &&
+            south >= other.south &&
+            east <= other.east &&
+            north <= other.north
+
     fun intersects(other: BBox): Boolean =
         west < other.east && east > other.west && south < other.north && north > other.south
 
@@ -39,6 +45,20 @@ data class BBox(
         val KOREA_BOUNDS = BBox(west = 124.0, south = 33.0, east = 132.0, north = 39.5)
         private const val HORIZONTAL_MULTIPLIER = 2.5
         private const val VERTICAL_MULTIPLIER = 5.0
+
+        fun fromRequestedBoundsInKorea(
+            west: Double,
+            south: Double,
+            east: Double,
+            north: Double,
+        ): BBox {
+            require(west < east) { "west must be less than east" }
+            require(south < north) { "south must be less than north" }
+
+            val bbox = BBox(west = west, south = south, east = east, north = north)
+            require(bbox.isWithin(KOREA_BOUNDS)) { "bbox must be within KOREA_BOUNDS" }
+            return bbox
+        }
 
         fun fromCenter(
             zoom: Int,

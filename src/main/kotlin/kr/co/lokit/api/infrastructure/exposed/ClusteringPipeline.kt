@@ -41,8 +41,7 @@ object ClusteringPipeline {
                         .sortedBy { it.rank }
                         .firstOrNull { it.url !in state.usedUrls }
                         ?.url
-                        ?: cluster.photosByRank.firstOrNull()?.url
-                        ?: ""
+                        ?: cluster.photosByRank.firstOrNull()?.url.orEmpty()
 
                 DeduplicationState(
                     usedUrls = state.usedUrls + selectedUrl,

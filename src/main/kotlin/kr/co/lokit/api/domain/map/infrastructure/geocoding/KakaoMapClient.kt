@@ -3,6 +3,7 @@ package kr.co.lokit.api.domain.map.infrastructure.geocoding
 import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
+import kr.co.lokit.api.common.util.orZero
 import kr.co.lokit.api.domain.map.application.AddressFormatter
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
@@ -159,11 +160,11 @@ class KakaoMapClient(
                     doc.roadAddressName
                         .takeIf { it.isNotBlank() }
                         ?.let { AddressFormatter.removeProvinceAndCity(it) },
-                longitude = doc.x.toDoubleOrNull() ?: 0.0,
-                latitude = doc.y.toDoubleOrNull() ?: 0.0,
+                longitude = doc.x.toDoubleOrNull().orZero(),
+                latitude = doc.y.toDoubleOrNull().orZero(),
                 category = extractCategory(doc.categoryName),
             )
-        } ?: emptyList()
+        }.orEmpty()
     }
 
     private fun extractCategory(categoryName: String): String? {

@@ -3,6 +3,8 @@ package kr.co.lokit.api.domain.map.application
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.common.concurrency.withPermit
 import kr.co.lokit.api.common.dto.isValidId
+import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
@@ -154,14 +156,87 @@ class MapQueryService(
         zoom: Double,
         albumId: Long?,
         lastDataVersion: Long?,
+    ): MapMeResponse =
+        getMeByBBox(
+            userId = userId,
+            centerLongitude = longitude,
+            centerLatitude = latitude,
+            zoom = zoom,
+            bbox =
+                BBox
+                    .fromCenter(MapZoom.from(zoom).discrete, longitude, latitude)
+                    .clampToKorea() ?: BBox.KOREA_BOUNDS,
+            albumId = albumId,
+            lastDataVersion = lastDataVersion,
+        )
+
+    override fun getMe(
+        userId: Long,
+        west: Double,
+        south: Double,
+        east: Double,
+        north: Double,
+        zoom: Double,
+        albumId: Long?,
+        lastDataVersion: Long?,
+    ): MapMeResponse {
+        val requestedBBox =
+            try {
+                BBox.fromRequestedBoundsInKorea(
+                    west = west,
+                    south = south,
+                    east = east,
+                    north = north,
+                )
+            } catch (e: IllegalArgumentException) {
+                throw BusinessException.InvalidInputException(
+                    message = "유효하지 않은 BBox 범위입니다",
+                    cause = e,
+                    errors = errorDetailsOf("west" to west, "south" to south, "east" to east, "north" to north),
+                )
+            }
+        val centerLongitude = (requestedBBox.west + requestedBBox.east) / 2.0
+        val centerLatitude = (requestedBBox.south + requestedBBox.north) / 2.0
+
+        return getMeByBBox(
+            userId = userId,
+            centerLongitude = centerLongitude,
+            centerLatitude = centerLatitude,
+            zoom = zoom,
+            bbox = requestedBBox,
+            albumId = albumId,
+            lastDataVersion = lastDataVersion,
+        )
+    }
+
+    override fun getLocationInfo(
+        longitude: Double,
+        latitude: Double,
+    ): LocationInfoResponse {
+        val raw = mapClientPort.reverseGeocode(longitude, latitude)
+        val header = AddressFormatter.toRoadHeader(raw.address.orEmpty(), raw.roadName.orEmpty())
+        val formattedAddress = AddressFormatter.removeProvinceAndCity(header)
+        return raw.copy(address = formattedAddress)
+    }
+
+    override fun searchPlaces(query: String): PlaceSearchResponse =
+        PlaceSearchResponse(places = mapClientPort.searchPlaces(query))
+
+    private fun getMeByBBox(
+        userId: Long,
+        centerLongitude: Double,
+        centerLatitude: Double,
+        zoom: Double,
+        bbox: BBox,
+        albumId: Long?,
+        lastDataVersion: Long?,
     ): MapMeResponse {
         val mapZoom = MapZoom.from(zoom)
-        val homeBBox = BBox.fromCenter(mapZoom.discrete, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
         val context = resolveViewerContext(userId = userId, albumId = albumId)
         val currentVersion =
             mapPhotosCacheService.getDataVersion(
                 _zoom = mapZoom.discrete,
-                _bbox = homeBBox,
+                _bbox = bbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
             )
@@ -169,7 +244,7 @@ class MapQueryService(
         val (locationFuture, albumsFuture, photosFuture) =
             StructuredConcurrency.run { scope ->
                 Triple(
-                    scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
+                    scope.fork { mapClientPort.reverseGeocode(centerLongitude, centerLatitude) },
                     scope.fork {
                         dbSemaphore.withPermit {
                             findAlbumsForCouple(context.coupleId)
@@ -180,7 +255,7 @@ class MapQueryService(
                             getPhotos(
                                 zoom = mapZoom.discrete,
                                 zoomLevel = mapZoom.level,
-                                bbox = homeBBox,
+                                bbox = bbox,
                                 context = context,
                                 lastDataVersion = lastDataVersion,
                                 currentDataVersion = currentVersion,
@@ -191,13 +266,12 @@ class MapQueryService(
             }
 
         val formattedLocation = formatLocation(locationFuture.get())
-
         val photosResponse = photosFuture.get()
         val albums = albumsFuture.get()
 
         return MapMeResponse(
             location = formattedLocation,
-            boundingBox = homeBBox.toResponse(),
+            boundingBox = bbox.toResponse(),
             albums = albums.toAlbumThumbnails(),
             dataVersion = currentVersion,
             clusters = photosResponse?.clusters,
@@ -205,19 +279,6 @@ class MapQueryService(
             totalHistoryCount = albumRepository.photoCountSumByUserId(userId),
         )
     }
-
-    override fun getLocationInfo(
-        longitude: Double,
-        latitude: Double,
-    ): LocationInfoResponse {
-        val raw = mapClientPort.reverseGeocode(longitude, latitude)
-        val header = AddressFormatter.toRoadHeader(raw.address ?: "", raw.roadName ?: "")
-        val formattedAddress = AddressFormatter.removeProvinceAndCity(header)
-        return raw.copy(address = formattedAddress)
-    }
-
-    override fun searchPlaces(query: String): PlaceSearchResponse =
-        PlaceSearchResponse(places = mapClientPort.searchPlaces(query))
 
     private fun resolveEffectiveAlbumId(
         userId: Long?,
@@ -243,18 +304,17 @@ class MapQueryService(
 
     private fun findAlbumsForCouple(coupleId: Long?) =
         coupleId
-            ?.let { albumRepository.findAllByCoupleId(it).sortedByDescending { album -> album.isDefault } }
-            ?: emptyList()
+            ?.let { albumRepository.findAllByCoupleId(it).sortedByDescending { album -> album.isDefault } }.orEmpty()
 
     private fun formatLocation(location: LocationInfoResponse): LocationInfoResponse =
         LocationInfoResponse(
             address =
                 AddressFormatter.removeProvinceAndCity(
-                    AddressFormatter.toRoadHeader(location.address ?: "", location.roadName ?: ""),
+                    AddressFormatter.toRoadHeader(location.address.orEmpty(), location.roadName.orEmpty()),
                 ),
             roadName = location.roadName,
             placeName = location.placeName,
-            regionName = AddressFormatter.removeProvinceAndCity(location.regionName ?: ""),
+            regionName = AddressFormatter.removeProvinceAndCity(location.regionName.orEmpty()),
         )
 
     private fun isMissingCoupleForAuthenticatedUser(

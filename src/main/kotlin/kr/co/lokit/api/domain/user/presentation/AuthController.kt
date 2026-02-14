@@ -37,7 +37,7 @@ class AuthController(
         val state =
             resolvedRedirect
                 ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
-                ?: ""
+                .orEmpty()
 
         val authUrl =
             KakaoOAuthProperties.AUTHORIZATION_URL +

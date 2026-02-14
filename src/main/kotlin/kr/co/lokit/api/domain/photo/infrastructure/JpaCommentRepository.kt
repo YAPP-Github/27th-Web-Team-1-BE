@@ -49,7 +49,7 @@ class JpaCommentRepository(
         val emoticonsByComment = emoticons.groupBy { it.comment.nonNullId() }
 
         return comments.map { comment ->
-            val commentEmoticons = emoticonsByComment[comment.nonNullId()] ?: emptyList()
+            val commentEmoticons = emoticonsByComment[comment.nonNullId()].orEmpty()
             val summaries =
                 commentEmoticons
                     .groupBy { it.emoji }

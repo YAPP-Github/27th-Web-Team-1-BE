@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.common.util.orZero
 
 object MapCacheKeyFactory {
     data class ParsedCellKey(
@@ -87,7 +88,7 @@ object MapCacheKeyFactory {
         albumId: Long?,
     ): String = "z${zoom}_c${coupleId}_a${normalizeId(albumId)}"
 
-    private fun normalizeId(value: Long?): Long = value ?: 0L
+    private fun normalizeId(value: Long?): Long = value.orZero()
 
     private fun toScaledInt(value: Double): Long = (value * SCALE_FACTOR).toLong()
 

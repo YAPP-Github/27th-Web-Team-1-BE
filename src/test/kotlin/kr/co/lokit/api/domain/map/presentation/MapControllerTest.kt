@@ -9,7 +9,9 @@ import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.BoundingBoxResponse
+import kr.co.lokit.api.domain.map.dto.HomeResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.map.dto.MapMeResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.userAuth
@@ -25,6 +27,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.eq
 
 @WebMvcTest(MapController::class)
 class MapControllerTest {
@@ -57,6 +61,17 @@ class MapControllerTest {
 
     @MockitoBean
     lateinit var permissionService: PermissionService
+
+    private fun createMapMeResponse(): MapMeResponse =
+        MapMeResponse(
+            location = LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            boundingBox = BoundingBoxResponse(west = 126.9, south = 37.4, east = 127.1, north = 37.6),
+            totalHistoryCount = 0,
+            albums = emptyList<HomeResponse.Companion.AlbumThumbnails>(),
+            dataVersion = 1L,
+            clusters = emptyList(),
+            photos = null,
+        )
 
     @Test
     fun `앨범 지도 정보 조회 성공`() {
@@ -103,6 +118,25 @@ class MapControllerTest {
                     .with(authentication(userAuth()))
                     .param("query", "스타벅스"),
             ).andExpect(status().isOk)
+    }
+
+    @Test
+    fun `지도 ME v1_1 조회 성공`() {
+        doReturn(createMapMeResponse()).`when`(getMapUseCase).getMe(anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyObject(), anyObject())
+
+        mockMvc
+            .perform(
+                get("/map/me")
+                    .with(authentication(userAuth()))
+                    .header("X-API-VERSION", "1.1")
+                    .param("west", "126.9")
+                    .param("south", "37.4")
+                    .param("east", "127.1")
+                    .param("north", "37.6")
+                    .param("zoom", "12.0"),
+            ).andExpect(status().isOk)
+
+        verify(getMapUseCase).getMe(eq(1L), eq(126.9), eq(37.4), eq(127.1), eq(37.6), eq(12.0), eq(null), eq(null))
     }
 
     @Test

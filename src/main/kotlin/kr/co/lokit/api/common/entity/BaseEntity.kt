@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.Version
 import kr.co.lokit.api.common.exception.entityIdNotInitialized
+import kr.co.lokit.api.common.util.orZero
 import org.hibernate.annotations.SoftDelete
 import org.hibernate.proxy.HibernateProxy
 import org.springframework.data.annotation.CreatedDate
@@ -63,5 +64,5 @@ abstract class BaseEntity {
         return id == otherId
     }
 
-    override fun hashCode(): Int = id?.hashCode() ?: 0
+    override fun hashCode(): Int = id?.hashCode().orZero()
 }

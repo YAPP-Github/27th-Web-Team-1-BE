@@ -10,6 +10,7 @@ import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
+import kr.co.lokit.api.common.util.orZero
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCache
@@ -61,7 +62,7 @@ class MapPhotosCacheService(
         coupleMutations.remove(coupleId)
     }
 
-    fun getVersion(coupleId: Long?): Long = coupleId?.let { coupleVersions[it]?.get() } ?: 0L
+    fun getVersion(coupleId: Long?): Long = coupleId?.let { coupleVersions[it]?.get() }.orZero()
 
     fun getVersion(
         _zoom: Int,
@@ -101,7 +102,7 @@ class MapPhotosCacheService(
             return 0L
         }
         val mutationVersion = getAlbumScopedMutationVersion(coupleId, albumId)
-        return (fnv64(coupleId, albumId ?: 0L, mutationVersion) and Long.MAX_VALUE)
+        return (fnv64(coupleId, albumId.orZero(), mutationVersion) and Long.MAX_VALUE)
     }
 
     private fun fnv64(vararg values: Long): Long {
@@ -364,7 +365,7 @@ class MapPhotosCacheService(
         for (coord in requestedCoords) {
             val baseKey = MapCacheKeyFactory.buildCellBaseKey(zoom, coord.first, coord.second, coupleId, albumId)
             val cachedVersion = latestCellVersionByBaseKey[baseKey] ?: continue
-            val requiredVersion = latestMutationByCell[coord] ?: 0L
+            val requiredVersion = latestMutationByCell[coord].orZero()
             if (cachedVersion < requiredVersion) {
                 continue
             }
@@ -409,7 +410,7 @@ class MapPhotosCacheService(
             if (coord !in requestedCoords) {
                 continue
             }
-            val current = latestByCell[coord] ?: 0L
+            val current = latestByCell[coord].orZero()
             if (mutation.sequence > current) {
                 latestByCell[coord] = mutation.sequence
             }
@@ -497,7 +498,7 @@ class MapPhotosCacheService(
             return
         }
 
-        val targetAlbum = albumId ?: 0L
+        val targetAlbum = albumId.orZero()
         val keysToInvalidate =
             keys.filter { key ->
                 val parsed = MapCacheKeyFactory.parseCellKey(key) ?: return@filter false
@@ -543,7 +544,7 @@ class MapPhotosCacheService(
             return
         }
 
-        val targetAlbum = albumId ?: 0L
+        val targetAlbum = albumId.orZero()
         val keysToInvalidate =
             keys.filter { key ->
                 val parsed = MapCacheKeyFactory.parseIndividualKey(key) ?: return@filter false

@@ -1,5 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.common.util.orFalse
+
 object AddressFormatter {
     private val buildingNumberRegex = Regex("^\\d+(-\\d+)?$")
     private val roadRegex = Regex(".*(대로|로)$")
@@ -19,7 +21,7 @@ object AddressFormatter {
 
         val roadToken = tokens[roadIndex]
         val nextToken = tokens.getOrNull(roadIndex + 1)
-        val hasBranch = nextToken?.matches(branchRoadRegex) ?: false
+        val hasBranch = nextToken?.matches(branchRoadRegex).orFalse()
 
         return if (hasBranch) {
             "$roadToken $nextToken"

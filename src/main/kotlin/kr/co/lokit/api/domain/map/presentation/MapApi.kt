@@ -84,6 +84,80 @@ interface MapApi {
     ): MapMeResponse
 
     @Operation(
+        summary = "지도 ME 조회 v1.1 (홈 + 사진 조회 통합)",
+        description = """
+            홈 정보와 지도 사진을 한 번에 조회합니다.
+
+            - v1.1은 지도 범위(west, south, east, north)를 직접 입력받아 조회합니다.
+            - 줌 레벨과 바운딩 박스 기반 사진/클러스터 분기 로직은 기존과 동일합니다.
+        """,
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = [Content(schema = Schema(implementation = MapMeResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청 파라미터",
+                content = [Content()],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증 필요",
+                content = [Content()],
+            ),
+        ],
+    )
+    fun getMe(
+        @Parameter(hidden = true) userId: Long,
+        @Parameter(
+            description = "서쪽 경도 (최소 경도)",
+            example = "126.9",
+            required = true,
+        )
+        @RequestParam west: Double,
+        @Parameter(
+            description = "남쪽 위도 (최소 위도)",
+            example = "37.4",
+            required = true,
+        )
+        @RequestParam south: Double,
+        @Parameter(
+            description = "동쪽 경도 (최대 경도)",
+            example = "127.1",
+            required = true,
+        )
+        @RequestParam east: Double,
+        @Parameter(
+            description = "북쪽 위도 (최대 위도)",
+            example = "37.6",
+            required = true,
+        )
+        @RequestParam north: Double,
+        @Parameter(
+            description = "줌 레벨(소수점 지원). 15 미만이면 클러스터링, 15 이상이면 개별 사진 반환",
+            example = "12.5",
+            required = true,
+        )
+        @RequestParam zoom: Double,
+        @Parameter(
+            description = "앨범 ID (선택). 지정 시 해당 앨범의 사진만 조회",
+            example = "1",
+            required = false,
+        )
+        @RequestParam albumId: Long?,
+        @Parameter(
+            description = "이전 응답의 dataVersion. 클라이언트 캐시 동기화 판단에 사용",
+            example = "3",
+            required = false,
+        )
+        @RequestParam lastDataVersion: Long?,
+    ): MapMeResponse
+
+    @Operation(
         summary = "클러스터 내 사진 목록 조회",
         description = """
             클러스터 ID를 기반으로 해당 그리드 셀 영역 내의 모든 사진을 조회합니다.

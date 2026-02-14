@@ -88,9 +88,9 @@ class LoggingInterceptor(
     ) {
         val method = request.method
         val uri = request.requestURI
-        val query = request.queryString?.let { "?$it" } ?: ""
-        val requestBody = wrappedRequest?.let { getBody(it.contentAsByteArray, it.contentType) } ?: ""
-        val responseBody = wrappedResponse?.let { getBody(it.contentAsByteArray, it.contentType) } ?: ""
+        val query = request.queryString?.let { "?$it" }.orEmpty()
+        val requestBody = wrappedRequest?.let { getBody(it.contentAsByteArray, it.contentType) }.orEmpty()
+        val responseBody = wrappedResponse?.let { getBody(it.contentAsByteArray, it.contentType) }.orEmpty()
 
         val sb = StringBuilder()
         sb.appendLine("$method $uri$query → $status (${latency}ms)")

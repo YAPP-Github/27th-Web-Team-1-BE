@@ -10,6 +10,7 @@ import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
+import kr.co.lokit.api.common.util.orZero
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
@@ -184,5 +185,5 @@ class JpaAlbumRepository(
     ): Boolean = albumJpaRepository.existsByCoupleIdAndTitle(coupleId, title)
 
     @Transactional(readOnly = true)
-    override fun photoCountSumByUserId(userId: Long): Int = albumJpaRepository.sumPhotoCountByUserId(userId) ?: 0
+    override fun photoCountSumByUserId(userId: Long): Int = albumJpaRepository.sumPhotoCountByUserId(userId).orZero()
 }
