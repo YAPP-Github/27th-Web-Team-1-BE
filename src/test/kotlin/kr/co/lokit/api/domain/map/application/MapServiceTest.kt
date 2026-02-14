@@ -12,6 +12,7 @@ import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
+import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createAlbumBounds
 import kr.co.lokit.api.fixture.createCouple
 import org.junit.jupiter.api.BeforeEach
@@ -19,6 +20,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyDouble
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.ArgumentMatchers.isNull
 import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
@@ -206,5 +210,33 @@ class MapServiceTest {
         assertEquals(1, result.places.size)
         assertEquals("스타벅스 강남역점", result.places[0].placeName)
         verify(mapClientPort).searchPlaces("스타벅스")
+    }
+
+    @Test
+    fun `기본 앨범 요청의 dataVersion 계산에는 정규화된 albumId를 사용한다`() {
+        val defaultAlbumId = 10L
+        val currentVersion = 7L
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
+        `when`(albumRepository.findById(defaultAlbumId)).thenReturn(createAlbum(id = defaultAlbumId, isDefault = true))
+        `when`(mapPhotosCacheService.getVersion(anyInt(), any(), eq(1L), isNull())).thenReturn(currentVersion)
+        `when`(mapClientPort.reverseGeocode(anyDouble(), anyDouble())).thenReturn(
+            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+        )
+        `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
+        `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
+
+        val result =
+            mapService.getMe(
+                userId = 1L,
+                longitude = 127.0,
+                latitude = 37.5,
+                zoom = 14,
+                bbox = BBox(126.9, 37.4, 127.1, 37.6),
+                albumId = defaultAlbumId,
+                lastDataVersion = currentVersion,
+            )
+
+        assertEquals(currentVersion, result.dataVersion)
+        verify(mapPhotosCacheService).getVersion(anyInt(), any(), eq(1L), isNull())
     }
 }

@@ -1,7 +1,7 @@
 # Lokit
 
 > 우리만의 이야기를, 지도에 Lokit
-> 사진과 장소를 함께 기록하는 지도 기반 앨범 서비스
+> 함께 기록하고, 함께 쌓아가는 커플 아카이빙 서비스
 
 Lokit은 사진을 앨범 단위로 관리하고, 촬영 위치를 기반으로 지도 위에서 추억을 한눈에 돌아볼 수 있는 모바일 중심 서비스입니다.
 
@@ -116,9 +116,8 @@ val (locationFuture, albumsFuture, photosFuture) =
 - 값이 같으면 `clusters`/`photos`만 null로 내려가며, 위치/앨범 목록/집계 값은 계속 응답됩니다.
 - 현재 증분 버전 파라미터(`lastDataVersion`)는 `/map/me`에만 제공됩니다.
 
-> 참고: 기본 앨범(`isDefault=true`) 요청 시 `dataVersion` 계산에는 원본 `albumId`가 사용되고,
-> 실제 사진 조회에는 정규화된 `albumId(null)`가 사용됩니다.
-> 이 차이로 기본 앨범 화면에서 일부 변경을 놓칠 수 있어 보정이 필요합니다.
+> 참고: 기본 앨범(`isDefault=true`) 요청은 `albumId`를 `null`로 정규화하여 처리합니다.
+> `dataVersion` 계산과 실제 사진 조회 모두 동일한 정규화 기준을 사용합니다.
 
 **Technical Decisions & Trade-offs**
 

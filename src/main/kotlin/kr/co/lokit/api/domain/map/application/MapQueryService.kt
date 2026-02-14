@@ -52,13 +52,7 @@ class MapQueryService(
             return emptyPhotosResponse(zoom)
         }
 
-        val effectiveAlbumId =
-            if (isValidId(albumId) && isValidId(userId)) {
-                val album = albumRepository.findById(albumId!!)
-                if (album?.isDefault == true) null else albumId
-            } else {
-                albumId
-            }
+        val effectiveAlbumId = resolveEffectiveAlbumId(userId, albumId)
 
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
             mapPhotosCacheService.getClusteredPhotos(zoom, boundedBbox, coupleId, effectiveAlbumId)
@@ -118,7 +112,8 @@ class MapQueryService(
     ): MapMeResponse {
         val homeBBox = BBox.fromCenter(zoom, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
         val coupleId = coupleRepository.findByUserId(userId)?.id
-        val currentVersion = mapPhotosCacheService.getVersion(zoom, homeBBox, coupleId, albumId)
+        val effectiveAlbumId = resolveEffectiveAlbumId(userId, albumId)
+        val currentVersion = mapPhotosCacheService.getVersion(zoom, homeBBox, coupleId, effectiveAlbumId)
         val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
 
         val (locationFuture, albumsFuture, photosFuture) =
@@ -141,7 +136,7 @@ class MapQueryService(
                             null
                         } else {
                             dbSemaphore.withPermit {
-                                getPhotos(zoom, homeBBox, userId, albumId)
+                                getPhotos(zoom, homeBBox, userId, effectiveAlbumId)
                             }
                         }
                     },
@@ -186,6 +181,17 @@ class MapQueryService(
 
     override fun searchPlaces(query: String): PlaceSearchResponse =
         PlaceSearchResponse(places = mapClientPort.searchPlaces(query))
+
+    private fun resolveEffectiveAlbumId(
+        userId: Long?,
+        albumId: Long?,
+    ): Long? =
+        if (isValidId(albumId) && isValidId(userId)) {
+            val album = albumRepository.findById(albumId!!)
+            if (album?.isDefault == true) null else albumId
+        } else {
+            albumId
+        }
 
     private fun emptyPhotosResponse(zoom: Int): MapPhotosResponse =
         MapPhotosResponse(
