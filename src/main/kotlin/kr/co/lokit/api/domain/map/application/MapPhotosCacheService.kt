@@ -30,6 +30,7 @@ import kotlin.math.tan
 class MapPhotosCacheService(
     private val mapQueryPort: MapQueryPort,
     private val cacheManager: CacheManager,
+    private val clusterBoundaryMergeStrategy: ClusterBoundaryMergeStrategy,
 ) {
     data class CachedCell(
         val response: ClusterResponse?,
@@ -159,7 +160,7 @@ class MapPhotosCacheService(
                 sequence = sequence,
                 prefetchCoordToKey = prefetchCoordToKey,
             )
-            return MapPhotosResponse(clusters = cachedResponses)
+            return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(cachedResponses, zoom))
         }
 
         val requestedCoords = uncachedKeys.mapNotNull { keyToCoord[it] }.toSet()
@@ -188,7 +189,7 @@ class MapPhotosCacheService(
             prefetchCoordToKey = prefetchCoordToKey,
         )
 
-        return MapPhotosResponse(clusters = cachedResponses + newResponses)
+        return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(cachedResponses + newResponses, zoom))
     }
 
     private fun schedulePrefetch(
@@ -551,7 +552,7 @@ class MapPhotosCacheService(
                 coupleId = coupleId,
                 albumId = albumId,
             )
-        return MapPhotosResponse(clusters = clusters.map { it.toResponse(zoom) })
+        return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(clusters.map { it.toResponse(zoom) }, zoom))
     }
 
     fun buildCellKey(

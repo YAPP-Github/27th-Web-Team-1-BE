@@ -58,6 +58,9 @@ class MapServiceTest {
     @Mock
     lateinit var mapPhotosCacheService: MapPhotosCacheService
 
+    @Mock
+    lateinit var clusterBoundaryMergeStrategy: ClusterBoundaryMergeStrategy
+
     lateinit var mapService: MapQueryService
 
     @BeforeEach
@@ -70,6 +73,7 @@ class MapServiceTest {
                 coupleRepository,
                 mapClientPort,
                 mapPhotosCacheService,
+                clusterBoundaryMergeStrategy,
             )
     }
 

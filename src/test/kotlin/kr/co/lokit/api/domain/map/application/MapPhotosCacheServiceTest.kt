@@ -38,7 +38,7 @@ class MapPhotosCacheServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = MapPhotosCacheService(mapQueryPort, cacheManager)
+        service = MapPhotosCacheService(mapQueryPort, cacheManager, LegacyClusterBoundaryMergeStrategy())
     }
 
     // --- buildCellKey 테스트 ---
@@ -242,7 +242,7 @@ class MapPhotosCacheServiceTest {
 
         // 캐시에 셀 데이터를 미리 넣어둔다
         val zoom = 14
-        val tempService = MapPhotosCacheService(mapQueryPort, cacheManager)
+        val tempService = MapPhotosCacheService(mapQueryPort, cacheManager, LegacyClusterBoundaryMergeStrategy())
         val gridSize =
             kr.co.lokit.api.domain.map.domain.GridValues
                 .getGridSize(zoom)
@@ -309,6 +309,97 @@ class MapPhotosCacheServiceTest {
         val result = service.getClusteredPhotos(14, bbox, null, null)
 
         assertNotNull(result)
+    }
+
+    @Test
+    fun `인접 셀 경계에서 가까운 클러스터는 병합된다`() {
+        `when`(cacheManager.getCache("mapCells")).thenReturn(null)
+        val bbox = BBox(126.9, 37.3, 127.2, 37.4)
+        val now = LocalDateTime.now()
+        val dbResult =
+            listOf(
+                ClusterProjection(
+                    cellX = 3085,
+                    cellY = 978,
+                    count = 1,
+                    thumbnailUrl = "a.jpg",
+                    centerLongitude = 127.112588277624,
+                    centerLatitude = 37.3602093121085,
+                    takenAt = now,
+                ),
+                ClusterProjection(
+                    cellX = 3085,
+                    cellY = 979,
+                    count = 1,
+                    thumbnailUrl = "b.jpg",
+                    centerLongitude = 127.108097457244,
+                    centerLatitude = 37.3661737923199,
+                    takenAt = now,
+                ),
+            )
+        `when`(
+            mapQueryPort.findClustersWithinBBox(
+                west = anyDouble(),
+                south = anyDouble(),
+                east = anyDouble(),
+                north = anyDouble(),
+                gridSize = anyDouble(),
+                coupleId = isNull(),
+                albumId = isNull(),
+            ),
+        ).thenReturn(dbResult)
+
+        val result = MapPhotosCacheService(mapQueryPort, cacheManager, DistanceBasedClusterBoundaryMergeStrategy())
+            .getClusteredPhotos(11, bbox, null, null)
+
+        assertNotNull(result.clusters)
+        assertEquals(1, result.clusters!!.size)
+        assertEquals(2, result.clusters!![0].count)
+    }
+
+    @Test
+    fun `인접 셀이라도 충분히 멀면 병합되지 않는다`() {
+        `when`(cacheManager.getCache("mapCells")).thenReturn(null)
+        val bbox = BBox(126.9, 37.3, 127.2, 37.4)
+        val now = LocalDateTime.now()
+        val dbResult =
+            listOf(
+                ClusterProjection(
+                    cellX = 100,
+                    cellY = 200,
+                    count = 1,
+                    thumbnailUrl = "a.jpg",
+                    centerLongitude = 127.0,
+                    centerLatitude = 37.0,
+                    takenAt = now,
+                ),
+                ClusterProjection(
+                    cellX = 100,
+                    cellY = 201,
+                    count = 1,
+                    thumbnailUrl = "b.jpg",
+                    centerLongitude = 127.05,
+                    centerLatitude = 37.1,
+                    takenAt = now,
+                ),
+            )
+        `when`(
+            mapQueryPort.findClustersWithinBBox(
+                west = anyDouble(),
+                south = anyDouble(),
+                east = anyDouble(),
+                north = anyDouble(),
+                gridSize = anyDouble(),
+                coupleId = isNull(),
+                albumId = isNull(),
+            ),
+        ).thenReturn(dbResult)
+
+        val result = MapPhotosCacheService(mapQueryPort, cacheManager, DistanceBasedClusterBoundaryMergeStrategy())
+            .getClusteredPhotos(11, bbox, null, null)
+
+        assertNotNull(result.clusters)
+        assertEquals(2, result.clusters!!.size)
     }
 
     // --- getIndividualPhotos 테스트 ---
