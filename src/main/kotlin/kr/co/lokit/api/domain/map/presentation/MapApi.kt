@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam
 @Tag(name = "Map", description = "지도 API")
 interface MapApi {
     @Operation(
+        operationId = "getMapMeV1_0",
         summary = "지도 ME 조회 (홈 + 사진 조회 통합)",
         description = """
             홈 정보와 지도 사진을 한 번에 조회합니다.
@@ -84,6 +85,7 @@ interface MapApi {
     ): MapMeResponse
 
     @Operation(
+        operationId = "getMapMeV1_1",
         summary = "지도 ME 조회 v1.1 (홈 + 사진 조회 통합)",
         description = """
             홈 정보와 지도 사진을 한 번에 조회합니다.
