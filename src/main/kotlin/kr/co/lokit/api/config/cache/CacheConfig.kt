@@ -18,7 +18,7 @@ class CacheConfig {
         cacheManager.setCaches(
             listOf(
                 CaffeineCache(
-                    "reverseGeocode",
+                    CacheNames.REVERSE_GEOCODE,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
@@ -26,7 +26,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "searchPlaces",
+                    CacheNames.SEARCH_PLACES,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
@@ -34,7 +34,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "userDetails",
+                    CacheNames.USER_DETAILS,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -42,7 +42,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "photo",
+                    CacheNames.PHOTO,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -50,7 +50,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "album",
+                    CacheNames.ALBUM,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -58,7 +58,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "albumCouple",
+                    CacheNames.ALBUM_COUPLE,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -66,7 +66,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "userCouple",
+                    CacheNames.USER_COUPLE,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -74,7 +74,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "coupleAlbums",
+                    CacheNames.COUPLE_ALBUMS,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
@@ -82,7 +82,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "mapPhotos",
+                    CacheNames.MAP_PHOTOS,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -90,7 +90,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "mapCells",
+                    CacheNames.MAP_CELLS,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -98,7 +98,7 @@ class CacheConfig {
                         .build(),
                 ),
                 CaffeineCache(
-                    "presignedUrl",
+                    CacheNames.PRESIGNED_URL,
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)

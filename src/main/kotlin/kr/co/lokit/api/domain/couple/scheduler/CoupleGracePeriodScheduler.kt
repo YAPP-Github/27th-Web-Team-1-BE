@@ -1,8 +1,8 @@
 package kr.co.lokit.api.domain.couple.scheduler
 
+import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.GracePeriodPolicy
-import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty

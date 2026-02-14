@@ -102,7 +102,7 @@ class OAuthServiceTest {
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
-        whenever(userRepository.apply(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
+        whenever(userRepository.update(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
         setupTokenGeneration()
 
         val result = oAuthService.login(OAuthProvider.KAKAO, "auth-code")
@@ -127,7 +127,7 @@ class OAuthServiceTest {
         val existingUser = User(id = 1L, email = "test@test.com", name = "테스트")
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(existingUser)
-        whenever(userRepository.apply(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
+        whenever(userRepository.update(existingUser.copy(profileImageUrl = null))).thenReturn(existingUser)
         setupTokenGeneration()
 
         oAuthService.login(OAuthProvider.KAKAO, "auth-code")
@@ -148,7 +148,7 @@ class OAuthServiceTest {
             )
 
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(withdrawnUser)
-        whenever(userRepository.apply(withdrawnUser.copy(profileImageUrl = null))).thenReturn(withdrawnUser)
+        whenever(userRepository.update(withdrawnUser.copy(profileImageUrl = null))).thenReturn(withdrawnUser)
         setupTokenGeneration()
 
         val userDetailsCache = mock(Cache::class.java)
@@ -175,7 +175,7 @@ class OAuthServiceTest {
                 withdrawnAt = LocalDateTime.now().minusDays(32),
             )
         whenever(userRepository.findByEmail("test@test.com", "테스트")).thenReturn(withdrawnExpiredUser)
-        whenever(userRepository.apply(withdrawnExpiredUser.copy(profileImageUrl = null))).thenReturn(withdrawnExpiredUser)
+        whenever(userRepository.update(withdrawnExpiredUser.copy(profileImageUrl = null))).thenReturn(withdrawnExpiredUser)
 
         assertThrows<BusinessException.UserRecoveryExpiredException> {
             oAuthService.login(OAuthProvider.KAKAO, "auth-code")

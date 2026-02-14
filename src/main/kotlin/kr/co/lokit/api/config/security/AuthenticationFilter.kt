@@ -17,7 +17,6 @@ class AuthenticationFilter(
     private val authService: AuthService,
     private val cookieGenerator: CookieGenerator,
 ) : OncePerRequestFilter() {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = false
@@ -36,7 +35,7 @@ class AuthenticationFilter(
                 request.requestURI,
                 if (accessToken != null) "present(${accessToken.take(20)}...)" else "null",
                 if (refreshToken != null) "present(${refreshToken.take(20)}...)" else "null",
-                request.cookies?.map { "${it.name}=${it.value.take(10)}..." }?.joinToString(", ") ?: "none"
+                request.cookies?.map { "${it.name}=${it.value.take(10)}..." }?.joinToString(", ") ?: "none",
             )
 
             if (SecurityContextHolder.getContext().authentication != null) {
@@ -85,7 +84,10 @@ class AuthenticationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun getTokenFromCookie(request: HttpServletRequest, name: String): String? =
+    private fun getTokenFromCookie(
+        request: HttpServletRequest,
+        name: String,
+    ): String? =
         request.cookies
             ?.find { it.name == name }
             ?.value

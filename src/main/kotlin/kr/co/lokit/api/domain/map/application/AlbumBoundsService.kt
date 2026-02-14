@@ -21,14 +21,19 @@ class AlbumBoundsService(
         updateAlbumBounds(coupleId, BoundsIdType.COUPLE, longitude, latitude)
     }
 
-    private fun updateAlbumBounds(id: Long, idType: BoundsIdType, longitude: Double, latitude: Double) {
+    private fun updateAlbumBounds(
+        id: Long,
+        idType: BoundsIdType,
+        longitude: Double,
+        latitude: Double,
+    ) {
         val existingBounds = albumBoundsRepository.findByStandardIdAndIdType(id, idType)
         if (existingBounds != null) {
             val expanded = existingBounds.expandedWith(longitude, latitude)
-            albumBoundsRepository.apply(expanded)
+            albumBoundsRepository.update(expanded)
         } else {
             albumBoundsRepository.save(
-                AlbumBounds.createInitial(id, idType, longitude, latitude)
+                AlbumBounds.createInitial(id, idType, longitude, latitude),
             )
         }
     }

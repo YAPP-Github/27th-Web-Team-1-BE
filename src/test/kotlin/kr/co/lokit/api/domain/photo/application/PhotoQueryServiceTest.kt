@@ -1,13 +1,13 @@
 package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.constant.CoupleStatus
-import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
+import kr.co.lokit.api.domain.photo.domain.DeIdentifiedUserProfile
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createPhotoDetail
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -94,7 +94,7 @@ class PhotoQueryServiceTest {
 
         val result = photoQueryService.getPhotoDetail(1L, viewerUserId)
 
-        assertEquals(DeIdentification.DEFAULT_NAME, result.uploaderName)
+        assertEquals(DeIdentifiedUserProfile.DISPLAY_NAME, result.uploaderName)
         assertNull(result.uploaderProfileImageUrl)
     }
 

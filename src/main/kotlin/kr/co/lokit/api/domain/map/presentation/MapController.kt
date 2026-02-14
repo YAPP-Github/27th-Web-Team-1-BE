@@ -3,7 +3,6 @@ package kr.co.lokit.api.domain.map.presentation
 import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
-import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
@@ -27,19 +26,19 @@ class MapController(
         @CurrentUserId userId: Long,
         @RequestParam longitude: Double,
         @RequestParam latitude: Double,
-        @RequestParam zoom: Int,
+        @RequestParam zoom: Double,
         @RequestParam(required = false) albumId: Long?,
         @RequestParam(required = false) lastDataVersion: Long?,
-    ): MapMeResponse =
-        getMapUseCase.getMe(
+    ): MapMeResponse {
+        return getMapUseCase.getMe(
             userId,
             longitude,
             latitude,
             zoom,
-            BBox.fromCenter(zoom, longitude, latitude),
             albumId,
             lastDataVersion,
         )
+    }
 
     @GetMapping("clusters/{clusterId}/photos")
     override fun getClusterPhotos(

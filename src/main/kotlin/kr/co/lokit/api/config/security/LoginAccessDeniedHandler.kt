@@ -16,28 +16,28 @@ import tools.jackson.databind.ObjectMapper
 class LoginAccessDeniedHandler(
     private val objectMapper: ObjectMapper,
 ) : AccessDeniedHandler {
-
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun handle(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        accessDeniedException: AccessDeniedException
+        accessDeniedException: AccessDeniedException,
     ) {
         logger.warn(
             "Access denied: method={}, uri={}, message={}",
             request.method,
             request.requestURI,
-            accessDeniedException.message
+            accessDeniedException.message,
         )
 
         val errorCode = ErrorCode.FORBIDDEN
-        val errorResponse = ApiResponse.failure(
-            status = HttpStatus.FORBIDDEN,
-            detail = accessDeniedException.message ?: errorCode.message,
-            request = request,
-            errorCode = errorCode.code,
-        )
+        val errorResponse =
+            ApiResponse.failure(
+                status = HttpStatus.FORBIDDEN,
+                detail = accessDeniedException.message ?: errorCode.message,
+                request = request,
+                errorCode = errorCode.code,
+            )
 
         response.status = HttpStatus.FORBIDDEN.value()
         response.contentType = MediaType.APPLICATION_JSON_VALUE

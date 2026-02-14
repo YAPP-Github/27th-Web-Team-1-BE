@@ -7,10 +7,9 @@ import org.slf4j.MDC
 import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.util.ContentCachingRequestWrapper
 import org.springframework.web.util.ContentCachingResponseWrapper
-import java.util.UUID
+import java.util.*
 
 class MdcContextFilter : OncePerRequestFilter() {
-
     companion object {
         const val REQUEST_ID = "requestId"
         const val REQUEST_URI = "requestUri"
@@ -53,7 +52,8 @@ class MdcContextFilter : OncePerRequestFilter() {
     }
 
     private fun generateRequestId(): String =
-        UUID.randomUUID()
+        UUID
+            .randomUUID()
             .toString()
             .replace("-", "")
             .substring(0, 8)

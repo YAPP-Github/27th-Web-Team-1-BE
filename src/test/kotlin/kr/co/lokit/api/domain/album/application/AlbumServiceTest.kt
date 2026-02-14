@@ -85,7 +85,7 @@ class AlbumServiceTest {
         val updatedAlbum = createAlbum(id = 1L, title = "새 제목", coupleId = 1L, createdById = 1L)
         `when`(albumRepository.findById(1L)).thenReturn(album)
         `when`(albumRepository.existsByCoupleIdAndTitle(1L, "새 제목")).thenReturn(false)
-        `when`(albumRepository.apply(album.copy(title = "새 제목"))).thenReturn(updatedAlbum)
+        `when`(albumRepository.update(album.copy(title = "새 제목"))).thenReturn(updatedAlbum)
 
         val result = albumCommandService.updateTitle(1L, "새 제목", 1L)
 

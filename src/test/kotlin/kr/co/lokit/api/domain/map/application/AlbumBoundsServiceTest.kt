@@ -44,10 +44,10 @@ class AlbumBoundsServiceTest {
         val coupleBounds = createAlbumBounds(id = 2L, idType = BoundsIdType.COUPLE)
         `when`(albumBoundsRepository.findByStandardIdAndIdType(1L, BoundsIdType.ALBUM)).thenReturn(existingBounds)
         `when`(albumBoundsRepository.findByStandardIdAndIdType(1L, BoundsIdType.COUPLE)).thenReturn(coupleBounds)
-        doReturn(existingBounds).`when`(albumBoundsRepository).apply(anyObject())
+        doReturn(existingBounds).`when`(albumBoundsRepository).update(anyObject())
 
         albumBoundsService.updateBoundsOnPhotoAdd(1L, 1L, 128.0, 38.0)
 
-        verify(albumBoundsRepository, times(2)).apply(anyObject())
+        verify(albumBoundsRepository, times(2)).update(anyObject())
     }
 }

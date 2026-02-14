@@ -27,21 +27,26 @@ class DiscordNotifier(
     @Value("\${discord.webhook.url}") private val webhookUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-    private val restClient = RestClient.builder()
-        .requestFactory(SimpleClientHttpRequestFactory().apply {
-            setConnectTimeout(5_000)
-            setReadTimeout(10_000)
-        })
-        .build()
+    private val restClient =
+        RestClient
+            .builder()
+            .requestFactory(
+                SimpleClientHttpRequestFactory().apply {
+                    setConnectTimeout(5_000)
+                    setReadTimeout(10_000)
+                },
+            ).build()
 
     private val backoffUntil =
-        Caffeine.newBuilder()
+        Caffeine
+            .newBuilder()
             .expireAfterWrite(2, TimeUnit.HOURS)
             .maximumSize(200)
             .build<String, Instant>()
 
     private val backoffStep =
-        Caffeine.newBuilder()
+        Caffeine
+            .newBuilder()
             .expireAfterWrite(2, TimeUnit.HOURS)
             .maximumSize(200)
             .build<String, Int>()
@@ -54,30 +59,36 @@ class DiscordNotifier(
         private const val BATCH_WINDOW_SECONDS = 10L
         private const val MAX_EMBEDS_PER_MESSAGE = 10
         private const val WEBHOOK_MAX_ATTEMPTS = 3
-        private val BACKOFF_DURATIONS = listOf(
-            Duration.ofMinutes(5),
-            Duration.ofMinutes(15),
-            Duration.ofHours(1),
-        )
-        private val KST_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            .withZone(ZoneId.of("Asia/Seoul"))
+        private val BACKOFF_DURATIONS =
+            listOf(
+                Duration.ofMinutes(5),
+                Duration.ofMinutes(15),
+                Duration.ofHours(1),
+            )
+        private val KST_FORMATTER =
+            DateTimeFormatter
+                .ofPattern("yyyy-MM-dd HH:mm:ss")
+                .withZone(ZoneId.of("Asia/Seoul"))
     }
 
     @PreDestroy
     fun notifyShutdown() {
         try {
             val timestamp = KST_FORMATTER.format(Instant.now())
-            val payload = mapOf(
-                "embeds" to listOf(
-                    mapOf(
-                        "title" to "서버 종료",
-                        "color" to 0xFFA500,
-                        "fields" to listOf(
-                            mapOf("name" to "Timestamp", "value" to timestamp, "inline" to false),
+            val payload =
+                mapOf(
+                    "embeds" to
+                        listOf(
+                            mapOf(
+                                "title" to "서버 종료",
+                                "color" to 0xFFA500,
+                                "fields" to
+                                    listOf(
+                                        mapOf("name" to "Timestamp", "value" to timestamp, "inline" to false),
+                                    ),
+                            ),
                         ),
-                    ),
-                ),
-            )
+                )
             sendWebhookWithRetry(payload, "shutdown")
         } catch (e: Exception) {
             log.warn("Discord 종료 알림 전송 실패: ${e.message}")
@@ -89,17 +100,20 @@ class DiscordNotifier(
         Thread.startVirtualThread {
             try {
                 val timestamp = KST_FORMATTER.format(Instant.now())
-                val payload = mapOf(
-                    "embeds" to listOf(
-                        mapOf(
-                            "title" to "서버 배포 완료",
-                            "color" to 0x00FF00,
-                            "fields" to listOf(
-                                mapOf("name" to "Timestamp", "value" to timestamp, "inline" to false),
+                val payload =
+                    mapOf(
+                        "embeds" to
+                            listOf(
+                                mapOf(
+                                    "title" to "서버 배포 완료",
+                                    "color" to 0x00FF00,
+                                    "fields" to
+                                        listOf(
+                                            mapOf("name" to "Timestamp", "value" to timestamp, "inline" to false),
+                                        ),
+                                ),
                             ),
-                        ),
-                    ),
-                )
+                    )
                 sendWebhookWithRetry(payload, "deployment")
             } catch (e: Exception) {
                 log.warn("Discord 배포 알림 전송 실패: ${e.message}")
@@ -107,7 +121,11 @@ class DiscordNotifier(
         }
     }
 
-    fun notify(ex: Exception, request: HttpServletRequest, trace: String? = null) {
+    fun notify(
+        ex: Exception,
+        request: HttpServletRequest,
+        trace: String? = null,
+    ) {
         val deduplicationKey = "${ex::class.simpleName}:${ex.message.hashCode()}"
         val now = Instant.now()
 
@@ -169,7 +187,8 @@ class DiscordNotifier(
         var last: Throwable? = null
         repeat(WEBHOOK_MAX_ATTEMPTS) { attempt ->
             try {
-                restClient.post()
+                restClient
+                    .post()
                     .uri(webhookUrl)
                     .header("Content-Type", "application/json")
                     .body(payload)
@@ -205,12 +224,13 @@ class DiscordNotifier(
         val trace: String? = null,
     ) {
         fun toEmbed(): Map<String, Any> {
-            val fields = mutableListOf(
-                field("Message", message),
-                field("Request", "$method $uri"),
-                field("Timestamp", timestamp),
-                field("Stacktrace", "```\n$stacktrace\n```"),
-            )
+            val fields =
+                mutableListOf(
+                    field("Message", message),
+                    field("Request", "$method $uri"),
+                    field("Timestamp", timestamp),
+                    field("Stacktrace", "```\n$stacktrace\n```"),
+                )
             if (!trace.isNullOrEmpty()) {
                 fields.add(field("Trace", "```\n$trace\n```"))
             }
@@ -221,7 +241,9 @@ class DiscordNotifier(
             )
         }
 
-        private fun field(name: String, value: String) =
-            mapOf("name" to name, "value" to value, "inline" to false)
+        private fun field(
+            name: String,
+            value: String,
+        ) = mapOf("name" to name, "value" to value, "inline" to false)
     }
 }

@@ -5,5 +5,9 @@ import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 
 interface CreatePhotoUseCase {
     fun create(photo: Photo): Photo
-    fun generatePresignedUrl(idempotencyKey: String?, contentType: String): PresignedUrl
+
+    fun generatePresignedUrl(
+        idempotencyKey: String?,
+        contentType: String,
+    ): PresignedUrl
 }

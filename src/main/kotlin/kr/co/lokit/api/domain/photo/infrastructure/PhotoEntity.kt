@@ -8,6 +8,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
+import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
@@ -54,8 +55,26 @@ class PhotoEntity(
     @Column(length = 1000)
     var description: String? = null
 
-    fun updateLocation(longitude: Double, latitude: Double) {
+    fun updateLocation(
+        longitude: Double,
+        latitude: Double,
+    ) {
         this.location = createPoint(longitude, latitude)
+    }
+
+    fun apply(
+        photo: Photo,
+        album: AlbumEntity,
+        uploadedBy: UserEntity,
+    ) {
+        this.album = album
+        this.uploadedBy = uploadedBy
+        this.url = photo.url
+        this.description = photo.description
+        this.coupleId = album.couple.nonNullId()
+        this.address = photo.address ?: this.address
+        this.takenAt = photo.takenAt
+        updateLocation(photo.location.longitude, photo.location.latitude)
     }
 
     companion object {

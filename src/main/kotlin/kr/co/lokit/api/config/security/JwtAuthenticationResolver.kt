@@ -11,13 +11,12 @@ class JwtAuthenticationResolver(
     private val jwtTokenProvider: JwtTokenProvider,
     private val userDetailsService: CustomUserDetailsService,
 ) : AuthenticationResolver {
-
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun support(credentials: String): Boolean = jwtTokenProvider.canParse(credentials)
 
-    override fun authenticate(credentials: String): UsernamePasswordAuthenticationToken? {
-        return try {
+    override fun authenticate(credentials: String): UsernamePasswordAuthenticationToken? =
+        try {
             val username = jwtTokenProvider.getUsernameFromToken(credentials)
             logger.debug("JWT parsed, username={}", username)
             val userDetails = userDetailsService.loadUserByUsername(username)
@@ -32,5 +31,4 @@ class JwtAuthenticationResolver(
             logger.error("JWT authentication failed: {}", e.message)
             null
         }
-    }
 }

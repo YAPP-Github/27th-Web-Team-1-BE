@@ -12,4 +12,10 @@ data class User(
     var profileImageUrl: String? = null,
     val status: AccountStatus = AccountStatus.ACTIVE,
     val withdrawnAt: LocalDateTime? = null,
-)
+) {
+    companion object {
+        private const val EMAIL_LOCK_KEY_PREFIX = "email:"
+
+        fun emailLockKey(email: String): String = "$EMAIL_LOCK_KEY_PREFIX$email"
+    }
+}

@@ -5,7 +5,7 @@ import kr.co.lokit.api.domain.map.dto.ClusterResponse
 class LegacyClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     override fun mergeClusters(
         clusters: List<ClusterResponse>,
-        zoom: Int,
+        zoomLevel: Double,
     ): List<ClusterResponse> = clusters
 
     override fun resolveClusterCells(

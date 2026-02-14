@@ -16,14 +16,18 @@ class FileConfig(
     @Value("\${aws.s3.bucket}") private val bucket: String,
 ) {
     @Bean
-    fun s3Client(): S3Client = S3Client.builder()
-        .region(Region.of(region))
-        .credentialsProvider(DefaultCredentialsProvider.create())
-        .build()
+    fun s3Client(): S3Client =
+        S3Client
+            .builder()
+            .region(Region.of(region))
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build()
 
     @Bean
-    fun s3Presigner(): S3Presigner = S3Presigner.builder()
-        .region(Region.of(region))
-        .credentialsProvider(DefaultCredentialsProvider.create())
-        .build()
+    fun s3Presigner(): S3Presigner =
+        S3Presigner
+            .builder()
+            .region(Region.of(region))
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build()
 }

@@ -10,9 +10,7 @@ class KakaoOAuthClientAdapter(
     override val provider: OAuthProvider
         get() = kakaoOAuthClient.provider
 
-    override fun getAccessToken(code: String): String =
-        kakaoOAuthClient.getAccessToken(code)
+    override fun getAccessToken(code: String): String = kakaoOAuthClient.getAccessToken(code)
 
-    override fun getUserInfo(accessToken: String): OAuthUserInfo =
-        kakaoOAuthClient.getUserInfo(accessToken)
+    override fun getUserInfo(accessToken: String): OAuthUserInfo = kakaoOAuthClient.getUserInfo(accessToken)
 }

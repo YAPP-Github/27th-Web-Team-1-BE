@@ -20,7 +20,10 @@ fun AlbumEntity.toDomain(): Album =
         this.photos = this@toDomain.photos.map { it.toDomain() }
     }
 
-fun Album.toEntity(couple: CoupleEntity, createdBy: UserEntity): AlbumEntity =
+fun Album.toEntity(
+    couple: CoupleEntity,
+    createdBy: UserEntity,
+): AlbumEntity =
     AlbumEntity(
         title = this.title,
         couple = couple,
@@ -34,17 +37,20 @@ fun AlbumRequest.toDomain(): Album =
     )
 
 fun List<Album>.toSelectableResponse(): SelectableAlbumResponse =
-    SelectableAlbumResponse(map {
-        val actualPhotoCount = if (it.isDefault) {
-            it.photos.size
-        } else {
-            it.photoCount
-        }
+    SelectableAlbumResponse(
+        map {
+            val actualPhotoCount =
+                if (it.isDefault) {
+                    it.photos.size
+                } else {
+                    it.photoCount
+                }
 
-        SelectableAlbumResponse.SelectableAlbum(
-            id = it.id,
-            title = it.title,
-            photoCount = actualPhotoCount,
-            thumbnailUrl = it.thumbnail?.url,
-        )
-    })
+            SelectableAlbumResponse.SelectableAlbum(
+                id = it.id,
+                title = it.title,
+                photoCount = actualPhotoCount,
+                thumbnailUrl = it.thumbnail?.url,
+            )
+        },
+    )

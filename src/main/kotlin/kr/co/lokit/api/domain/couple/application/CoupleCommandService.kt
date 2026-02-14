@@ -2,18 +2,22 @@ package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.constant.CoupleStatus
-import kr.co.lokit.api.common.constant.GracePeriodPolicy
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.common.exception.errorDetailsOf
+import kr.co.lokit.api.config.cache.CacheNames
+import kr.co.lokit.api.config.cache.clearPermissionCaches
+import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
+import kr.co.lokit.api.domain.couple.domain.CoupleReconnectRejectReason
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CachePut
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 @Service
 class CoupleCommandService(
@@ -23,7 +27,7 @@ class CoupleCommandService(
     JoinCoupleUseCase {
     @OptimisticRetry
     @Transactional
-    @CachePut(cacheNames = ["userCouple"], key = "#userId")
+    @CachePut(cacheNames = [CacheNames.USER_COUPLE], key = "#userId")
     override fun createIfNone(
         couple: Couple,
         userId: Long,
@@ -31,60 +35,22 @@ class CoupleCommandService(
 
     @OptimisticRetry
     @Transactional
-    @CachePut(cacheNames = ["userCouple"], key = "#userId")
+    @CachePut(cacheNames = [CacheNames.USER_COUPLE], key = "#userId")
     override fun joinByInviteCode(
         inviteCode: String,
         userId: Long,
     ): Couple {
-        val targetCouple =
-            coupleRepository.findByInviteCode(inviteCode)
-                ?: throw entityNotFound<Couple>("inviteCode", inviteCode)
-
+        val targetCouple = resolveJoinTarget(inviteCode)
         if (targetCouple.status == CoupleStatus.EXPIRED) {
             throw BusinessException.CoupleReconnectExpiredException(
-                errors = mapOf("coupleId" to targetCouple.id.toString()),
+                errors = errorDetailsOf(ErrorField.COUPLE_ID to targetCouple.id),
             )
         }
 
-        val existingCouple = coupleRepository.findByUserId(userId)
-        if (existingCouple != null) {
-            val fullCouple = coupleRepository.findById(existingCouple.id)!!
-            if (fullCouple.userIds.size >= 2) {
-                throw BusinessException.CoupleAlreadyConnectedException(
-                    errors = mapOf("coupleId" to existingCouple.id.toString()),
-                )
-            }
-            coupleRepository.deleteById(existingCouple.id)
-        }
+        detachExistingCoupleIfJoinable(userId)
+        val joined = joinTargetCouple(targetCouple, userId)
 
-        val joined =
-            if (targetCouple.status == CoupleStatus.DISCONNECTED) {
-                val disconnectedAt = targetCouple.disconnectedAt
-                    ?: throw BusinessException.CoupleNotDisconnectedException(
-                        errors = mapOf("coupleId" to targetCouple.id.toString()),
-                    )
-                if (isReconnectWindowExpired(disconnectedAt)) {
-                    throw BusinessException.CoupleReconnectExpiredException(
-                        errors = mapOf("coupleId" to targetCouple.id.toString()),
-                    )
-                }
-                if (targetCouple.userIds.isEmpty()) {
-                    throw BusinessException.CoupleReconnectNotAllowedException(
-                        errors = mapOf(
-                            "coupleId" to targetCouple.id.toString(),
-                            "reason" to "no_remaining_member",
-                        ),
-                    )
-                }
-                coupleRepository.reconnect(targetCouple.id, userId)
-            } else {
-                coupleRepository.addUser(targetCouple.id, userId)
-            }
-
-        cacheManager.getCache("userCouple")?.evict(userId)
-        joined.userIds.forEach { memberId ->
-            cacheManager.getCache("userCouple")?.evict(memberId)
-        }
+        cacheManager.evictUserCoupleCache(userId, *joined.userIds.toLongArray())
         evictPermissionCaches()
 
         return joined
@@ -93,12 +59,49 @@ class CoupleCommandService(
     override fun getInviteCode(userId: Long): String =
         (coupleRepository.findByUserId(userId) ?: throw entityNotFound<Couple>(userId)).inviteCode
 
-    private fun evictPermissionCaches() {
-        cacheManager.getCache("album")?.clear()
-        cacheManager.getCache("photo")?.clear()
-        cacheManager.getCache("albumCouple")?.clear()
+    private fun resolveJoinTarget(inviteCode: String): Couple =
+        coupleRepository.findByInviteCode(inviteCode)
+            ?: throw entityNotFound<Couple>("inviteCode", inviteCode)
+
+    private fun detachExistingCoupleIfJoinable(userId: Long) {
+        val existingCouple = coupleRepository.findByUserId(userId) ?: return
+        val fullCouple = coupleRepository.findById(existingCouple.id)!!
+        if (fullCouple.isFull()) {
+            throw BusinessException.CoupleAlreadyConnectedException(
+                errors = errorDetailsOf(ErrorField.COUPLE_ID to existingCouple.id),
+            )
+        }
+        coupleRepository.deleteById(existingCouple.id)
     }
 
-    private fun isReconnectWindowExpired(disconnectedAt: LocalDateTime): Boolean =
-        disconnectedAt.plusDays(GracePeriodPolicy.RECONNECT_DAYS).isBefore(LocalDateTime.now())
+    private fun joinTargetCouple(
+        targetCouple: Couple,
+        userId: Long,
+    ): Couple {
+        if (targetCouple.status != CoupleStatus.DISCONNECTED) {
+            return coupleRepository.addUser(targetCouple.id, userId)
+        }
+
+        targetCouple.disconnectedAt
+            ?: throw BusinessException.CoupleNotDisconnectedException(
+                errors = errorDetailsOf(ErrorField.COUPLE_ID to targetCouple.id),
+            )
+        if (targetCouple.isReconnectWindowExpired()) {
+            throw BusinessException.CoupleReconnectExpiredException(
+                errors = errorDetailsOf(ErrorField.COUPLE_ID to targetCouple.id),
+            )
+        }
+        if (!targetCouple.hasRemainingMemberForReconnect()) {
+            throw BusinessException.CoupleReconnectNotAllowedException(
+                errors =
+                    errorDetailsOf(
+                        ErrorField.COUPLE_ID to targetCouple.id,
+                        ErrorField.REASON to CoupleReconnectRejectReason.NO_REMAINING_MEMBER.code,
+                    ),
+            )
+        }
+        return coupleRepository.reconnect(targetCouple.id, userId)
+    }
+
+    private fun evictPermissionCaches() = cacheManager.clearPermissionCaches()
 }

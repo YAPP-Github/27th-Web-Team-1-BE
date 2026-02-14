@@ -3,6 +3,7 @@ package kr.co.lokit.api.domain.user.presentation
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
+import kr.co.lokit.api.config.cache.clearAllCaches
 import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.map.infrastructure.AlbumBoundsJpaRepository
@@ -78,7 +79,7 @@ class AdminController(
         userJpaRepository.delete(user)
 
         // 4. 캐시 전체 무효화
-        cacheManager.cacheNames.forEach { cacheManager.getCache(it)?.clear() }
+        cacheManager.clearAllCaches()
 
         return "해킹에 성공하셨습니다. 축하합니다."
     }
@@ -94,7 +95,7 @@ class AdminController(
         if (!adminKey.trim().equals(key.trim(), ignoreCase = true)) {
             return "당신은 이 서버를 해킹할 자격이 없습니다. 안타깝네요 ㅠ0ㅠ"
         }
-        cacheManager.cacheNames.forEach { cacheManager.getCache(it)?.clear() }
+        cacheManager.clearAllCaches()
         return "해킹에 성공하셨습니다. 축하합니다."
     }
 }

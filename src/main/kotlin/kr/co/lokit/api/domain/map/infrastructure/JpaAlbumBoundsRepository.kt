@@ -14,20 +14,22 @@ import org.springframework.transaction.annotation.Transactional
 class JpaAlbumBoundsRepository(
     private val jpaRepository: AlbumBoundsJpaRepository,
 ) : AlbumBoundsRepositoryPort {
-
     override fun save(bounds: AlbumBounds): AlbumBounds {
         val entity = bounds.toEntity()
         return jpaRepository.save(entity).toDomain()
     }
 
     @Transactional(readOnly = true)
-    override fun findByStandardIdAndIdType(standardId: Long, idType: BoundsIdType): AlbumBounds? =
-        jpaRepository.findByStandardIdAndIdType(standardId, idType)?.toDomain()
+    override fun findByStandardIdAndIdType(
+        standardId: Long,
+        idType: BoundsIdType,
+    ): AlbumBounds? = jpaRepository.findByStandardIdAndIdType(standardId, idType)?.toDomain()
 
     @Transactional
-    override fun apply(bounds: AlbumBounds): AlbumBounds {
-        val entity = jpaRepository.findByIdOrNull(bounds.id)
-            ?: throw entityNotFound<AlbumBounds>(bounds.id)
+    override fun update(bounds: AlbumBounds): AlbumBounds {
+        val entity =
+            jpaRepository.findByIdOrNull(bounds.id)
+                ?: throw entityNotFound<AlbumBounds>(bounds.id)
 
         entity.apply {
             minLongitude = bounds.minLongitude

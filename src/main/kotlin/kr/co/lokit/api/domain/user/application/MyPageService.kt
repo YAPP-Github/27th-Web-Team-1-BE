@@ -12,14 +12,20 @@ class MyPageService(
     private val userRepository: UserRepositoryPort,
 ) : UpdateMyPageUseCase {
     @Transactional
-    override fun updateNickname(userId: Long, nickname: String): User {
+    override fun updateNickname(
+        userId: Long,
+        nickname: String,
+    ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        return userRepository.apply(user.copy(name = nickname))
+        return userRepository.update(user.copy(name = nickname))
     }
 
     @Transactional
-    override fun updateProfileImage(userId: Long, profileImageUrl: String): User {
+    override fun updateProfileImage(
+        userId: Long,
+        profileImageUrl: String,
+    ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        return userRepository.apply(user.copy(profileImageUrl = profileImageUrl))
+        return userRepository.update(user.copy(profileImageUrl = profileImageUrl))
     }
 }

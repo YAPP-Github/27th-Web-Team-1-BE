@@ -2,7 +2,12 @@ package kr.co.lokit.api.domain.album.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.common.exception.errorDetailsOf
+import kr.co.lokit.api.config.cache.CacheNames
+import kr.co.lokit.api.config.cache.CacheRegion
+import kr.co.lokit.api.config.cache.evictKey
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.application.port.`in`.CreateAlbumUseCase
 import kr.co.lokit.api.domain.album.application.port.`in`.UpdateAlbumUseCase
@@ -30,16 +35,16 @@ class AlbumCommandService(
         val coupleId =
             albumRepository.findDefaultByUserId(userId)?.coupleId
                 ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
-                    errors = mapOf("userId" to userId.toString()),
+                    errors = errorDetailsOf(ErrorField.USER_ID to userId),
                 )
 
         if (albumRepository.existsByCoupleIdAndTitle(coupleId, album.title)) {
             throw BusinessException.AlbumAlreadyExistsException(
-                errors = mapOf("title" to album.title),
+                errors = errorDetailsOf(ErrorField.TITLE to album.title),
             )
         }
         val saved = albumRepository.save(album, userId)
-        cacheManager.getCache("coupleAlbums")?.evict(coupleId)
+        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, coupleId)
         return saved
     }
 
@@ -55,16 +60,16 @@ class AlbumCommandService(
                 ?: throw entityNotFound<Album>(id)
         if (album.isDefault) {
             throw BusinessException.DefaultAlbumTitleChangeNotAllowedException(
-                errors = mapOf("albumId" to id.toString()),
+                errors = errorDetailsOf(ErrorField.ALBUM_ID to id),
             )
         }
         if (album.title != title && albumRepository.existsByCoupleIdAndTitle(album.coupleId, title)) {
             throw BusinessException.AlbumAlreadyExistsException(
-                errors = mapOf("title" to title),
+                errors = errorDetailsOf(ErrorField.TITLE to title),
             )
         }
-        val updated = albumRepository.apply(album.copy(title = title))
-        cacheManager.getCache("coupleAlbums")?.evict(album.coupleId)
+        val updated = albumRepository.update(album.copy(title = title))
+        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
         return updated
     }
 
@@ -72,8 +77,8 @@ class AlbumCommandService(
     @Transactional
     @Caching(
         evict = [
-            CacheEvict(cacheNames = ["albumCouple"], key = "#id"),
-            CacheEvict(cacheNames = ["album"], key = "#userId + ':' + #id"),
+            CacheEvict(cacheNames = [CacheNames.ALBUM_COUPLE], key = "#id"),
+            CacheEvict(cacheNames = [CacheNames.ALBUM], key = "#userId + ':' + #id"),
         ],
     )
     override fun delete(
@@ -85,11 +90,11 @@ class AlbumCommandService(
                 ?: throw entityNotFound<Album>(id)
         if (album.isDefault) {
             throw BusinessException.DefaultAlbumDeletionNotAllowedException(
-                errors = mapOf("albumId" to id.toString()),
+                errors = errorDetailsOf(ErrorField.ALBUM_ID to id),
             )
         }
         albumRepository.deleteById(id)
-        cacheManager.getCache("coupleAlbums")?.evict(album.coupleId)
+        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
         mapPhotosCacheService.evictForCouple(album.coupleId)
     }
 }

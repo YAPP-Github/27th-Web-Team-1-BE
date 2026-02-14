@@ -15,6 +15,10 @@ data class UpdateNicknameRequest(
 @Schema(description = "프로필 사진 수정 요청")
 data class UpdateProfileImageRequest(
     @field:NotBlank
-    @Schema(description = "프로필 사진 URL", example = "https://example.com/profile.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+        description = "프로필 사진 URL",
+        example = "https://example.com/profile.jpg",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
     val profileImageUrl: String,
 )

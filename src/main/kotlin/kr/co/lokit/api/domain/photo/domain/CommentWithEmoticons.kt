@@ -5,7 +5,13 @@ data class CommentWithEmoticons(
     val userName: String,
     val userProfileImageUrl: String?,
     val emoticons: List<EmoticonSummary>,
-)
+) {
+    fun deIdentified(): CommentWithEmoticons =
+        copy(
+            userName = DeIdentifiedUserProfile.DISPLAY_NAME,
+            userProfileImageUrl = DeIdentifiedUserProfile.hiddenProfileImageUrl(),
+        )
+}
 
 data class EmoticonSummary(
     val emoji: String,

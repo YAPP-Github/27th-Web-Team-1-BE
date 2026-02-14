@@ -34,7 +34,6 @@ class AlbumEntity(
     @Column(nullable = false, columnDefinition = "boolean not null default false")
     val isDefault: Boolean = false,
 ) : BaseEntity() {
-
     @Column(nullable = false)
     var photoCount: Int = 0
         protected set
@@ -42,7 +41,7 @@ class AlbumEntity(
     @OneToMany(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE],
-        mappedBy = "album"
+        mappedBy = "album",
     )
     var photos: MutableList<PhotoEntity> = mutableListOf()
         protected set

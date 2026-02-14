@@ -12,8 +12,8 @@ interface PhotoJpaRepository : JpaRepository<PhotoEntity, Long> {
     fun findByIdWithRelations(id: Long): PhotoEntity?
 
     @Query(
-        "SELECT p FROM Photo p JOIN FETCH p.album JOIN FETCH p.uploadedBy"
-            + " WHERE p.uploadedBy.id = :userId ORDER BY p.takenAt DESC"
+        "SELECT p FROM Photo p JOIN FETCH p.album JOIN FETCH p.uploadedBy" +
+            " WHERE p.uploadedBy.id = :userId ORDER BY p.takenAt DESC",
     )
     fun findAllByUploadedById(userId: Long): List<PhotoEntity>
 

@@ -1,7 +1,10 @@
 package kr.co.lokit.api.domain.couple.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
+import kr.co.lokit.api.config.cache.clearPermissionCaches
+import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
 import org.springframework.cache.CacheManager
@@ -15,23 +18,21 @@ class CoupleDisconnectService(
 ) : DisconnectCoupleUseCase {
     @Transactional
     override fun disconnect(userId: Long) {
-        val couple = coupleRepository.findByUserId(userId)
-            ?: throw BusinessException.CoupleNotFoundException(
-                errors = mapOf("userId" to userId.toString()),
-            )
+        val couple =
+            coupleRepository.findByUserId(userId)
+                ?: throw BusinessException.CoupleNotFoundException(
+                    errors = errorDetailsOf(ErrorField.USER_ID to userId),
+                )
 
         if (couple.status.isDisconnectedOrExpired) {
             if (couple.disconnectedByUserId == userId) {
                 throw BusinessException.CoupleAlreadyDisconnectedException(
-                    errors = mapOf("coupleId" to couple.id.toString()),
+                    errors = errorDetailsOf(ErrorField.COUPLE_ID to couple.id),
                 )
             }
 
             coupleRepository.removeCoupleUser(userId)
-            cacheManager.getCache("userCouple")?.evict(userId)
-            couple.userIds.filter { it != userId }.forEach { partnerId ->
-                cacheManager.getCache("userCouple")?.evict(partnerId)
-            }
+            cacheManager.evictUserCoupleCache(userId, *couple.userIds.filter { it != userId }.toLongArray())
             evictPermissionCaches()
             return
         }
@@ -43,16 +44,9 @@ class CoupleDisconnectService(
         coupleRepository.removeCoupleUser(userId)
 
         // 3. 캐시 무효화
-        cacheManager.getCache("userCouple")?.evict(userId)
-        couple.userIds.filter { it != userId }.forEach { partnerId ->
-            cacheManager.getCache("userCouple")?.evict(partnerId)
-        }
+        cacheManager.evictUserCoupleCache(userId, *couple.userIds.filter { it != userId }.toLongArray())
         evictPermissionCaches()
     }
 
-    private fun evictPermissionCaches() {
-        cacheManager.getCache("album")?.clear()
-        cacheManager.getCache("photo")?.clear()
-        cacheManager.getCache("albumCouple")?.clear()
-    }
+    private fun evictPermissionCaches() = cacheManager.clearPermissionCaches()
 }

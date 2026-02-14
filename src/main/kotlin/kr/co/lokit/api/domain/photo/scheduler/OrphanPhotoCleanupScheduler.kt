@@ -31,32 +31,37 @@ class OrphanPhotoCleanupScheduler(
         val since = LocalDateTime.now().minusDays(1)
         val cutoff = Instant.now().minus(1, ChronoUnit.DAYS)
 
-        val (dbUrlsFuture, s3KeysFuture) = StructuredConcurrency.run { scope ->
-            Pair(
-                scope.fork { photoJpaRepository.findUrlsCreatedSince(since).toSet() },
-                scope.fork { listRecentS3Keys(cutoff) },
-            )
-        }
+        val (dbUrlsFuture, s3KeysFuture) =
+            StructuredConcurrency.run { scope ->
+                Pair(
+                    scope.fork { photoJpaRepository.findUrlsCreatedSince(since).toSet() },
+                    scope.fork { listRecentS3Keys(cutoff) },
+                )
+            }
 
         val dbUrls = dbUrlsFuture.get()
         val recentS3Keys = s3KeysFuture.get()
 
-        val orphanKeys = recentS3Keys.filter { key ->
-            val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, region, key)
-            objectUrl !in dbUrls
-        }
+        val orphanKeys =
+            recentS3Keys.filter { key ->
+                val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, region, key)
+                objectUrl !in dbUrls
+            }
 
         orphanKeys.chunked(MAX_BATCH_DELETE_SIZE).forEach { chunk ->
             retry(actionName = "orphan-delete", context = "chunkSize=${chunk.size}") {
-                val delete = Delete.builder()
-                    .objects(chunk.map { key -> ObjectIdentifier.builder().key(key).build() })
-                    .quiet(true)
-                    .build()
+                val delete =
+                    Delete
+                        .builder()
+                        .objects(chunk.map { key -> ObjectIdentifier.builder().key(key).build() })
+                        .quiet(true)
+                        .build()
                 s3Client.deleteObjects(
-                    DeleteObjectsRequest.builder()
+                    DeleteObjectsRequest
+                        .builder()
                         .bucket(bucket)
                         .delete(delete)
-                        .build()
+                        .build(),
                 )
             }
         }
@@ -71,16 +76,20 @@ class OrphanPhotoCleanupScheduler(
         var continuationToken: String? = null
 
         do {
-            val request = ListObjectsV2Request.builder()
-                .bucket(bucket)
-                .prefix(PREFIX)
-                .apply { continuationToken?.let { continuationToken(it) } }
-                .build()
+            val request =
+                ListObjectsV2Request
+                    .builder()
+                    .bucket(bucket)
+                    .prefix(PREFIX)
+                    .apply { continuationToken?.let { continuationToken(it) } }
+                    .build()
 
-            val response = retry(actionName = "orphan-list-objects", context = "prefix=$PREFIX") {
-                s3Client.listObjectsV2(request)
-            }
-            response.contents()
+            val response =
+                retry(actionName = "orphan-list-objects", context = "prefix=$PREFIX") {
+                    s3Client.listObjectsV2(request)
+                }
+            response
+                .contents()
                 .filter { it.lastModified().isAfter(cutoff) }
                 .forEach { keys.add(it.key()) }
             continuationToken = if (response.isTruncated) response.nextContinuationToken() else null

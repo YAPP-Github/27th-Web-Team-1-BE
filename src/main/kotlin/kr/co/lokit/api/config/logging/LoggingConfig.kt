@@ -12,7 +12,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 class LoggingConfig(
     @Value("\${logging.request.verbose:false}") private val verbose: Boolean,
 ) : WebMvcConfigurer {
-
     @Bean
     fun mdcContextFilter(): MdcContextFilter = MdcContextFilter()
 
@@ -27,7 +26,8 @@ class LoggingConfig(
     fun loggingInterceptor(): LoggingInterceptor = LoggingInterceptor(verbose)
 
     override fun addInterceptors(registry: InterceptorRegistry) {
-        registry.addInterceptor(loggingInterceptor())
+        registry
+            .addInterceptor(loggingInterceptor())
             .addPathPatterns("/**")
     }
 }

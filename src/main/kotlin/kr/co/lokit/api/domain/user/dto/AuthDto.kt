@@ -1,19 +1,12 @@
 package kr.co.lokit.api.domain.user.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import kr.co.lokit.api.domain.user.domain.User
 
 @Schema(description = "로그인 요청")
 data class LoginRequest(
     @Schema(description = "사용자 이메일", example = "user@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
     val email: String,
-) {
-    fun toDomain(): User =
-        User(
-            email = email,
-            name = "user",
-        )
-}
+)
 
 @Schema(description = "JWT 토큰 응답")
 data class JwtTokenResponse(

@@ -1,9 +1,13 @@
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     kotlin("jvm") version "2.2.21"
     kotlin("plugin.spring") version "2.2.21"
     id("org.springframework.boot") version "4.0.1"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "2.2.21"
+    jacoco
 }
 
 group = "kr.co.lokit"
@@ -101,6 +105,94 @@ tasks.withType<Test> {
     testLogging {
         events("skipped", "failed")
         showStandardStreams = false
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.test)
+
+    val coverageExcludes =
+        listOf(
+            "**/config/**",
+            "**/presentation/**",
+            "**/dto/**",
+            "**/infrastructure/**",
+            "**/mapping/**",
+            "**/scheduler/**",
+            "**/application/port/**",
+            "**/common/annotation/**",
+            "**/*Entity*",
+            "**/*Api*",
+            "**/*Properties*",
+            "**/ApiApplication*",
+        )
+
+    classDirectories.setFrom(
+        files(
+            sourceSets.main.get().output.asFileTree.matching {
+                exclude(coverageExcludes)
+            },
+        ),
+    )
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+    dependsOn(tasks.test)
+    enabled =
+        providers
+            .gradleProperty("coverageVerification")
+            .map { it.toBoolean() }
+            .getOrElse(false)
+
+    val coverageExcludes =
+        listOf(
+            "**/config/**",
+            "**/presentation/**",
+            "**/dto/**",
+            "**/infrastructure/**",
+            "**/mapping/**",
+            "**/scheduler/**",
+            "**/application/port/**",
+            "**/common/annotation/**",
+            "**/*Entity*",
+            "**/*Api*",
+            "**/*Properties*",
+            "**/ApiApplication*",
+        )
+
+    classDirectories.setFrom(
+        files(
+            sourceSets.main.get().output.asFileTree.matching {
+                exclude(coverageExcludes)
+            },
+        ),
+    )
+
+    violationRules {
+        rule {
+            enabled = true
+            element = "BUNDLE"
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.50".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.40".toBigDecimal()
+            }
+        }
     }
 }
 

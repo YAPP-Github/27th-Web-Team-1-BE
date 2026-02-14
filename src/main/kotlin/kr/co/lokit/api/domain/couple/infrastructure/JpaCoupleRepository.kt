@@ -1,7 +1,10 @@
 package kr.co.lokit.api.domain.couple.infrastructure
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -28,21 +31,25 @@ class JpaCoupleRepository(
     }
 
     @Transactional(readOnly = true)
-    override fun findById(id: Long): Couple? =
-        coupleJpaRepository.findByIdFetchUsers(id)?.toDomain()
+    override fun findById(id: Long): Couple? = coupleJpaRepository.findByIdFetchUsers(id)?.toDomain()
 
     @Transactional
-    override fun saveWithUser(couple: Couple, userId: Long): Couple {
-        val userEntity = userJpaRepository.findByIdOrNull(userId)
-            ?: throw entityNotFound<User>(userId)
+    override fun saveWithUser(
+        couple: Couple,
+        userId: Long,
+    ): Couple {
+        val userEntity =
+            userJpaRepository.findByIdOrNull(userId)
+                ?: throw entityNotFound<User>(userId)
 
         val coupleEntity = couple.toEntity()
         val savedCouple = coupleJpaRepository.save(coupleEntity)
 
-        val coupleUser = CoupleUserEntity(
-            couple = savedCouple,
-            user = userEntity,
-        )
+        val coupleUser =
+            CoupleUserEntity(
+                couple = savedCouple,
+                user = userEntity,
+            )
         savedCouple.addUser(coupleUser)
 
         val defaultAlbum = AlbumEntity(title = "전체보기", couple = savedCouple, createdBy = userEntity, isDefault = true)
@@ -60,34 +67,40 @@ class JpaCoupleRepository(
         coupleJpaRepository.findByDisconnectedByUserId(userId)?.toDomain()
 
     @Transactional
-    override fun addUser(coupleId: Long, userId: Long): Couple {
-        val coupleEntity = coupleJpaRepository.findByIdFetchUsers(coupleId)
-            ?: throw entityNotFound<Couple>(coupleId)
-        val userEntity = userJpaRepository.findByIdOrNull(userId)
-            ?: throw entityNotFound<User>(userId)
+    override fun addUser(
+        coupleId: Long,
+        userId: Long,
+    ): Couple {
+        val coupleEntity =
+            coupleJpaRepository.findByIdFetchUsers(coupleId)
+                ?: throw entityNotFound<Couple>(coupleId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(userId)
+                ?: throw entityNotFound<User>(userId)
 
-        if (coupleEntity.coupleUsers.size >= MAX_COUPLE_MEMBERS) {
+        if (coupleEntity.coupleUsers.size >= Couple.MAX_MEMBERS) {
             throw BusinessException.CoupleMaxMembersExceededException(
-                errors = mapOf(
-                    "coupleId" to coupleId.toString(),
-                    "maxMembers" to MAX_COUPLE_MEMBERS.toString(),
-                ),
+                errors =
+                    errorDetailsOf(
+                        ErrorField.COUPLE_ID to coupleId,
+                        ErrorField.MAX_MEMBERS to Couple.MAX_MEMBERS,
+                    ),
             )
         }
 
-        val coupleUser = CoupleUserEntity(
-            couple = coupleEntity,
-            user = userEntity,
-        )
+        val coupleUser =
+            CoupleUserEntity(
+                couple = coupleEntity,
+                user = userEntity,
+            )
         coupleEntity.addUser(coupleUser)
 
         return coupleEntity.toDomain()
     }
 
-    @Cacheable(cacheNames = ["userCouple"], key = "#userId", sync = true)
+    @Cacheable(cacheNames = [CacheNames.USER_COUPLE], key = "#userId", sync = true)
     @Transactional(readOnly = true)
-    override fun findByUserId(userId: Long): Couple? =
-        coupleJpaRepository.findByUserId(userId)?.toDomain()
+    override fun findByUserId(userId: Long): Couple? = coupleJpaRepository.findByUserId(userId)?.toDomain()
 
     @Transactional
     override fun deleteById(id: Long) {
@@ -100,24 +113,29 @@ class JpaCoupleRepository(
     }
 
     @Transactional
-    override fun disconnect(coupleId: Long, userId: Long) {
-        val entity = coupleJpaRepository.findByIdOrNull(coupleId)
-            ?: throw entityNotFound<Couple>(coupleId)
+    override fun disconnect(
+        coupleId: Long,
+        userId: Long,
+    ) {
+        val entity =
+            coupleJpaRepository.findByIdOrNull(coupleId)
+                ?: throw entityNotFound<Couple>(coupleId)
         entity.disconnect(userId)
     }
 
     @Transactional
-    override fun reconnect(coupleId: Long, userId: Long): Couple {
-        val entity = coupleJpaRepository.findByIdFetchUsers(coupleId)
-            ?: throw entityNotFound<Couple>(coupleId)
-        val userEntity = userJpaRepository.findByIdOrNull(userId)
-            ?: throw entityNotFound<User>(userId)
+    override fun reconnect(
+        coupleId: Long,
+        userId: Long,
+    ): Couple {
+        val entity =
+            coupleJpaRepository.findByIdFetchUsers(coupleId)
+                ?: throw entityNotFound<Couple>(coupleId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(userId)
+                ?: throw entityNotFound<User>(userId)
         entity.reconnect()
         entity.addUser(CoupleUserEntity(couple = entity, user = userEntity))
         return entity.toDomain()
-    }
-
-    companion object {
-        private const val MAX_COUPLE_MEMBERS = 2
     }
 }

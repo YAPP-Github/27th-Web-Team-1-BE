@@ -7,13 +7,19 @@ interface CoupleRepositoryPort {
 
     fun findById(id: Long): Couple?
 
-    fun saveWithUser(couple: Couple, userId: Long): Couple
+    fun saveWithUser(
+        couple: Couple,
+        userId: Long,
+    ): Couple
 
     fun findByInviteCode(inviteCode: String): Couple?
 
     fun findByDisconnectedByUserId(userId: Long): Couple?
 
-    fun addUser(coupleId: Long, userId: Long): Couple
+    fun addUser(
+        coupleId: Long,
+        userId: Long,
+    ): Couple
 
     fun findByUserId(userId: Long): Couple?
 
@@ -21,8 +27,13 @@ interface CoupleRepositoryPort {
 
     fun removeCoupleUser(userId: Long)
 
-    fun disconnect(coupleId: Long, userId: Long)
+    fun disconnect(
+        coupleId: Long,
+        userId: Long,
+    )
 
-    fun reconnect(coupleId: Long, userId: Long): Couple
+    fun reconnect(
+        coupleId: Long,
+        userId: Long,
+    ): Couple
 }
-

@@ -9,9 +9,10 @@ import org.springframework.stereotype.Component
 class KakaoMapClientAdapter(
     private val kakaoMapClient: KakaoMapClient,
 ) : MapClientPort {
-    override fun reverseGeocode(longitude: Double, latitude: Double): LocationInfoResponse =
-        kakaoMapClient.reverseGeocode(longitude, latitude)
+    override fun reverseGeocode(
+        longitude: Double,
+        latitude: Double,
+    ): LocationInfoResponse = kakaoMapClient.reverseGeocode(longitude, latitude)
 
-    override fun searchPlaces(query: String): List<PlaceResponse> =
-        kakaoMapClient.searchPlaces(query)
+    override fun searchPlaces(query: String): List<PlaceResponse> = kakaoMapClient.searchPlaces(query)
 }

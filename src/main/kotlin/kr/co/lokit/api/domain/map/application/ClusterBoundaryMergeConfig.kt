@@ -16,10 +16,9 @@ class ClusterBoundaryMergeConfig {
         @Value("\${map.cluster.boundary-merge.strategy:distance}") strategy: String,
     ): ClusterBoundaryMergeStrategy {
         val selected =
-            when (strategy.lowercase()) {
-                "legacy" -> LegacyClusterBoundaryMergeStrategy()
-                "distance" -> DistanceBasedClusterBoundaryMergeStrategy()
-                else -> DistanceBasedClusterBoundaryMergeStrategy()
+            when (ClusterBoundaryMergeType.from(strategy)) {
+                ClusterBoundaryMergeType.LEGACY -> LegacyClusterBoundaryMergeStrategy()
+                ClusterBoundaryMergeType.DISTANCE -> DistanceBasedClusterBoundaryMergeStrategy()
             }
         log.info("Cluster boundary merge strategy selected: {}", selected::class.simpleName)
         return selected

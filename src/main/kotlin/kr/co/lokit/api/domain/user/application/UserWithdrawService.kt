@@ -1,6 +1,12 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
+import kr.co.lokit.api.config.cache.CacheRegion
+import kr.co.lokit.api.config.cache.clearPermissionCaches
+import kr.co.lokit.api.config.cache.evictKey
+import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
@@ -18,10 +24,11 @@ class UserWithdrawService(
 ) : WithdrawUseCase {
     @Transactional
     override fun withdraw(userId: Long) {
-        val user = userRepository.findById(userId)
-            ?: throw BusinessException.UserNotFoundException(
-                errors = mapOf("userId" to userId.toString()),
-            )
+        val user =
+            userRepository.findById(userId)
+                ?: throw BusinessException.UserNotFoundException(
+                    errors = errorDetailsOf(ErrorField.USER_ID to userId),
+                )
 
         // 1. Refresh Token 전부 삭제
         refreshTokenRepository.deleteByUserId(userId)
@@ -30,11 +37,12 @@ class UserWithdrawService(
         val couple = coupleRepository.findByUserId(userId)
         if (couple != null) {
             throw BusinessException.UserDisconnectRequiredException(
-                errors = mapOf(
-                    "userId" to userId.toString(),
-                    "coupleId" to couple.id.toString(),
-                    "coupleStatus" to couple.status.name,
-                ),
+                errors =
+                    errorDetailsOf(
+                        ErrorField.USER_ID to userId,
+                        ErrorField.COUPLE_ID to couple.id,
+                        ErrorField.COUPLE_STATUS to couple.status.name,
+                    ),
             )
         }
 
@@ -42,10 +50,8 @@ class UserWithdrawService(
         userRepository.withdraw(userId)
 
         // 4. 캐시 무효화
-        cacheManager.getCache("userDetails")?.evict(user.email)
-        cacheManager.getCache("userCouple")?.evict(userId)
-        cacheManager.getCache("album")?.clear()
-        cacheManager.getCache("photo")?.clear()
-        cacheManager.getCache("albumCouple")?.clear()
+        cacheManager.evictKey(CacheRegion.USER_DETAILS, user.email)
+        cacheManager.evictUserCoupleCache(userId)
+        cacheManager.clearPermissionCaches()
     }
 }

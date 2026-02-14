@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
@@ -28,7 +30,7 @@ class AuthService(
         val user =
             userRepository.findById(refreshTokenRecord.userId)
                 ?: throw BusinessException.UserNotFoundException(
-                    errors = mapOf("userId" to refreshTokenRecord.userId.toString()),
+                    errors = errorDetailsOf(ErrorField.USER_ID to refreshTokenRecord.userId),
                 )
 
         return generateTokensAndSave(user)

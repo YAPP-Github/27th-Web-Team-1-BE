@@ -52,11 +52,12 @@ class MaskingJsonLayout : LayoutBase<ILoggingEvent>() {
             logMap["exception"] = ThrowableProxyUtil.asString(event.throwableProxy)
         }
 
-        val json = if (prettyPrint) {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(logMap)
-        } else {
-            objectMapper.writeValueAsString(logMap)
-        }
+        val json =
+            if (prettyPrint) {
+                objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(logMap)
+            } else {
+                objectMapper.writeValueAsString(logMap)
+            }
         return json + "\n"
     }
 }

@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.user.infrastructure
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRecord
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import org.springframework.data.repository.findByIdOrNull
@@ -28,7 +30,9 @@ class JpaRefreshTokenRepository(
     ) {
         val userEntity =
             userJpaRepository.findByIdOrNull(userId)
-                ?: throw BusinessException.UserNotFoundException(errors = mapOf("userId" to userId.toString()))
+                ?: throw BusinessException.UserNotFoundException(
+                    errors = errorDetailsOf(ErrorField.USER_ID to userId),
+                )
 
         refreshTokenJpaRepository.deleteByUserId(userId)
         refreshTokenJpaRepository.save(

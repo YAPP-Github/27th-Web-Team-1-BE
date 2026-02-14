@@ -2,6 +2,7 @@ package kr.co.lokit.api.common.permission
 
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -33,10 +34,10 @@ class PermissionService(
         return couple.id == coupleId
     }
 
-    @Cacheable(cacheNames = ["albumCouple"], key = "#albumId", sync = true)
+    @Cacheable(cacheNames = [CacheNames.ALBUM_COUPLE], key = "#albumId", sync = true)
     fun getAlbumCoupleId(albumId: Long): Long = getAlbumOrThrow(albumId).coupleId
 
-    @Cacheable(cacheNames = ["album"], key = "#userId + ':' + #albumId", sync = true)
+    @Cacheable(cacheNames = [CacheNames.ALBUM], key = "#userId + ':' + #albumId", sync = true)
     fun canAccessAlbum(
         userId: Long,
         albumId: Long,
@@ -65,7 +66,7 @@ class PermissionService(
         return getAlbumOrThrow(albumId).createdById == userId
     }
 
-    @Cacheable(cacheNames = ["photo"], key = "#userId + ':' + #photoId", sync = true)
+    @Cacheable(cacheNames = [CacheNames.PHOTO], key = "#userId + ':' + #photoId", sync = true)
     fun canReadPhoto(
         userId: Long,
         photoId: Long,

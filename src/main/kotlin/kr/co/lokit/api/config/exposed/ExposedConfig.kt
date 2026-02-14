@@ -12,25 +12,27 @@ import javax.sql.DataSource
 
 @Configuration
 class ExposedConfig {
+    @Bean
+    fun databaseConfig(): DatabaseConfig =
+        DatabaseConfig {
+            useNestedTransactions = false
+        }
 
     @Bean
-    fun databaseConfig(): DatabaseConfig = DatabaseConfig {
-        useNestedTransactions = false
-    }
-
-    @Bean
-    fun exposedDatabase(dataSource: DataSource, databaseConfig: DatabaseConfig): Database {
-        val database = Database.connect(
-            datasource = dataSource,
-            databaseConfig = databaseConfig,
-        )
+    fun exposedDatabase(
+        dataSource: DataSource,
+        databaseConfig: DatabaseConfig,
+    ): Database {
+        val database =
+            Database.connect(
+                datasource = dataSource,
+                databaseConfig = databaseConfig,
+            )
         TransactionManager.manager.defaultIsolationLevel =
             Connection.TRANSACTION_READ_COMMITTED
         return database
     }
 
     @Bean
-    fun mapQueryPort(database: Database): MapQueryPort {
-        return ExposedMapQueryAdapter(database)
-    }
+    fun mapQueryPort(database: Database): MapQueryPort = ExposedMapQueryAdapter(database)
 }

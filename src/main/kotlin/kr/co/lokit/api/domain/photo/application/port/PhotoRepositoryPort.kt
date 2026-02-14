@@ -14,8 +14,7 @@ interface PhotoRepositoryPort {
 
     fun findById(id: Long): Photo
 
-    fun apply(photo: Photo): Photo
+    fun update(photo: Photo): Photo
 
     fun saveAll(photos: List<Photo>): List<Photo>
 }
-

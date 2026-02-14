@@ -20,6 +20,9 @@ data class PageResult<T>(
         )
 
     companion object {
-        fun calculateOffset(page: Int, size: Int): Long = page.toLong() * size
+        fun calculateOffset(
+            page: Int,
+            size: Int,
+        ): Long = page.toLong() * size
     }
 }

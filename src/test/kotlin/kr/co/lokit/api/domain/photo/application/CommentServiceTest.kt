@@ -1,12 +1,12 @@
 package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.constant.CoupleStatus
-import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.EmoticonRepositoryPort
 import kr.co.lokit.api.domain.photo.domain.CommentWithEmoticons
+import kr.co.lokit.api.domain.photo.domain.DeIdentifiedUserProfile
 import kr.co.lokit.api.fixture.createComment
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createEmoticon
@@ -123,7 +123,7 @@ class CommentServiceTest {
         val result = commentService.getComments(photoId, viewerUserId)
 
         assertEquals(2, result.size)
-        assertEquals(DeIdentification.DEFAULT_NAME, result[0].userName)
+        assertEquals(DeIdentifiedUserProfile.DISPLAY_NAME, result[0].userName)
         assertNull(result[0].userProfileImageUrl)
         assertEquals("나", result[1].userName)
         assertEquals("https://example.com/my-profile.jpg", result[1].userProfileImageUrl)

@@ -10,7 +10,10 @@ import kr.co.lokit.api.domain.photo.infrastructure.EmoticonEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 
-fun Comment.toEntity(photo: PhotoEntity, user: UserEntity): CommentEntity =
+fun Comment.toEntity(
+    photo: PhotoEntity,
+    user: UserEntity,
+): CommentEntity =
     CommentEntity(
         photo = photo,
         user = user,
@@ -27,7 +30,10 @@ fun CommentEntity.toDomain(): Comment =
         commentedAt = this.commentedAt,
     )
 
-fun Emoticon.toEntity(comment: CommentEntity, user: UserEntity): EmoticonEntity =
+fun Emoticon.toEntity(
+    comment: CommentEntity,
+    user: UserEntity,
+): EmoticonEntity =
     EmoticonEntity(
         comment = comment,
         user = user,

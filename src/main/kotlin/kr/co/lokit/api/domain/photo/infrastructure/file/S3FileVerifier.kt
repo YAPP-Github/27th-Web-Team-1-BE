@@ -18,10 +18,11 @@ class S3FileVerifier(
     fun verifyNotExists(key: String) {
         try {
             s3Client.headObject(
-                HeadObjectRequest.builder()
+                HeadObjectRequest
+                    .builder()
                     .bucket(bucket)
                     .key(key)
-                    .build()
+                    .build(),
             )
             throw BusinessException.InvalidInputException("S3에 이미 파일이 존재합니다: $key")
         } catch (_: NoSuchKeyException) {
@@ -33,10 +34,11 @@ class S3FileVerifier(
         val key = extractKey(objectUrl)
         try {
             s3Client.headObject(
-                HeadObjectRequest.builder()
+                HeadObjectRequest
+                    .builder()
                     .bucket(bucket)
                     .key(key)
-                    .build()
+                    .build(),
             )
         } catch (e: NoSuchKeyException) {
             throw BusinessException.InvalidInputException("S3에 파일이 업로드되지 않았습니다: $key")

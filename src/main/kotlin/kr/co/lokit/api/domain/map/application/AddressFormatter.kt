@@ -1,12 +1,14 @@
 package kr.co.lokit.api.domain.map.application
 
 object AddressFormatter {
-
     private val buildingNumberRegex = Regex("^\\d+(-\\d+)?$")
     private val roadRegex = Regex(".*(대로|로)$")
     private val branchRoadRegex = Regex(".*(번길|길)$")
 
-    fun toRoadHeader(addressName: String, roadName: String): String {
+    fun toRoadHeader(
+        addressName: String,
+        roadName: String,
+    ): String {
         if (addressName.isBlank()) return addressName
         if (roadName.isBlank()) return toRoadHeader(addressName)
 
@@ -35,8 +37,10 @@ object AddressFormatter {
         val mainIndex = tokens.indexOfFirst { it.matches(roadRegex) }
         if (mainIndex >= 0) {
             val main = tokens[mainIndex]
-            val branch = tokens.getOrNull(mainIndex + 1)
-                ?.takeIf { it.matches(branchRoadRegex) }
+            val branch =
+                tokens
+                    .getOrNull(mainIndex + 1)
+                    ?.takeIf { it.matches(branchRoadRegex) }
 
             return buildString {
                 append(main)
@@ -58,10 +62,11 @@ object AddressFormatter {
         if (address.isNullOrBlank()) return address
 
         val tokens = address.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
-        val filtered = tokens.filterNot { token ->
-            token.endsWith("도") || token.endsWith("시") ||
-                token.endsWith("특별시") || token.endsWith("광역시")
-        }
+        val filtered =
+            tokens.filterNot { token ->
+                token.endsWith("도") || token.endsWith("시") ||
+                    token.endsWith("특별시") || token.endsWith("광역시")
+            }
 
         return if (filtered.isNotEmpty()) filtered.joinToString(" ") else address
     }

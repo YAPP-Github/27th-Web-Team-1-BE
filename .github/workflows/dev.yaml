@@ -21,8 +21,12 @@ env:
 
 jobs:
     ci:
-        if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
+        env:
+            DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        permissions:
+            contents: read
+            pull-requests: write
 
         steps:
             -   name: Checkout
@@ -35,8 +39,125 @@ jobs:
                     distribution: 'temurin'
                     cache: gradle
 
-            -   name: Test
-                run: ./gradlew test --no-daemon --parallel --build-cache -PtestMaxParallelForks=2
+            -   name: Test & Coverage
+                run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon --parallel --build-cache -PtestMaxParallelForks=2 -PcoverageVerification=true
+
+            -   name: Upload JaCoCo report
+                if: always()
+                uses: actions/upload-artifact@v4
+                with:
+                    name: jacoco-report
+                    path: |
+                        build/reports/jacoco/test/html/**
+                        build/reports/jacoco/test/jacocoTestReport.xml
+
+            -   name: Build coverage summary
+                id: coverage
+                if: always()
+                run: |
+                    XML_PATH="build/reports/jacoco/test/jacocoTestReport.xml"
+                    if [ ! -f "$XML_PATH" ]; then
+                      echo "line_rate=0.00" >> "$GITHUB_OUTPUT"
+                      echo "branch_rate=0.00" >> "$GITHUB_OUTPUT"
+                      {
+                        echo "### JaCoCo Coverage"
+                        echo ""
+                        echo "- 리포트 생성 실패 (XML 없음)"
+                      } >> "$GITHUB_STEP_SUMMARY"
+                      exit 0
+                    fi
+
+                    LINE_COUNTER=$(grep '<counter type="LINE"' "$XML_PATH" | tail -1)
+                    BRANCH_COUNTER=$(grep '<counter type="BRANCH"' "$XML_PATH" | tail -1)
+
+                    LINE_MISSED=$(echo "$LINE_COUNTER" | sed -E 's/.*missed="([0-9]+)".*/\1/')
+                    LINE_COVERED=$(echo "$LINE_COUNTER" | sed -E 's/.*covered="([0-9]+)".*/\1/')
+                    BRANCH_MISSED=$(echo "$BRANCH_COUNTER" | sed -E 's/.*missed="([0-9]+)".*/\1/')
+                    BRANCH_COVERED=$(echo "$BRANCH_COUNTER" | sed -E 's/.*covered="([0-9]+)".*/\1/')
+
+                    LINE_TOTAL=$((LINE_MISSED + LINE_COVERED))
+                    BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
+
+                    if [ "$LINE_TOTAL" -eq 0 ]; then LINE_RATE="0.00"; else LINE_RATE=$(awk "BEGIN {printf \"%.2f\", ($LINE_COVERED/$LINE_TOTAL)*100}"); fi
+                    if [ "$BRANCH_TOTAL" -eq 0 ]; then BRANCH_RATE="0.00"; else BRANCH_RATE=$(awk "BEGIN {printf \"%.2f\", ($BRANCH_COVERED/$BRANCH_TOTAL)*100}"); fi
+
+                    echo "line_rate=$LINE_RATE" >> "$GITHUB_OUTPUT"
+                    echo "branch_rate=$BRANCH_RATE" >> "$GITHUB_OUTPUT"
+                    echo "line_covered=$LINE_COVERED" >> "$GITHUB_OUTPUT"
+                    echo "line_total=$LINE_TOTAL" >> "$GITHUB_OUTPUT"
+                    echo "branch_covered=$BRANCH_COVERED" >> "$GITHUB_OUTPUT"
+                    echo "branch_total=$BRANCH_TOTAL" >> "$GITHUB_OUTPUT"
+
+                    {
+                      echo "### JaCoCo Coverage"
+                      echo ""
+                      echo "- Line: ${LINE_RATE}% (${LINE_COVERED}/${LINE_TOTAL})"
+                      echo "- Branch: ${BRANCH_RATE}% (${BRANCH_COVERED}/${BRANCH_TOTAL})"
+                      echo "- HTML Report: workflow artifact \`jacoco-report\`"
+                    } >> "$GITHUB_STEP_SUMMARY"
+
+            -   name: Comment coverage on PR
+                if: always() && github.event_name == 'pull_request'
+                uses: actions/github-script@v7
+                with:
+                    script: |
+                        const marker = "<!-- jacoco-coverage-comment -->";
+                        const lineRate = "${{ steps.coverage.outputs.line_rate }}";
+                        const branchRate = "${{ steps.coverage.outputs.branch_rate }}";
+                        const lineCovered = "${{ steps.coverage.outputs.line_covered }}";
+                        const lineTotal = "${{ steps.coverage.outputs.line_total }}";
+                        const branchCovered = "${{ steps.coverage.outputs.branch_covered }}";
+                        const branchTotal = "${{ steps.coverage.outputs.branch_total }}";
+
+                        const body = `${marker}
+                        ### JaCoCo Coverage
+                        - Line: ${lineRate}% (${lineCovered}/${lineTotal})
+                        - Branch: ${branchRate}% (${branchCovered}/${branchTotal})
+                        - 상세 리포트: workflow artifact \`jacoco-report\``;
+
+                        const { data: comments } = await github.rest.issues.listComments({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: context.issue.number,
+                        });
+                        const existing = comments.find((c) => c.user.type === "Bot" && c.body.includes(marker));
+                        if (existing) {
+                          await github.rest.issues.updateComment({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            comment_id: existing.id,
+                            body,
+                          });
+                        } else {
+                          await github.rest.issues.createComment({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            issue_number: context.issue.number,
+                            body,
+                          });
+                        }
+
+            -   name: Notify Discord (CI)
+                if: always() && env.DISCORD_WEBHOOK_URL != ''
+                env:
+                    LINE_RATE: ${{ steps.coverage.outputs.line_rate }}
+                    BRANCH_RATE: ${{ steps.coverage.outputs.branch_rate }}
+                    GITHUB_EVENT_NAME: ${{ github.event_name }}
+                    GITHUB_REF_NAME: ${{ github.ref_name }}
+                    GITHUB_REPOSITORY: ${{ github.repository }}
+                    GITHUB_SERVER_URL: ${{ github.server_url }}
+                    GITHUB_RUN_ID: ${{ github.run_id }}
+                run: |
+                    RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+                    MSG="CI 완료 (${GITHUB_EVENT_NAME})
+                    - Branch: ${GITHUB_REF_NAME}
+                    - Line Coverage: ${LINE_RATE:-N/A}%
+                    - Branch Coverage: ${BRANCH_RATE:-N/A}%
+                    - Run: ${RUN_URL}"
+
+                    curl -sS -X POST "${DISCORD_WEBHOOK_URL}" \
+                      -H "Content-Type: application/json" \
+                      -d "$(jq -n --arg content "$MSG" '{content: $content}')"
 
     cd:
         if: github.event_name == 'push'

@@ -12,12 +12,7 @@ interface UserRepositoryPort {
         name: String,
     ): User
 
-    fun apply(user: User): User
-    fun apply(
-        user: User,
-        name: String,
-        profileImageUrl: String?,
-    )
+    fun update(user: User): User
 
     fun withdraw(userId: Long)
 

@@ -12,5 +12,8 @@ interface UpdatePhotoUseCase {
         userId: Long,
     ): Photo
 
-    fun delete(photoId: Long, userId: Long)
+    fun delete(
+        photoId: Long,
+        userId: Long,
+    )
 }

@@ -26,7 +26,8 @@ class UserController(
         val clearAccessToken = cookieGenerator.clearAccessTokenCookie(request)
         val clearRefreshToken = cookieGenerator.clearRefreshTokenCookie(request)
 
-        return ResponseEntity.noContent()
+        return ResponseEntity
+            .noContent()
             .header(HttpHeaders.SET_COOKIE, clearAccessToken.toString())
             .header(HttpHeaders.SET_COOKIE, clearRefreshToken.toString())
             .build()

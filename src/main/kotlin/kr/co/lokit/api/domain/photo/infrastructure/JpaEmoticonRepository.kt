@@ -18,23 +18,35 @@ class JpaEmoticonRepository(
     private val userJpaRepository: UserJpaRepository,
 ) : EmoticonRepositoryPort {
     override fun save(emoticon: Emoticon): Emoticon {
-        val commentEntity = commentJpaRepository.findByIdOrNull(emoticon.commentId)
-            ?: throw entityNotFound<Comment>(emoticon.commentId)
-        val userEntity = userJpaRepository.findByIdOrNull(emoticon.userId)
-            ?: throw entityNotFound<User>(emoticon.userId)
+        val commentEntity =
+            commentJpaRepository.findByIdOrNull(emoticon.commentId)
+                ?: throw entityNotFound<Comment>(emoticon.commentId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(emoticon.userId)
+                ?: throw entityNotFound<User>(emoticon.userId)
         val entity = emoticon.toEntity(commentEntity, userEntity)
         return emoticonJpaRepository.save(entity).toDomain()
     }
 
-    override fun delete(commentId: Long, userId: Long, emoji: String) {
-        val entity = emoticonJpaRepository.findByCommentIdAndUserIdAndEmoji(commentId, userId, emoji)
-            ?: throw entityNotFound<Emoticon>("commentId", commentId)
+    override fun delete(
+        commentId: Long,
+        userId: Long,
+        emoji: String,
+    ) {
+        val entity =
+            emoticonJpaRepository.findByCommentIdAndUserIdAndEmoji(commentId, userId, emoji)
+                ?: throw entityNotFound<Emoticon>("commentId", commentId)
         emoticonJpaRepository.delete(entity)
     }
 
-    override fun countByCommentIdAndUserId(commentId: Long, userId: Long): Long =
-        emoticonJpaRepository.countByCommentIdAndUserId(commentId, userId)
+    override fun countByCommentIdAndUserId(
+        commentId: Long,
+        userId: Long,
+    ): Long = emoticonJpaRepository.countByCommentIdAndUserId(commentId, userId)
 
-    override fun existsByCommentIdAndUserIdAndEmoji(commentId: Long, userId: Long, emoji: String): Boolean =
-        emoticonJpaRepository.existsByCommentIdAndUserIdAndEmoji(commentId, userId, emoji)
+    override fun existsByCommentIdAndUserIdAndEmoji(
+        commentId: Long,
+        userId: Long,
+        emoji: String,
+    ): Boolean = emoticonJpaRepository.existsByCommentIdAndUserIdAndEmoji(commentId, userId, emoji)
 }

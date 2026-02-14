@@ -52,7 +52,7 @@ data class CreatePhotoRequest(
     @Schema(
         description = "사진 URL",
         example = "https://bucket.s3.amazonaws.com/photos/1/image.jpg",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val url: String,
     @Schema(description = "앨범 ID", example = "1 or null(전체 앨범)")
@@ -64,7 +64,7 @@ data class CreatePhotoRequest(
     @Schema(
         description = "촬영일시 (EXIF 데이터)",
         example = "2026-01-06T14:30:00",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val takenAt: LocalDateTime,
     @Schema(description = "사진 설명", example = "가족 여행 사진")

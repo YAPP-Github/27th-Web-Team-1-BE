@@ -11,7 +11,7 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
         left join fetch c.coupleUsers cu
         left join fetch cu.user
         where c.inviteCode = :inviteCode
-        """
+        """,
     )
     fun findByInviteCode(inviteCode: String): CoupleEntity?
 
@@ -21,7 +21,7 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
         left join fetch c.coupleUsers cu
         left join fetch cu.user
         where c.id = :id
-        """
+        """,
     )
     fun findByIdFetchUsers(id: Long): CoupleEntity?
 
@@ -30,7 +30,7 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
         select c from Couple c
         join fetch c.coupleUsers cu
         where cu.user.id = :userId
-        """
+        """,
     )
     fun findByUserId(userId: Long): CoupleEntity?
 
@@ -41,7 +41,7 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
         left join fetch cu.user
         where c.disconnectedByUserId = :userId
         and c.status = 'DISCONNECTED'
-        """
+        """,
     )
     fun findByDisconnectedByUserId(userId: Long): CoupleEntity?
 

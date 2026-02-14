@@ -13,6 +13,30 @@ data class Photo(
     var takenAt: LocalDateTime = LocalDateTime.now(),
     val address: String? = null,
 ) {
-    fun hasLocation(): Boolean =
-        location.longitude != 0.0 && location.latitude != 0.0
+    fun hasLocation(): Boolean = location.longitude != 0.0 && location.latitude != 0.0
+
+    fun withAddress(address: String?): Photo = copy(address = address)
+
+    fun withDefaultAlbum(defaultAlbumId: Long?): Photo =
+        if (defaultAlbumId != null) {
+            copy(albumId = defaultAlbumId)
+        } else {
+            this
+        }
+
+    fun update(
+        albumId: Long?,
+        description: String?,
+        longitude: Double?,
+        latitude: Double?,
+    ): Photo =
+        copy(
+            albumId = albumId ?: this.albumId,
+            description = description ?: this.description,
+            location =
+                location.copy(
+                    longitude = longitude ?: location.longitude,
+                    latitude = latitude ?: location.latitude,
+                ),
+        )
 }

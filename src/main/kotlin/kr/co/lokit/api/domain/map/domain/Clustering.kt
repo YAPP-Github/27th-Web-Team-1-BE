@@ -1,15 +1,11 @@
 package kr.co.lokit.api.domain.map.domain
 
 import kotlin.math.PI
-import kotlin.math.atan
 import kotlin.math.ceil
-import kotlin.math.exp
 import kotlin.math.floor
-import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
-import kotlin.math.tan
 
 data class BBox(
     val west: Double,
@@ -43,17 +39,16 @@ data class BBox(
         val KOREA_BOUNDS = BBox(west = 124.0, south = 33.0, east = 132.0, north = 39.5)
         private const val HORIZONTAL_MULTIPLIER = 2.5
         private const val VERTICAL_MULTIPLIER = 5.0
-        private const val EARTH_RADIUS_METERS = 6378137.0
 
         fun fromCenter(
             zoom: Int,
             longitude: Double,
             latitude: Double,
         ): BBox {
-            val mx = longitude * (PI * EARTH_RADIUS_METERS / 180.0)
-            val my = ln(tan((90.0 + latitude) * PI / 360.0)) * EARTH_RADIUS_METERS
+            val mx = MercatorProjection.longitudeToMeters(longitude)
+            val my = MercatorProjection.latitudeToMeters(latitude)
 
-            val worldSize = 2 * PI * EARTH_RADIUS_METERS
+            val worldSize = 2 * PI * MercatorProjection.EARTH_RADIUS_METERS
             val tileSizeAtZoom = worldSize / 2.0.pow(zoom.toDouble())
             val hHalf = tileSizeAtZoom * HORIZONTAL_MULTIPLIER
             val vHalf = tileSizeAtZoom * VERTICAL_MULTIPLIER
@@ -65,10 +60,10 @@ data class BBox(
             val northM = ceil((my + vHalf) / gridSize) * gridSize
 
             return BBox(
-                west = westM / (PI * EARTH_RADIUS_METERS / 180.0),
-                south = atan(exp(southM / EARTH_RADIUS_METERS)) * 360.0 / PI - 90.0,
-                east = eastM / (PI * EARTH_RADIUS_METERS / 180.0),
-                north = atan(exp(northM / EARTH_RADIUS_METERS)) * 360.0 / PI - 90.0,
+                west = MercatorProjection.metersToLongitude(westM),
+                south = MercatorProjection.metersToLatitude(southM),
+                east = MercatorProjection.metersToLongitude(eastM),
+                north = MercatorProjection.metersToLatitude(northM),
             )
         }
 
@@ -87,7 +82,6 @@ data class GridCell(
 ) {
     fun toBBox(): BBox {
         val gridSize = GridValues.getGridSize(zoom)
-        val earthRadius = 6378137.0
 
         val westM = cellX * gridSize
         val southM = cellY * gridSize
@@ -95,10 +89,10 @@ data class GridCell(
         val northM = southM + gridSize
 
         return BBox(
-            west = westM / (PI * earthRadius / 180.0),
-            south = atan(exp(southM / earthRadius)) * 360.0 / PI - 90.0,
-            east = eastM / (PI * earthRadius / 180.0),
-            north = atan(exp(northM / earthRadius)) * 360.0 / PI - 90.0,
+            west = MercatorProjection.metersToLongitude(westM),
+            south = MercatorProjection.metersToLatitude(southM),
+            east = MercatorProjection.metersToLongitude(eastM),
+            north = MercatorProjection.metersToLatitude(northM),
         )
     }
 
@@ -116,10 +110,7 @@ object ClusterId {
 
     fun parse(clusterId: String): GridCell {
         val match =
-
-            PATTERN.matchEntire(clusterId)
-
-                ?: throw IllegalArgumentException("Invalid clusterId format: $clusterId")
+            PATTERN.matchEntire(clusterId) ?: throw IllegalArgumentException("Invalid clusterId format: $clusterId")
 
         return GridCell(
             zoom = match.groupValues[1].toInt(),

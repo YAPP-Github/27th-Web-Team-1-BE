@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnMissingBean(KakaoMapClient::class)
 class NoOpMapClient : MapClient {
-    override fun reverseGeocode(longitude: Double, latitude: Double): LocationInfoResponse =
+    override fun reverseGeocode(
+        longitude: Double,
+        latitude: Double,
+    ): LocationInfoResponse =
         LocationInfoResponse(
             address = null,
             placeName = null,

@@ -113,7 +113,7 @@ class PhotoCommandServiceTest {
                 uploadedById = 1L,
             )
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
-        `when`(photoRepository.apply(anyObject())).thenReturn(updatedPhoto)
+        `when`(photoRepository.update(anyObject())).thenReturn(updatedPhoto)
 
         val result = photoCommandService.update(1L, 1L, request.description, request.longitude, request.latitude, 1L)
 
@@ -134,7 +134,7 @@ class PhotoCommandServiceTest {
                 uploadedById = 1L,
             )
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
-        `when`(photoRepository.apply(anyObject())).thenReturn(updatedPhoto)
+        `when`(photoRepository.update(anyObject())).thenReturn(updatedPhoto)
 
         photoCommandService.update(1L, 1L, request.description, request.longitude, request.latitude, 1L)
 

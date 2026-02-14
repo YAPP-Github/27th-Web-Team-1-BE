@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component
 @Component
 @Profile("local", "dev")
 class TracingAspect {
-
     @Around(
         """
         (

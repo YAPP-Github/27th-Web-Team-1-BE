@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.map.dto
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin
@@ -39,6 +40,9 @@ data class ClusterResponse(
         required = true,
     )
     var latitude: Double,
+    @field:JsonIgnore
+    @Schema(hidden = true)
+    val takenAt: LocalDateTime? = null,
 )
 
 @Schema(description = "개별 사진 응답 (줌 >= 15)")
@@ -255,8 +259,8 @@ data class MapMeResponse(
     val albums: List<HomeResponse.Companion.AlbumThumbnails>,
     @Schema(description = "데이터 버전 (사진 변경 시 증가, 프론트 캐싱에 사용)")
     val dataVersion: Long = 0,
-    @Schema(description = "클러스터 목록 (줌 < 15일 때, dataVersion 미변경 시 null)")
+    @Schema(description = "클러스터 목록 (줌 < 15일 때)")
     val clusters: List<ClusterResponse>? = null,
-    @Schema(description = "개별 사진 목록 (줌 >= 15일 때, dataVersion 미변경 시 null)")
+    @Schema(description = "개별 사진 목록 (줌 >= 15일 때)")
     val photos: List<MapPhotoResponse>? = null,
 )

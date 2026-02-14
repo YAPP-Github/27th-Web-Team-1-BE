@@ -21,21 +21,27 @@ class JpaCommentRepository(
     private val userJpaRepository: UserJpaRepository,
 ) : CommentRepositoryPort {
     override fun save(comment: Comment): Comment {
-        val photoEntity = photoJpaRepository.findByIdOrNull(comment.photoId)
-            ?: throw entityNotFound<Photo>(comment.photoId)
-        val userEntity = userJpaRepository.findByIdOrNull(comment.userId)
-            ?: throw entityNotFound<User>(comment.userId)
+        val photoEntity =
+            photoJpaRepository.findByIdOrNull(comment.photoId)
+                ?: throw entityNotFound<Photo>(comment.photoId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(comment.userId)
+                ?: throw entityNotFound<User>(comment.userId)
         val entity = comment.toEntity(photoEntity, userEntity)
         return commentJpaRepository.save(entity).toDomain()
     }
 
     override fun findById(id: Long): Comment {
-        val entity = commentJpaRepository.findByIdOrNull(id)
-            ?: throw entityNotFound<Comment>(id)
+        val entity =
+            commentJpaRepository.findByIdOrNull(id)
+                ?: throw entityNotFound<Comment>(id)
         return entity.toDomain()
     }
 
-    override fun findAllByPhotoIdWithEmoticons(photoId: Long, currentUserId: Long): List<CommentWithEmoticons> {
+    override fun findAllByPhotoIdWithEmoticons(
+        photoId: Long,
+        currentUserId: Long,
+    ): List<CommentWithEmoticons> {
         val comments = commentJpaRepository.findAllByPhotoId(photoId)
         if (comments.isEmpty()) return emptyList()
 
@@ -44,15 +50,16 @@ class JpaCommentRepository(
 
         return comments.map { comment ->
             val commentEmoticons = emoticonsByComment[comment.nonNullId()] ?: emptyList()
-            val summaries = commentEmoticons
-                .groupBy { it.emoji }
-                .map { (emoji, group) ->
-                    EmoticonSummary(
-                        emoji = emoji,
-                        count = group.size,
-                        reacted = group.any { it.user.nonNullId() == currentUserId },
-                    )
-                }
+            val summaries =
+                commentEmoticons
+                    .groupBy { it.emoji }
+                    .map { (emoji, group) ->
+                        EmoticonSummary(
+                            emoji = emoji,
+                            count = group.size,
+                            reacted = group.any { it.user.nonNullId() == currentUserId },
+                        )
+                    }
             CommentWithEmoticons(
                 comment = comment.toDomain(),
                 userName = comment.user.name,

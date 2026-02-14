@@ -14,9 +14,7 @@ data class UserPrincipal(
     val role: UserRole,
     val status: AccountStatus = AccountStatus.ACTIVE,
 ) : UserDetails {
-
-    override fun getAuthorities(): Collection<GrantedAuthority> =
-        listOf(SimpleGrantedAuthority(role.authority))
+    override fun getAuthorities(): Collection<GrantedAuthority> = listOf(SimpleGrantedAuthority(role.authority))
 
     override fun getPassword(): String? = null
 
@@ -41,4 +39,3 @@ data class UserPrincipal(
             )
     }
 }
-

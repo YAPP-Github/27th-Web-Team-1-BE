@@ -1,9 +1,11 @@
 package kr.co.lokit.api.domain.map.application
 
+import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.GridValues
+import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
@@ -14,17 +16,14 @@ import org.springframework.cache.caffeine.CaffeineCache
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Semaphore
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.tan
 
 @Service
 class MapPhotosCacheService(
@@ -36,9 +35,9 @@ class MapPhotosCacheService(
         val response: ClusterResponse?,
     )
 
-    private fun lonToM(lon: Double): Double = lon * (PI * EARTH_RADIUS / 180.0)
+    private fun lonToM(lon: Double): Double = MercatorProjection.longitudeToMeters(lon)
 
-    private fun latToM(lat: Double): Double = ln(tan((90.0 + lat) * PI / 360.0)) * EARTH_RADIUS
+    private fun latToM(lat: Double): Double = MercatorProjection.latitudeToMeters(lat)
 
     private data class ViewportState(
         val centerX: Long,
@@ -55,8 +54,9 @@ class MapPhotosCacheService(
 
     fun evictForCouple(coupleId: Long) {
         coupleVersions.computeIfAbsent(coupleId) { AtomicLong(0) }.incrementAndGet()
-        evictCoupleEntries("mapCells", coupleId)
-        evictCoupleEntries("mapPhotos", coupleId)
+        evictCoupleEntries(CacheNames.MAP_CELLS, coupleId)
+        evictCoupleEntries(CacheNames.MAP_PHOTOS, coupleId)
+        latestCellVersionByBaseKey.keys.removeIf { it.contains("_c${coupleId}_") }
         requestStates.keys.removeIf { it.contains("_c${coupleId}_") }
         coupleMutations.remove(coupleId)
     }
@@ -91,6 +91,28 @@ class MapPhotosCacheService(
         return maxSequence
     }
 
+    fun getDataVersion(
+        _zoom: Int,
+        _bbox: BBox,
+        coupleId: Long?,
+        albumId: Long?,
+    ): Long {
+        if (coupleId == null) {
+            return 0L
+        }
+        val mutationVersion = getAlbumScopedMutationVersion(coupleId, albumId)
+        return (fnv64(coupleId, albumId ?: 0L, mutationVersion) and Long.MAX_VALUE)
+    }
+
+    private fun fnv64(vararg values: Long): Long {
+        var hash = FNV64_OFFSET_BASIS
+        values.forEach { value ->
+            hash = hash xor value
+            hash *= FNV64_PRIME
+        }
+        return hash
+    }
+
     fun evictForPhotoMutation(
         coupleId: Long,
         albumId: Long?,
@@ -108,11 +130,13 @@ class MapPhotosCacheService(
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
+        zoomLevel: Double = zoom.toDouble(),
+        canReuseCellCache: Boolean = true,
     ): MapPhotosResponse {
         val gridSize = GridValues.getGridSize(zoom)
         val cache =
-            cacheManager.getCache("mapCells") as? CaffeineCache
-                ?: return queryDirectly(zoom, bbox, gridSize, coupleId, albumId)
+            cacheManager.getCache(CacheNames.MAP_CELLS) as? CaffeineCache
+                ?: return queryDirectly(zoom, bbox, gridSize, coupleId, albumId, zoomLevel)
         val version = getVersion(zoom, bbox, coupleId, albumId)
         val sequence = getMutationSequence(coupleId)
 
@@ -121,16 +145,18 @@ class MapPhotosCacheService(
         val cellYMin = floor(latToM(bbox.south) / gridSize).toLong()
         val cellYMax = floor(latToM(bbox.north) / gridSize).toLong()
 
+        val requestedCoords = LinkedHashSet<Pair<Long, Long>>()
         val keyToCoord = mutableMapOf<String, Pair<Long, Long>>()
         for (cx in cellXMin..cellXMax) {
             for (cy in cellYMin..cellYMax) {
-                val key = buildCellKey(zoom, cx, cy, coupleId, albumId, version)
+                requestedCoords.add(cx to cy)
+                val key = MapCacheKeyFactory.buildCellKey(zoom, cx, cy, coupleId, albumId, version)
                 keyToCoord[key] = cx to cy
             }
         }
 
         if (keyToCoord.size > MAX_CELLS_FOR_CELL_CACHE) {
-            return queryDirectly(zoom, bbox, gridSize, coupleId, albumId)
+            return queryDirectly(zoom, bbox, gridSize, coupleId, albumId, zoomLevel)
         }
 
         val prefetchCoordToKey =
@@ -147,10 +173,35 @@ class MapPhotosCacheService(
                 version = version,
             )
 
-        val cachedMap = cache.nativeCache.getAllPresent(keyToCoord.keys)
-        val cachedResponses = cachedMap.values.mapNotNull { (it as CachedCell).response }
-        val uncachedKeys = keyToCoord.keys.filter { !cachedMap.containsKey(it) }
-        if (uncachedKeys.isEmpty()) {
+        val (cachedCellsByCoord, uncachedCoords) =
+            if (canReuseCellCache) {
+                val cachedMap = cache.nativeCache.getAllPresent(keyToCoord.keys)
+                val cachedByCoord =
+                    cachedMap.entries
+                        .mapNotNull { entry ->
+                            val key = entry.key as? String ?: return@mapNotNull null
+                            val coord = keyToCoord[key] ?: return@mapNotNull null
+                            val cell = entry.value as? CachedCell ?: return@mapNotNull null
+                            coord to cell
+                        }.toMap()
+                cachedByCoord.keys.forEach { coord ->
+                    latestCellVersionByBaseKey[MapCacheKeyFactory.buildCellBaseKey(zoom, coord.first, coord.second, coupleId, albumId)] =
+                        version
+                }
+                cachedByCoord to (requestedCoords - cachedByCoord.keys)
+            } else {
+                resolveReusableCellsOnVersionMismatch(
+                    cache = cache,
+                    zoom = zoom,
+                    gridSize = gridSize,
+                    coupleId = coupleId,
+                    albumId = albumId,
+                    requestedCoords = requestedCoords,
+                )
+            }
+        val cachedResponses = cachedCellsByCoord.values.mapNotNull { it.response }
+
+        if (uncachedCoords.isEmpty()) {
             schedulePrefetch(
                 cache = cache,
                 zoom = zoom,
@@ -160,19 +211,20 @@ class MapPhotosCacheService(
                 sequence = sequence,
                 prefetchCoordToKey = prefetchCoordToKey,
             )
-            return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(cachedResponses, zoom))
+            return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(cachedResponses, zoomLevel))
         }
 
-        val requestedCoords = uncachedKeys.mapNotNull { keyToCoord[it] }.toSet()
-        val dbCellMap = fetchClusterCellMap(requestedCoords, gridSize, coupleId, albumId)
+        val dbCellMap = fetchClusterCellMap(uncachedCoords, gridSize, coupleId, albumId)
         val newResponses = mutableListOf<ClusterResponse>()
         val bulkInsertMap = mutableMapOf<String, CachedCell>()
 
-        for (key in uncachedKeys) {
-            val coord = keyToCoord[key] ?: continue
+        for (coord in uncachedCoords) {
+            val key = MapCacheKeyFactory.buildCellKey(zoom, coord.first, coord.second, coupleId, albumId, version)
             val projection = dbCellMap[coord.first to coord.second]
             val response = projection?.toResponse(zoom)
             bulkInsertMap[key] = CachedCell(response)
+            latestCellVersionByBaseKey[MapCacheKeyFactory.buildCellBaseKey(zoom, coord.first, coord.second, coupleId, albumId)] =
+                version
             response?.let { newResponses.add(it) }
         }
 
@@ -189,7 +241,13 @@ class MapPhotosCacheService(
             prefetchCoordToKey = prefetchCoordToKey,
         )
 
-        return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(cachedResponses + newResponses, zoom))
+        return MapPhotosResponse(
+            clusters =
+                clusterBoundaryMergeStrategy.mergeClusters(
+                    cachedResponses + newResponses,
+                    zoomLevel,
+                ),
+        )
     }
 
     private fun schedulePrefetch(
@@ -229,6 +287,18 @@ class MapPhotosCacheService(
                     val projection = dbCellMap[coord.first to coord.second]
                     val response = projection?.toResponse(zoom)
                     bulkInsertMap[key] = CachedCell(response)
+                    val parsed = MapCacheKeyFactory.parseCellKey(key)
+                    if (parsed != null) {
+                        val baseKey =
+                            MapCacheKeyFactory.buildCellBaseKey(
+                                zoom = parsed.zoom,
+                                cellX = parsed.cellX,
+                                cellY = parsed.cellY,
+                                coupleId = parsed.coupleId,
+                                albumId = parsed.albumId,
+                            )
+                        latestCellVersionByBaseKey[baseKey] = parsed.version
+                    }
                 }
                 if (bulkInsertMap.isNotEmpty()) {
                     cache.nativeCache.putAll(bulkInsertMap)
@@ -275,6 +345,78 @@ class MapPhotosCacheService(
             }
     }
 
+    private fun resolveReusableCellsOnVersionMismatch(
+        cache: CaffeineCache,
+        zoom: Int,
+        gridSize: Double,
+        coupleId: Long?,
+        albumId: Long?,
+        requestedCoords: Set<Pair<Long, Long>>,
+    ): Pair<Map<Pair<Long, Long>, CachedCell>, Set<Pair<Long, Long>>> {
+        val latestMutationByCell =
+            calculateLatestMutationSequenceByCell(
+                coupleId = coupleId,
+                albumId = albumId,
+                gridSize = gridSize,
+                requestedCoords = requestedCoords,
+            )
+        val cachedByCoord = mutableMapOf<Pair<Long, Long>, CachedCell>()
+        for (coord in requestedCoords) {
+            val baseKey = MapCacheKeyFactory.buildCellBaseKey(zoom, coord.first, coord.second, coupleId, albumId)
+            val cachedVersion = latestCellVersionByBaseKey[baseKey] ?: continue
+            val requiredVersion = latestMutationByCell[coord] ?: 0L
+            if (cachedVersion < requiredVersion) {
+                continue
+            }
+            val versionedKey =
+                MapCacheKeyFactory.buildCellKey(
+                    zoom = zoom,
+                    cellX = coord.first,
+                    cellY = coord.second,
+                    coupleId = coupleId,
+                    albumId = albumId,
+                    version = cachedVersion,
+                )
+            val cachedCell = cache.nativeCache.getIfPresent(versionedKey) as? CachedCell
+            if (cachedCell != null) {
+                cachedByCoord[coord] = cachedCell
+                continue
+            }
+            latestCellVersionByBaseKey.remove(baseKey, cachedVersion)
+        }
+        val uncachedCoords = requestedCoords - cachedByCoord.keys
+        return cachedByCoord to uncachedCoords
+    }
+
+    private fun calculateLatestMutationSequenceByCell(
+        coupleId: Long?,
+        albumId: Long?,
+        gridSize: Double,
+        requestedCoords: Set<Pair<Long, Long>>,
+    ): Map<Pair<Long, Long>, Long> {
+        if (coupleId == null || requestedCoords.isEmpty()) {
+            return emptyMap()
+        }
+        val mutations = coupleMutations[coupleId] ?: return emptyMap()
+        val latestByCell = HashMap<Pair<Long, Long>, Long>()
+        for (mutation in mutations) {
+            if (albumId != null && mutation.albumId != albumId) {
+                continue
+            }
+            val coord =
+                floor(lonToM(mutation.longitude) / gridSize).toLong() to
+                    floor(latToM(mutation.latitude) / gridSize).toLong()
+            if (coord !in requestedCoords) {
+                continue
+            }
+            val current = latestByCell[coord] ?: 0L
+            if (mutation.sequence > current) {
+                latestByCell[coord] = mutation.sequence
+            }
+        }
+        return latestByCell
+    }
+
     private fun evictCoupleEntries(
         cacheName: String,
         coupleId: Long,
@@ -317,14 +459,40 @@ class MapPhotosCacheService(
 
     private fun getMutationSequence(coupleId: Long?): Long = getVersion(coupleId)
 
+    private fun getAlbumScopedMutationVersion(
+        coupleId: Long,
+        albumId: Long?,
+    ): Long {
+        if (albumId == null) {
+            return getMutationSequence(coupleId)
+        }
+        val mutations = coupleMutations[coupleId] ?: return 0L
+        var maxSequence = 0L
+        for (mutation in mutations) {
+            if (mutation.albumId != albumId) {
+                continue
+            }
+            if (mutation.sequence > maxSequence) {
+                maxSequence = mutation.sequence
+            }
+        }
+        return maxSequence
+    }
+
     private fun evictCellEntriesForPoint(
         coupleId: Long,
         albumId: Long?,
         longitude: Double,
         latitude: Double,
     ) {
-        val cache = cacheManager.getCache("mapCells") as? CaffeineCache ?: return
-        val keys = cache.nativeCache.asMap().keys.asSequence().filterIsInstance<String>().toList()
+        val cache = cacheManager.getCache(CacheNames.MAP_CELLS) as? CaffeineCache ?: return
+        val keys =
+            cache.nativeCache
+                .asMap()
+                .keys
+                .asSequence()
+                .filterIsInstance<String>()
+                .toList()
         if (keys.isEmpty()) {
             return
         }
@@ -332,7 +500,7 @@ class MapPhotosCacheService(
         val targetAlbum = albumId ?: 0L
         val keysToInvalidate =
             keys.filter { key ->
-                val parsed = parseCellKey(key) ?: return@filter false
+                val parsed = MapCacheKeyFactory.parseCellKey(key) ?: return@filter false
                 if (parsed.coupleId != coupleId) return@filter false
                 if (parsed.albumId != 0L && parsed.albumId != targetAlbum) return@filter false
                 val gridSize = GridValues.getGridSize(parsed.zoom)
@@ -342,6 +510,18 @@ class MapPhotosCacheService(
             }
         if (keysToInvalidate.isNotEmpty()) {
             cache.nativeCache.invalidateAll(keysToInvalidate)
+            keysToInvalidate.forEach { key ->
+                val parsed = MapCacheKeyFactory.parseCellKey(key) ?: return@forEach
+                val baseKey =
+                    MapCacheKeyFactory.buildCellBaseKey(
+                        zoom = parsed.zoom,
+                        cellX = parsed.cellX,
+                        cellY = parsed.cellY,
+                        coupleId = parsed.coupleId,
+                        albumId = parsed.albumId,
+                    )
+                latestCellVersionByBaseKey.remove(baseKey)
+            }
         }
     }
 
@@ -351,8 +531,14 @@ class MapPhotosCacheService(
         longitude: Double,
         latitude: Double,
     ) {
-        val cache = cacheManager.getCache("mapPhotos") as? CaffeineCache ?: return
-        val keys = cache.nativeCache.asMap().keys.asSequence().filterIsInstance<String>().toList()
+        val cache = cacheManager.getCache(CacheNames.MAP_PHOTOS) as? CaffeineCache ?: return
+        val keys =
+            cache.nativeCache
+                .asMap()
+                .keys
+                .asSequence()
+                .filterIsInstance<String>()
+                .toList()
         if (keys.isEmpty()) {
             return
         }
@@ -360,7 +546,7 @@ class MapPhotosCacheService(
         val targetAlbum = albumId ?: 0L
         val keysToInvalidate =
             keys.filter { key ->
-                val parsed = parseIndividualKey(key) ?: return@filter false
+                val parsed = MapCacheKeyFactory.parseIndividualKey(key) ?: return@filter false
                 if (parsed.coupleId != coupleId) return@filter false
                 if (parsed.albumId != 0L && parsed.albumId != targetAlbum) return@filter false
                 longitude in parsed.west..parsed.east && latitude in parsed.south..parsed.north
@@ -368,46 +554,6 @@ class MapPhotosCacheService(
         if (keysToInvalidate.isNotEmpty()) {
             cache.nativeCache.invalidateAll(keysToInvalidate)
         }
-    }
-
-    private data class ParsedCellKey(
-        val zoom: Int,
-        val cellX: Long,
-        val cellY: Long,
-        val coupleId: Long,
-        val albumId: Long,
-    )
-
-    private data class ParsedIndividualKey(
-        val west: Double,
-        val south: Double,
-        val east: Double,
-        val north: Double,
-        val coupleId: Long,
-        val albumId: Long,
-    )
-
-    private fun parseCellKey(key: String): ParsedCellKey? {
-        val match = CELL_KEY_REGEX.matchEntire(key) ?: return null
-        return ParsedCellKey(
-            zoom = match.groupValues[1].toInt(),
-            cellX = match.groupValues[2].toLong(),
-            cellY = match.groupValues[3].toLong(),
-            coupleId = match.groupValues[4].toLong(),
-            albumId = match.groupValues[5].toLong(),
-        )
-    }
-
-    private fun parseIndividualKey(key: String): ParsedIndividualKey? {
-        val match = INDIVIDUAL_KEY_REGEX.matchEntire(key) ?: return null
-        return ParsedIndividualKey(
-            west = match.groupValues[2].toLong() / 1_000_000.0,
-            south = match.groupValues[3].toLong() / 1_000_000.0,
-            east = match.groupValues[4].toLong() / 1_000_000.0,
-            north = match.groupValues[5].toLong() / 1_000_000.0,
-            coupleId = match.groupValues[6].toLong(),
-            albumId = match.groupValues[7].toLong(),
-        )
     }
 
     private fun calculateDirectionalPrefetchCells(
@@ -431,7 +577,7 @@ class MapPhotosCacheService(
         val centerX = floor(lonToM(centerLon) / gridSize).toLong()
         val centerY = floor(latToM(centerLat) / gridSize).toLong()
         val now = System.currentTimeMillis()
-        val stateKey = "z${zoom}_c${coupleId}_a${albumId ?: 0}"
+        val stateKey = MapCacheKeyFactory.buildRequestStateKey(zoom, coupleId, albumId)
         val previous = requestStates.put(stateKey, ViewportState(centerX, centerY, now)) ?: return emptyMap()
 
         val deltaX = centerX - previous.centerX
@@ -506,14 +652,14 @@ class MapPhotosCacheService(
                     y in koreaYMin..koreaYMax &&
                     (x !in requestedXMin..requestedXMax || y !in requestedYMin..requestedYMax)
             }.take(MAX_PREFETCH_CELLS)
-            .associateWith { (x, y) -> buildCellKey(zoom, x, y, coupleId, albumId, version) }
+            .associateWith { (x, y) -> MapCacheKeyFactory.buildCellKey(zoom, x, y, coupleId, albumId, version) }
     }
 
     @Transactional(readOnly = true)
     @Cacheable(
-        cacheNames = ["mapPhotos"],
+        cacheNames = [CacheNames.MAP_PHOTOS],
         key =
-            "T(kr.co.lokit.api.domain.map.application.MapPhotosCacheServiceKt)" +
+            "T(kr.co.lokit.api.domain.map.application.MapCacheKeyFactory)" +
                 ".buildIndividualKey(#bbox, #zoom, #coupleId, #albumId, @mapPhotosCacheService.getVersion(#zoom, #bbox, #coupleId, #albumId))",
         unless = "#result.photos == null || #result.photos.isEmpty()",
     )
@@ -541,6 +687,7 @@ class MapPhotosCacheService(
         gridSize: Double,
         coupleId: Long?,
         albumId: Long?,
+        zoomLevel: Double = zoom.toDouble(),
     ): MapPhotosResponse {
         val clusters =
             mapQueryPort.findClustersWithinBBox(
@@ -552,7 +699,13 @@ class MapPhotosCacheService(
                 coupleId = coupleId,
                 albumId = albumId,
             )
-        return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(clusters.map { it.toResponse(zoom) }, zoom))
+        return MapPhotosResponse(
+            clusters =
+                clusterBoundaryMergeStrategy.mergeClusters(
+                    clusters.map { it.toResponse(zoom) },
+                    zoomLevel,
+                ),
+        )
     }
 
     fun buildCellKey(
@@ -562,7 +715,7 @@ class MapPhotosCacheService(
         cid: Long?,
         aid: Long?,
         v: Long,
-    ): String = "z${zoom}_x${cx}_y${cy}_c${cid ?: 0}_a${aid ?: 0}_v$v"
+    ): String = MapCacheKeyFactory.buildCellKey(zoom, cx, cy, cid, aid, v)
 
     companion object {
         private const val MAX_CELLS_FOR_CELL_CACHE = 500
@@ -574,24 +727,9 @@ class MapPhotosCacheService(
         private val prefetchSemaphore = Semaphore(2)
         private val coupleVersions = ConcurrentHashMap<Long, AtomicLong>()
         private val coupleMutations = ConcurrentHashMap<Long, ConcurrentLinkedDeque<PhotoMutation>>()
+        private val latestCellVersionByBaseKey = ConcurrentHashMap<String, Long>()
         private val requestStates = ConcurrentHashMap<String, ViewportState>()
-        private val CELL_KEY_REGEX = Regex("^z(-?\\d+)_x(-?\\d+)_y(-?\\d+)_c(-?\\d+)_a(-?\\d+)_v(-?\\d+)$")
-        private val INDIVIDUAL_KEY_REGEX =
-            Regex("^ind_z(-?\\d+)_w(-?\\d+)_s(-?\\d+)_e(-?\\d+)_n(-?\\d+)_c(-?\\d+)_a(-?\\d+)_v(-?\\d+)$")
-        private const val EARTH_RADIUS = 6378137.0
+        private const val FNV64_OFFSET_BASIS = -3750763034362895579L
+        private const val FNV64_PRIME = 1099511628211L
     }
-}
-
-fun buildIndividualKey(
-    bbox: BBox,
-    zoom: Int,
-    cid: Long?,
-    aid: Long?,
-    v: Long,
-): String {
-    val west = (bbox.west * 1_000_000).toLong()
-    val south = (bbox.south * 1_000_000).toLong()
-    val east = (bbox.east * 1_000_000).toLong()
-    val north = (bbox.north * 1_000_000).toLong()
-    return "ind_z${zoom}_w${west}_s${south}_e${east}_n${north}_c${cid ?: 0}_a${aid ?: 0}_v$v"
 }

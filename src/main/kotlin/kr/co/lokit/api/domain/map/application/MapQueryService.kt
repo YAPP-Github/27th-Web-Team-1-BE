@@ -6,7 +6,6 @@ import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
-import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
@@ -15,6 +14,8 @@ import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
+import kr.co.lokit.api.domain.map.domain.MapZoom
+import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.HomeResponse.Companion.toAlbumThumbnails
@@ -41,30 +42,43 @@ class MapQueryService(
     private val clusterBoundaryMergeStrategy: ClusterBoundaryMergeStrategy,
 ) : GetMapUseCase,
     SearchLocationUseCase {
+    private data class MapViewerContext(
+        val userId: Long?,
+        val coupleId: Long?,
+        val albumId: Long?,
+    )
+
     private val dbSemaphore = Semaphore(6)
 
     private fun getPhotos(
         zoom: Int,
+        zoomLevel: Double,
         bbox: BBox,
-        userId: Long?,
-        albumId: Long?,
+        context: MapViewerContext,
+        lastDataVersion: Long?,
+        currentDataVersion: Long,
     ): MapPhotosResponse {
         val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoom)
-        val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
-        if (userId != null && coupleId == null) {
+        if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
             return emptyPhotosResponse(zoom)
         }
+        val canReuseCellCache = lastDataVersion != null && lastDataVersion == currentDataVersion
 
-        val effectiveAlbumId = resolveEffectiveAlbumId(userId, albumId)
-
-        return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
-            mapPhotosCacheService.getClusteredPhotos(zoom, boundedBbox, coupleId, effectiveAlbumId)
+        return if (zoomLevel < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) {
+            mapPhotosCacheService.getClusteredPhotos(
+                zoom = zoom,
+                zoomLevel = zoomLevel,
+                bbox = boundedBbox,
+                coupleId = context.coupleId,
+                albumId = context.albumId,
+                canReuseCellCache = canReuseCellCache,
+            )
         } else {
             mapPhotosCacheService.getIndividualPhotos(
                 zoom = zoom,
                 bbox = boundedBbox,
-                coupleId = coupleId,
-                albumId = effectiveAlbumId,
+                coupleId = context.coupleId,
+                albumId = context.albumId,
             )
         }
     }
@@ -74,8 +88,8 @@ class MapQueryService(
         clusterId: String,
         userId: Long?,
     ): List<ClusterPhotoResponse> {
-        val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
-        if (userId != null && coupleId == null) {
+        val context = resolveViewerContext(userId = userId, albumId = null)
+        if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
             return emptyList()
         }
         val gridCell = ClusterId.parse(clusterId)
@@ -86,7 +100,7 @@ class MapQueryService(
                 south = expandedBBox.south,
                 east = expandedBBox.east,
                 north = expandedBBox.north,
-                coupleId = coupleId,
+                coupleId = context.coupleId,
             )
         if (photos.isEmpty()) {
             return emptyList()
@@ -111,7 +125,11 @@ class MapQueryService(
         val memberCells = if (mergedCells.isEmpty()) setOf(target) else mergedCells
         return photos
             .filter {
-                val cell = CellCoord(floor(lonToMeters(it.longitude) / gridSize).toLong(), floor(latToMeters(it.latitude) / gridSize).toLong())
+                val cell =
+                    CellCoord(
+                        floor(lonToMeters(it.longitude) / gridSize).toLong(),
+                        floor(latToMeters(it.latitude) / gridSize).toLong(),
+                    )
                 cell in memberCells
             }.toClusterPhotosPageResponse()
     }
@@ -133,16 +151,20 @@ class MapQueryService(
         userId: Long,
         longitude: Double,
         latitude: Double,
-        zoom: Int,
-        bbox: BBox,
+        zoom: Double,
         albumId: Long?,
         lastDataVersion: Long?,
     ): MapMeResponse {
-        val homeBBox = BBox.fromCenter(zoom, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
-        val coupleId = coupleRepository.findByUserId(userId)?.id
-        val effectiveAlbumId = resolveEffectiveAlbumId(userId, albumId)
-        val currentVersion = mapPhotosCacheService.getVersion(zoom, homeBBox, coupleId, effectiveAlbumId)
-        val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
+        val mapZoom = MapZoom.from(zoom)
+        val homeBBox = BBox.fromCenter(mapZoom.discrete, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
+        val context = resolveViewerContext(userId = userId, albumId = albumId)
+        val currentVersion =
+            mapPhotosCacheService.getDataVersion(
+                _zoom = mapZoom.discrete,
+                _bbox = homeBBox,
+                coupleId = context.coupleId,
+                albumId = context.albumId,
+            )
 
         val (locationFuture, albumsFuture, photosFuture) =
             StructuredConcurrency.run { scope ->
@@ -150,38 +172,25 @@ class MapQueryService(
                     scope.fork { mapClientPort.reverseGeocode(longitude, latitude) },
                     scope.fork {
                         dbSemaphore.withPermit {
-                            if (coupleId != null) {
-                                albumRepository
-                                    .findAllByCoupleId(coupleId)
-                                    .sortedByDescending { it.isDefault }
-                            } else {
-                                emptyList()
-                            }
+                            findAlbumsForCouple(context.coupleId)
                         }
                     },
                     scope.fork {
-                        if (versionUnchanged) {
-                            null
-                        } else {
-                            dbSemaphore.withPermit {
-                                getPhotos(zoom, homeBBox, userId, effectiveAlbumId)
-                            }
+                        dbSemaphore.withPermit {
+                            getPhotos(
+                                zoom = mapZoom.discrete,
+                                zoomLevel = mapZoom.level,
+                                bbox = homeBBox,
+                                context = context,
+                                lastDataVersion = lastDataVersion,
+                                currentDataVersion = currentVersion,
+                            )
                         }
                     },
                 )
             }
 
-        val location = locationFuture.get()
-        val formattedLocation =
-            LocationInfoResponse(
-                address =
-                    AddressFormatter.removeProvinceAndCity(
-                        AddressFormatter.toRoadHeader(location.address ?: "", location.roadName ?: ""),
-                    ),
-                roadName = location.roadName,
-                placeName = location.placeName,
-                regionName = AddressFormatter.removeProvinceAndCity(location.regionName ?: ""),
-            )
+        val formattedLocation = formatLocation(locationFuture.get())
 
         val photosResponse = photosFuture.get()
         val albums = albumsFuture.get()
@@ -221,9 +230,47 @@ class MapQueryService(
             albumId
         }
 
+    private fun resolveOptionalCoupleId(userId: Long?): Long? = userId?.let { coupleRepository.findByUserId(it)?.id }
+
+    private fun resolveViewerContext(
+        userId: Long?,
+        albumId: Long?,
+    ): MapViewerContext {
+        val coupleId = resolveOptionalCoupleId(userId)
+        val effectiveAlbumId = resolveEffectiveAlbumId(userId, albumId)
+        return MapViewerContext(userId = userId, coupleId = coupleId, albumId = effectiveAlbumId)
+    }
+
+    private fun findAlbumsForCouple(coupleId: Long?) =
+        coupleId
+            ?.let { albumRepository.findAllByCoupleId(it).sortedByDescending { album -> album.isDefault } }
+            ?: emptyList()
+
+    private fun formatLocation(location: LocationInfoResponse): LocationInfoResponse =
+        LocationInfoResponse(
+            address =
+                AddressFormatter.removeProvinceAndCity(
+                    AddressFormatter.toRoadHeader(location.address ?: "", location.roadName ?: ""),
+                ),
+            roadName = location.roadName,
+            placeName = location.placeName,
+            regionName = AddressFormatter.removeProvinceAndCity(location.regionName ?: ""),
+        )
+
+    private fun isMissingCoupleForAuthenticatedUser(
+        userId: Long?,
+        coupleId: Long?,
+    ): Boolean = userId != null && coupleId == null
+
     private fun expandedClusterSearchBBox(cell: kr.co.lokit.api.domain.map.domain.GridCell): BBox? {
-        val sw = kr.co.lokit.api.domain.map.domain.GridCell(cell.zoom, cell.cellX - 1, cell.cellY - 1).toBBox()
-        val ne = kr.co.lokit.api.domain.map.domain.GridCell(cell.zoom, cell.cellX + 1, cell.cellY + 1).toBBox()
+        val sw =
+            kr.co.lokit.api.domain.map.domain
+                .GridCell(cell.zoom, cell.cellX - 1, cell.cellY - 1)
+                .toBBox()
+        val ne =
+            kr.co.lokit.api.domain.map.domain
+                .GridCell(cell.zoom, cell.cellX + 1, cell.cellY + 1)
+                .toBBox()
         return BBox(
             west = sw.west,
             south = sw.south,
@@ -232,9 +279,9 @@ class MapQueryService(
         ).clampToKorea()
     }
 
-    private fun lonToMeters(lon: Double): Double = lon * (Math.PI * 6378137.0 / 180.0)
+    private fun lonToMeters(lon: Double): Double = MercatorProjection.longitudeToMeters(lon)
 
-    private fun latToMeters(lat: Double): Double = Math.log(Math.tan((90.0 + lat) * Math.PI / 360.0)) * 6378137.0
+    private fun latToMeters(lat: Double): Double = MercatorProjection.latitudeToMeters(lat)
 
     private fun emptyPhotosResponse(zoom: Int): MapPhotosResponse =
         MapPhotosResponse(

@@ -16,11 +16,9 @@ import org.springframework.context.annotation.Configuration
 class OpenApiConfig(
     @Value("\${spring.profiles.active:local}")
     private val activeProfile: String,
-
     @Value("\${server.servlet.context-path:/}")
     private val contextPath: String,
 ) {
-
     @Bean
     fun openApi(): OpenAPI =
         OpenAPI()
@@ -29,13 +27,11 @@ class OpenApiConfig(
                     .title("Lokit API")
                     .version("1.0.0")
                     .description("Lokit API 문서"),
-            )
-            .servers(
+            ).servers(
                 listOf(
                     Server().url(contextPath).description("API Server"),
                 ),
-            )
-            .tags(
+            ).tags(
                 listOf(
                     Tag().name("Auth").description("인증 API"),
                     Tag().name("Couple").description("커플 API"),
@@ -43,8 +39,7 @@ class OpenApiConfig(
                     Tag().name("Photo").description("사진 API"),
                     Tag().name("Map").description("지도 API"),
                 ),
-            )
-            .components(
+            ).components(
                 Components()
                     .addSecuritySchemes(
                         SECURITY_SCHEME_NAME,
@@ -54,8 +49,7 @@ class OpenApiConfig(
                             .name("accessToken")
                             .description(securityDescription()),
                     ),
-            )
-            .addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+            ).addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
 
     private fun securityDescription(): String =
         """
@@ -69,7 +63,8 @@ class OpenApiConfig(
 
     @Bean
     fun apiGroup(): GroupedOpenApi =
-        GroupedOpenApi.builder()
+        GroupedOpenApi
+            .builder()
             .group("api")
             .packagesToScan("kr.co.lokit.api")
             .build()

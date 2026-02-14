@@ -17,6 +17,11 @@ interface ClusterBoundaryMergeStrategy {
     fun mergeClusters(
         clusters: List<ClusterResponse>,
         zoom: Int,
+    ): List<ClusterResponse> = mergeClusters(clusters, zoom.toDouble())
+
+    fun mergeClusters(
+        clusters: List<ClusterResponse>,
+        zoomLevel: Double,
     ): List<ClusterResponse>
 
     fun resolveClusterCells(

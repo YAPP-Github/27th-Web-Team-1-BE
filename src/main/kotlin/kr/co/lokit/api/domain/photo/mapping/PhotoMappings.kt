@@ -23,13 +23,16 @@ fun CreatePhotoRequest.toDomain(userId: Long): Photo =
         takenAt = this@toDomain.takenAt,
     )
 
-fun Photo.toEntity(album: AlbumEntity, uploadedBy: UserEntity): PhotoEntity =
+fun Photo.toEntity(
+    album: AlbumEntity,
+    uploadedBy: UserEntity,
+): PhotoEntity =
     PhotoEntity(
         url = this.url,
         album = album,
         location = PhotoEntity.createPoint(this.location.longitude, this.location.latitude),
         uploadedBy = uploadedBy,
-        address = this.address!!
+        address = requireNotNull(this.address) { "Photo.address must be initialized before persistence" },
     ).apply {
         this.description = this@toEntity.description
         this.takenAt = this@toEntity.takenAt
@@ -46,7 +49,7 @@ fun PhotoEntity.toDomain(): Photo =
         url = this.url,
         uploadedById = this.uploadedBy.nonNullId(),
         takenAt = this.takenAt,
-        address = this.address
+        address = this.address,
     )
 
 fun Photo.toResponse(): PhotoResponse =
@@ -63,11 +66,12 @@ fun Photo.toResponse(): PhotoResponse =
     )
 
 fun Album.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse {
-    val actualPhotoCount = if (this.isDefault) {
-        this.photos.size
-    } else {
-        this.photoCount
-    }
+    val actualPhotoCount =
+        if (this.isDefault) {
+            this.photos.size
+        } else {
+            this.photoCount
+        }
 
     return AlbumWithPhotosResponse(
         id = this.id,
@@ -92,9 +96,10 @@ fun PhotoEntity.toPhotoDetail(): PhotoDetail =
         uploadedById = this.uploadedBy.nonNullId(),
         uploaderName = this.uploadedBy.name,
         uploaderProfileImageUrl = this.uploadedBy.profileImageUrl,
-        location = Location(
-            longitude = this.longitude,
-            latitude = this.latitude,
-        ),
+        location =
+            Location(
+                longitude = this.longitude,
+                latitude = this.latitude,
+            ),
         description = this.description,
     )

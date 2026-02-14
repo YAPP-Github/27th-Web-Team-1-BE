@@ -51,73 +51,86 @@ class CouplePurgeWorker(
     }
 
     private fun softDeleteEmoticons(albumIds: List<Long>) {
-        entityManager.createNativeQuery(
-            """
-            UPDATE emoticon SET is_deleted = true
-            WHERE comment_id IN (
-                SELECT c.id FROM comment c
-                WHERE c.photo_id IN (
-                    SELECT p.id FROM photo p WHERE p.album_id IN (:albumIds)
-                )
-            ) AND is_deleted = false
-            """.trimIndent(),
-        ).setParameter("albumIds", albumIds).executeUpdate()
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE emoticon SET is_deleted = true
+                WHERE comment_id IN (
+                    SELECT c.id FROM comment c
+                    WHERE c.photo_id IN (
+                        SELECT p.id FROM photo p WHERE p.album_id IN (:albumIds)
+                    )
+                ) AND is_deleted = false
+                """.trimIndent(),
+            ).setParameter("albumIds", albumIds)
+            .executeUpdate()
     }
 
     private fun softDeleteComments(albumIds: List<Long>) {
-        entityManager.createNativeQuery(
-            """
-            UPDATE comment SET is_deleted = true
-            WHERE photo_id IN (
-                SELECT p.id FROM photo p WHERE p.album_id IN (:albumIds)
-            ) AND is_deleted = false
-            """.trimIndent(),
-        ).setParameter("albumIds", albumIds).executeUpdate()
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE comment SET is_deleted = true
+                WHERE photo_id IN (
+                    SELECT p.id FROM photo p WHERE p.album_id IN (:albumIds)
+                ) AND is_deleted = false
+                """.trimIndent(),
+            ).setParameter("albumIds", albumIds)
+            .executeUpdate()
     }
 
     private fun softDeletePhotos(albumIds: List<Long>) {
-        entityManager.createNativeQuery(
-            """
-            UPDATE photo SET is_deleted = true
-            WHERE album_id IN (:albumIds) AND is_deleted = false
-            """.trimIndent(),
-        ).setParameter("albumIds", albumIds).executeUpdate()
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE photo SET is_deleted = true
+                WHERE album_id IN (:albumIds) AND is_deleted = false
+                """.trimIndent(),
+            ).setParameter("albumIds", albumIds)
+            .executeUpdate()
     }
 
     private fun softDeleteAlbums(albumIds: List<Long>) {
-        entityManager.createNativeQuery(
-            """
-            UPDATE album SET is_deleted = true
-            WHERE id IN (:albumIds) AND is_deleted = false
-            """.trimIndent(),
-        ).setParameter("albumIds", albumIds).executeUpdate()
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE album SET is_deleted = true
+                WHERE id IN (:albumIds) AND is_deleted = false
+                """.trimIndent(),
+            ).setParameter("albumIds", albumIds)
+            .executeUpdate()
     }
 
     private fun softDeleteCoupleUsers(coupleId: Long) {
-        entityManager.createNativeQuery(
-            """
-            UPDATE couple_user SET is_deleted = true
-            WHERE couple_id = :coupleId AND is_deleted = false
-            """.trimIndent(),
-        ).setParameter("coupleId", coupleId).executeUpdate()
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE couple_user SET is_deleted = true
+                WHERE couple_id = :coupleId AND is_deleted = false
+                """.trimIndent(),
+            ).setParameter("coupleId", coupleId)
+            .executeUpdate()
     }
 
     private fun softDeleteCouple(coupleId: Long) {
-        entityManager.createNativeQuery(
-            """
-            UPDATE couple SET is_deleted = true
-            WHERE id = :coupleId AND is_deleted = false
-            """.trimIndent(),
-        ).setParameter("coupleId", coupleId).executeUpdate()
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE couple SET is_deleted = true
+                WHERE id = :coupleId AND is_deleted = false
+                """.trimIndent(),
+            ).setParameter("coupleId", coupleId)
+            .executeUpdate()
     }
 
     private fun deleteS3Files(urls: List<String>) {
         if (urls.isEmpty()) return
 
         val prefix = OBJECT_URL_TEMPLATE.format(bucket, region)
-        val keys = urls.mapNotNull { url ->
-            if (url.startsWith(prefix)) url.removePrefix(prefix) else null
-        }
+        val keys =
+            urls.mapNotNull { url ->
+                if (url.startsWith(prefix)) url.removePrefix(prefix) else null
+            }
 
         keys.chunked(MAX_BATCH_DELETE_SIZE).forEach { chunk ->
             retry(
@@ -125,12 +138,14 @@ class CouplePurgeWorker(
                 context = "chunkSize=${chunk.size}",
             ) {
                 val delete =
-                    Delete.builder()
+                    Delete
+                        .builder()
                         .objects(chunk.map { key -> ObjectIdentifier.builder().key(key).build() })
                         .quiet(true)
                         .build()
                 s3Client.deleteObjects(
-                    DeleteObjectsRequest.builder()
+                    DeleteObjectsRequest
+                        .builder()
                         .bucket(bucket)
                         .delete(delete)
                         .build(),

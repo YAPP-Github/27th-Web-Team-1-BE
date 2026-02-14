@@ -6,7 +6,6 @@ sealed class BusinessException(
     override val cause: Throwable? = null,
     val errors: Map<String, String> = emptyMap(),
 ) : RuntimeException(message, cause) {
-
     class InvalidInputException(
         message: String = ErrorCode.INVALID_INPUT.message,
         cause: Throwable? = null,
@@ -186,20 +185,20 @@ sealed class BusinessException(
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =
     BusinessException.ResourceNotFoundException(
         "${T::class.simpleName}(id=$id)을(를) 찾을 수 없습니다",
-        errors = mapOf("id" to id.toString()),
+        errors = errorDetailsOf(ErrorField.ID to id),
     )
 
 inline fun <reified T> entityNotFound(
     field: String,
-    value: Any
+    value: Any,
 ): BusinessException.ResourceNotFoundException =
     BusinessException.ResourceNotFoundException(
         "${T::class.simpleName}을(를) ($value)로 찾을 수 없습니다",
-        errors = mapOf(field to value.toString()),
+        errors = errorDetailsOf(field to value),
     )
 
 fun entityIdNotInitialized(entityName: String): BusinessException.NotInitializedException =
     BusinessException.NotInitializedException(
         "${entityName}의 id가 초기화되지 않았습니다",
-        errors = mapOf("entityName" to entityName),
+        errors = errorDetailsOf(ErrorField.ENTITY_NAME to entityName),
     )

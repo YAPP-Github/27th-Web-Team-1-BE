@@ -11,13 +11,13 @@ import java.util.concurrent.Executor
 @Configuration
 @EnableAsync
 class AsyncConfig {
-
     @Bean
     fun taskExecutor(): Executor = VirtualThreadTaskExecutor("virtual-")
 
     @Bean
-    fun taskScheduler(): TaskScheduler = SimpleAsyncTaskScheduler().apply {
-        setVirtualThreads(true)
-        setThreadNamePrefix("scheduled-vt-")
-    }
+    fun taskScheduler(): TaskScheduler =
+        SimpleAsyncTaskScheduler().apply {
+            setVirtualThreads(true)
+            setThreadNamePrefix("scheduled-vt-")
+        }
 }

@@ -23,10 +23,12 @@ class JpaPhotoRepository(
 ) : PhotoRepositoryPort {
     @Transactional
     override fun save(photo: Photo): Photo {
-        val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId!!)
-            ?: throw entityNotFound<Album>(photo.albumId)
-        val userEntity = userJpaRepository.findByIdOrNull(photo.uploadedById)
-            ?: throw entityNotFound<User>(photo.uploadedById)
+        val albumEntity =
+            albumJpaRepository.findByIdOrNull(photo.albumId!!)
+                ?: throw entityNotFound<Album>(photo.albumId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(photo.uploadedById)
+                ?: throw entityNotFound<User>(photo.uploadedById)
         val photoEntity = photo.toEntity(albumEntity, userEntity)
         val savedEntity = photoJpaRepository.save(photoEntity)
         return savedEntity.toDomain()
@@ -38,42 +40,47 @@ class JpaPhotoRepository(
 
     @Transactional
     override fun deleteById(id: Long) {
-        val photoEntity = photoJpaRepository.findByIdWithRelations(id)
-            ?: throw entityNotFound<Photo>(id)
+        val photoEntity =
+            photoJpaRepository.findByIdWithRelations(id)
+                ?: throw entityNotFound<Photo>(id)
 
         photoEntity.album.onPhotoRemoved()
         photoJpaRepository.deleteById(id)
     }
 
-    override fun findAllByUserId(userId: Long): List<Photo> {
-        return photoJpaRepository.findAllByUploadedById(userId)
+    override fun findAllByUserId(userId: Long): List<Photo> =
+        photoJpaRepository
+            .findAllByUploadedById(userId)
             .map { it.toDomain() }
-    }
 
-    override fun findById(id: Long): Photo {
-        return photoJpaRepository.findByIdWithRelations(id)?.toDomain()
+    override fun findById(id: Long): Photo =
+        photoJpaRepository.findByIdWithRelations(id)?.toDomain()
             ?: throw entityNotFound<Photo>(id)
-    }
 
     override fun saveAll(photos: List<Photo>): List<Photo> {
         if (photos.isEmpty()) return emptyList()
         val first = photos.first()
-        val albumEntity = albumJpaRepository.findByIdOrNull(first.albumId!!)
-            ?: throw entityNotFound<Album>(first.albumId)
-        val userEntity = userJpaRepository.findByIdOrNull(first.uploadedById)
-            ?: throw entityNotFound<User>(first.uploadedById)
+        val albumEntity =
+            albumJpaRepository.findByIdOrNull(first.albumId!!)
+                ?: throw entityNotFound<Album>(first.albumId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(first.uploadedById)
+                ?: throw entityNotFound<User>(first.uploadedById)
         val entities = photos.map { it.toEntity(albumEntity, userEntity) }
         return photoJpaRepository.saveAll(entities).map { it.toDomain() }
     }
 
     @Transactional
-    override fun apply(photo: Photo): Photo {
-        val albumEntity = albumJpaRepository.findByIdOrNull(photo.albumId!!)
-            ?: throw entityNotFound<Album>(photo.albumId)
-        val userEntity = userJpaRepository.findByIdOrNull(photo.uploadedById)
-            ?: throw entityNotFound<User>(photo.uploadedById)
-        val photoEntity = photoJpaRepository.findByIdWithRelations(photo.id)
-            ?: throw entityNotFound<Photo>(photo.id)
+    override fun update(photo: Photo): Photo {
+        val albumEntity =
+            albumJpaRepository.findByIdOrNull(photo.albumId!!)
+                ?: throw entityNotFound<Album>(photo.albumId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(photo.uploadedById)
+                ?: throw entityNotFound<User>(photo.uploadedById)
+        val photoEntity =
+            photoJpaRepository.findByIdWithRelations(photo.id)
+                ?: throw entityNotFound<Photo>(photo.id)
 
         val oldAlbum = photoEntity.album
         if (oldAlbum.nonNullId() != albumEntity.nonNullId()) {
@@ -81,14 +88,7 @@ class JpaPhotoRepository(
             albumEntity.onPhotoAdded()
         }
 
-        photoEntity.apply {
-            this.album = albumEntity
-            this.uploadedBy = userEntity
-            this.url = photo.url
-            this.description = photo.description
-            this.coupleId = albumEntity.couple.nonNullId()
-            updateLocation(photo.location.longitude, photo.location.latitude)
-        }
+        photoEntity.apply(photo = photo, album = albumEntity, uploadedBy = userEntity)
         return photoEntity.toDomain()
     }
 }

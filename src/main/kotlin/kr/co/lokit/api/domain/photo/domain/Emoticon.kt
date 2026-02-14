@@ -5,4 +5,8 @@ data class Emoticon(
     val commentId: Long,
     val userId: Long,
     val emoji: String,
-)
+) {
+    companion object {
+        const val MAX_PER_USER_PER_COMMENT = 10
+    }
+}

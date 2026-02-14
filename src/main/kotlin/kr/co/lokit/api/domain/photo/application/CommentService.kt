@@ -1,7 +1,8 @@
 package kr.co.lokit.api.domain.photo.application
 
-import kr.co.lokit.api.common.constant.DeIdentification
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.EmoticonRepositoryPort
@@ -21,30 +22,28 @@ class CommentService(
 ) : CommentUseCase,
     EmoticonUseCase {
     @Transactional
-    override fun createComment(photoId: Long, userId: Long, content: String): Comment {
+    override fun createComment(
+        photoId: Long,
+        userId: Long,
+        content: String,
+    ): Comment {
         val comment = Comment(photoId = photoId, userId = userId, content = content)
         return commentRepository.save(comment)
     }
 
     @Transactional(readOnly = true)
-    override fun getComments(photoId: Long, currentUserId: Long): List<CommentWithEmoticons> {
+    override fun getComments(
+        photoId: Long,
+        currentUserId: Long,
+    ): List<CommentWithEmoticons> {
         val comments = commentRepository.findAllByPhotoIdWithEmoticons(photoId, currentUserId)
-
-        val couple = coupleRepository.findByUserId(currentUserId)
-        val deIdentifyUserId = if (couple != null && couple.status.isDisconnectedOrExpired) {
-            couple.disconnectedByUserId
-        } else {
-            null
-        }
+        val deIdentifyUserId = coupleRepository.findByUserId(currentUserId)?.deIdentifiedUserId()
 
         if (deIdentifyUserId == null) return comments
 
         return comments.map { commentWithEmoticons ->
             if (commentWithEmoticons.comment.userId == deIdentifyUserId) {
-                commentWithEmoticons.copy(
-                    userName = DeIdentification.DEFAULT_NAME,
-                    userProfileImageUrl = DeIdentification.DEFAULT_PROFILE_IMAGE_URL,
-                )
+                commentWithEmoticons.deIdentified()
             } else {
                 commentWithEmoticons
             }
@@ -52,16 +51,29 @@ class CommentService(
     }
 
     @Transactional
-    override fun addEmoticon(commentId: Long, userId: Long, emoji: String): Emoticon {
+    override fun addEmoticon(
+        commentId: Long,
+        userId: Long,
+        emoji: String,
+    ): Emoticon {
         if (emoticonRepository.existsByCommentIdAndUserIdAndEmoji(commentId, userId, emoji)) {
             throw BusinessException.EmoticonAlreadyExistsException(
-                errors = mapOf("commentId" to commentId.toString(), "userId" to userId.toString(), "emoji" to emoji),
+                errors =
+                    errorDetailsOf(
+                        ErrorField.COMMENT_ID to commentId,
+                        ErrorField.USER_ID to userId,
+                        ErrorField.EMOJI to emoji,
+                    ),
             )
         }
         val count = emoticonRepository.countByCommentIdAndUserId(commentId, userId)
-        if (count >= MAX_EMOTICONS_PER_USER_PER_COMMENT) {
+        if (count >= Emoticon.MAX_PER_USER_PER_COMMENT) {
             throw BusinessException.CommentMaxEmoticonsExceededException(
-                errors = mapOf("commentId" to commentId.toString(), "userId" to userId.toString()),
+                errors =
+                    errorDetailsOf(
+                        ErrorField.COMMENT_ID to commentId,
+                        ErrorField.USER_ID to userId,
+                    ),
             )
         }
         val emoticon = Emoticon(commentId = commentId, userId = userId, emoji = emoji)
@@ -69,11 +81,11 @@ class CommentService(
     }
 
     @Transactional
-    override fun removeEmoticon(commentId: Long, userId: Long, emoji: String) {
+    override fun removeEmoticon(
+        commentId: Long,
+        userId: Long,
+        emoji: String,
+    ) {
         emoticonRepository.delete(commentId, userId, emoji)
-    }
-
-    companion object {
-        private const val MAX_EMOTICONS_PER_USER_PER_COMMENT = 10
     }
 }

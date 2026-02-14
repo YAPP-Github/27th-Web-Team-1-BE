@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.album.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.mapping.toDomain
@@ -20,25 +21,30 @@ class JpaAlbumRepository(
     private val coupleJpaRepository: CoupleJpaRepository,
     private val userJpaRepository: UserJpaRepository,
 ) : AlbumRepositoryPort {
-
-    private fun enrichDefaultAlbumWithAllPhotos(album: Album, coupleId: Long): Album {
+    private fun enrichDefaultAlbumWithAllPhotos(
+        album: Album,
+        coupleId: Long,
+    ): Album {
         if (!album.isDefault) {
             return album
         }
 
-        val allAlbums = findAllByCoupleIdInternal(coupleId)
-            .filter { it.id != album.id }
+        val allAlbums =
+            findAllByCoupleIdInternal(coupleId)
+                .filter { it.id != album.id }
 
-        val allPhotos = (album.photos + allAlbums.flatMap { it.photos })
-            .distinctBy { it.id }
+        val allPhotos =
+            (album.photos + allAlbums.flatMap { it.photos })
+                .distinctBy { it.id }
 
         val actualPhotoCount = allPhotos.size
 
-        return album.copy(
-            photoCount = actualPhotoCount
-        ).apply {
-            this.photos = allPhotos
-        }
+        return album
+            .copy(
+                photoCount = actualPhotoCount,
+            ).apply {
+                this.photos = allPhotos
+            }
     }
 
     private fun findAllByUserIdInternal(userId: Long): List<Album> {
@@ -64,19 +70,23 @@ class JpaAlbumRepository(
     }
 
     @Transactional
-    override fun save(album: Album, userId: Long): Album {
-        val couple = coupleJpaRepository.findByUserId(userId)
-            ?: throw entityNotFound<Couple>(userId)
-        val userEntity = userJpaRepository.findByIdOrNull(userId)
-            ?: throw entityNotFound<User>(userId)
+    override fun save(
+        album: Album,
+        userId: Long,
+    ): Album {
+        val couple =
+            coupleJpaRepository.findByUserId(userId)
+                ?: throw entityNotFound<Couple>(userId)
+        val userEntity =
+            userJpaRepository.findByIdOrNull(userId)
+                ?: throw entityNotFound<User>(userId)
         val albumEntity = album.toEntity(couple, userEntity)
         val savedEntity = albumJpaRepository.save(albumEntity)
         return savedEntity.toDomain()
     }
 
     @Transactional(readOnly = true)
-    override fun findById(id: Long): Album? =
-        albumJpaRepository.findByIdOrNull(id)?.toDomain()
+    override fun findById(id: Long): Album? = albumJpaRepository.findByIdOrNull(id)?.toDomain()
 
     @Transactional(readOnly = true)
     override fun findAllByUserId(userId: Long): List<Album> {
@@ -91,7 +101,7 @@ class JpaAlbumRepository(
         }
     }
 
-    @Cacheable(cacheNames = ["coupleAlbums"], key = "#coupleId", sync = true)
+    @Cacheable(cacheNames = [CacheNames.COUPLE_ALBUMS], key = "#coupleId", sync = true)
     @Transactional(readOnly = true)
     override fun findAllByCoupleId(coupleId: Long): List<Album> {
         val albums = findAllByCoupleIdInternal(coupleId)
@@ -105,9 +115,10 @@ class JpaAlbumRepository(
         }
     }
 
-    override fun apply(album: Album): Album {
-        val albumEntity = albumJpaRepository.findByIdOrNull(album.id)
-            ?: throw entityNotFound<Album>(album.id)
+    override fun update(album: Album): Album {
+        val albumEntity =
+            albumJpaRepository.findByIdOrNull(album.id)
+                ?: throw entityNotFound<Album>(album.id)
         albumEntity.updateTitle(album.title)
         return albumEntity.toDomain()
     }
@@ -144,12 +155,13 @@ class JpaAlbumRepository(
     }
 
     @Transactional(readOnly = true)
-    override fun findByIdWithPhotos(id: Long): List<Album> {
-        return findByIdWithPhotos(id, null)
-    }
+    override fun findByIdWithPhotos(id: Long): List<Album> = findByIdWithPhotos(id, null)
 
     @Transactional(readOnly = true)
-    override fun findByIdWithPhotos(id: Long, userId: Long?): List<Album> {
+    override fun findByIdWithPhotos(
+        id: Long,
+        @Suppress("UNUSED_PARAMETER") userId: Long?,
+    ): List<Album> {
         val albums = albumJpaRepository.findByIdWithPhotos(id).map { it.toDomain() }
 
         return albums.map { album ->
@@ -162,16 +174,15 @@ class JpaAlbumRepository(
     }
 
     @Transactional(readOnly = true)
-    override fun findDefaultByUserId(userId: Long): Album? {
-        return albumJpaRepository.findByUserIdAndIsDefaultTrue(userId)?.toDomain()
-    }
+    override fun findDefaultByUserId(userId: Long): Album? =
+        albumJpaRepository.findByUserIdAndIsDefaultTrue(userId)?.toDomain()
 
     @Transactional(readOnly = true)
-    override fun existsByCoupleIdAndTitle(coupleId: Long, title: String): Boolean {
-        return albumJpaRepository.existsByCoupleIdAndTitle(coupleId, title)
-    }
+    override fun existsByCoupleIdAndTitle(
+        coupleId: Long,
+        title: String,
+    ): Boolean = albumJpaRepository.existsByCoupleIdAndTitle(coupleId, title)
 
     @Transactional(readOnly = true)
-    override fun photoCountSumByUserId(userId: Long): Int =
-        albumJpaRepository.sumPhotoCountByUserId(userId) ?: 0
+    override fun photoCountSumByUserId(userId: Long): Int = albumJpaRepository.sumPhotoCountByUserId(userId) ?: 0
 }
