@@ -255,8 +255,8 @@ data class MapMeResponse(
     val albums: List<HomeResponse.Companion.AlbumThumbnails>,
     @Schema(description = "데이터 버전 (사진 변경 시 증가, 프론트 캐싱에 사용)")
     val dataVersion: Long = 0,
-    @Schema(description = "클러스터 목록 (줌 < 15일 때, dataVersion 미변경 시 null)")
+    @Schema(description = "클러스터 목록 (줌 < 15일 때)")
     val clusters: List<ClusterResponse>? = null,
-    @Schema(description = "개별 사진 목록 (줌 >= 15일 때, dataVersion 미변경 시 null)")
+    @Schema(description = "개별 사진 목록 (줌 >= 15일 때)")
     val photos: List<MapPhotoResponse>? = null,
 )

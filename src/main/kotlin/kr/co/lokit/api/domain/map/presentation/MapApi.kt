@@ -76,7 +76,7 @@ interface MapApi {
         )
         @RequestParam albumId: Long?,
         @Parameter(
-            description = "이전 응답의 dataVersion. 일치하면 사진 데이터를 생략하여 응답 최적화",
+            description = "이전 응답의 dataVersion. 클라이언트 캐시 동기화 판단에 사용",
             example = "3",
             required = false,
         )

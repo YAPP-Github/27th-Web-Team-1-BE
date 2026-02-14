@@ -83,7 +83,7 @@ class MapPhotosCacheServiceTest {
     @Test
     fun `buildIndividualKey는 올바른 형식의 키를 생성한다`() {
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
-        val key = buildIndividualKey(bbox, 14, 1L, 2L, 0L)
+        val key = MapCacheKeyFactory.buildIndividualKey(bbox, 14, 1L, 2L, 0L)
 
         assertTrue(key.startsWith("ind_z14_w"))
         assertTrue(key.contains("_c1_"))
@@ -94,7 +94,7 @@ class MapPhotosCacheServiceTest {
     @Test
     fun `buildIndividualKey에서 coupleId가 null이면 0으로 대체된다`() {
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
-        val key = buildIndividualKey(bbox, 14, null, null, 0L)
+        val key = MapCacheKeyFactory.buildIndividualKey(bbox, 14, null, null, 0L)
 
         assertTrue(key.contains("_c0_"))
     }
@@ -102,8 +102,8 @@ class MapPhotosCacheServiceTest {
     @Test
     fun `같은 파라미터로 buildIndividualKey를 호출하면 동일한 키가 생성된다`() {
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
-        val key1 = buildIndividualKey(bbox, 14, 1L, null, 0L)
-        val key2 = buildIndividualKey(bbox, 14, 1L, null, 0L)
+        val key1 = MapCacheKeyFactory.buildIndividualKey(bbox, 14, 1L, null, 0L)
+        val key2 = MapCacheKeyFactory.buildIndividualKey(bbox, 14, 1L, null, 0L)
 
         assertEquals(key1, key2)
     }
@@ -111,8 +111,8 @@ class MapPhotosCacheServiceTest {
     @Test
     fun `다른 버전으로 buildIndividualKey를 호출하면 다른 키가 생성된다`() {
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
-        val key1 = buildIndividualKey(bbox, 14, 1L, null, 0L)
-        val key2 = buildIndividualKey(bbox, 14, 1L, null, 1L)
+        val key1 = MapCacheKeyFactory.buildIndividualKey(bbox, 14, 1L, null, 0L)
+        val key2 = MapCacheKeyFactory.buildIndividualKey(bbox, 14, 1L, null, 1L)
 
         assertTrue(key1 != key2)
     }
@@ -164,7 +164,7 @@ class MapPhotosCacheServiceTest {
 
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
         val targetCellKey = service.buildCellKey(14, 10, 20, 1L, null, 0L)
-        val targetPhotoKey = buildIndividualKey(bbox, 17, 1L, null, 0L)
+        val targetPhotoKey = MapCacheKeyFactory.buildIndividualKey(bbox, 17, 1L, null, 0L)
         val otherCellKey = service.buildCellKey(14, 10, 20, 2L, null, 0L)
 
         mapCells.nativeCache.put(targetCellKey, MapPhotosCacheService.CachedCell(null))
@@ -206,6 +206,25 @@ class MapPhotosCacheServiceTest {
 
         assertTrue(service.getVersion(14, bbox, 1L, 10L) > 0L)
         assertEquals(0L, service.getVersion(14, bbox, 1L, 11L))
+    }
+
+    @Test
+    fun `dataVersion은 위치가 달라도 동일한 전역 버전을 반환한다`() {
+        val mapCells = CaffeineCache("mapCells", Caffeine.newBuilder().build())
+        val mapPhotos = CaffeineCache("mapPhotos", Caffeine.newBuilder().build())
+        `when`(cacheManager.getCache("mapCells")).thenReturn(mapCells)
+        `when`(cacheManager.getCache("mapPhotos")).thenReturn(mapPhotos)
+
+        service.evictForPhotoMutation(coupleId = 1L, albumId = 10L, longitude = 127.0, latitude = 37.5)
+
+        val seoulBbox = BBox(126.9, 37.4, 127.1, 37.6)
+        val busanBbox = BBox(129.0, 35.0, 129.2, 35.2)
+
+        val seoulVersion = service.getDataVersion(14, seoulBbox, 1L, 10L)
+        val busanVersion = service.getDataVersion(14, busanBbox, 1L, 10L)
+
+        assertEquals(seoulVersion, busanVersion)
+        assertTrue(seoulVersion > 0L)
     }
 
     // --- getClusteredPhotos 테스트 ---

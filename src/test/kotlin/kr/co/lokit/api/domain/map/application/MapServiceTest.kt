@@ -9,6 +9,7 @@ import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
 import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createAlbumBounds
@@ -183,6 +184,9 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findById(defaultAlbumId)).thenReturn(createAlbum(id = defaultAlbumId, isDefault = true))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull())).thenReturn(
+            MapPhotosResponse(clusters = emptyList()),
+        )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
             LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
@@ -202,5 +206,6 @@ class MapServiceTest {
 
         assertEquals(currentVersion, result.dataVersion)
         verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), anyOrNull())
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull())
     }
 }

@@ -136,13 +136,12 @@ class MapQueryService(
         zoom: Int,
         bbox: BBox,
         albumId: Long?,
-        lastDataVersion: Long?,
+        @Suppress("UNUSED_PARAMETER") lastDataVersion: Long?,
     ): MapMeResponse {
         val homeBBox = BBox.fromCenter(zoom, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
         val coupleId = coupleRepository.findByUserId(userId)?.id
         val effectiveAlbumId = resolveEffectiveAlbumId(userId, albumId)
         val currentVersion = mapPhotosCacheService.getDataVersion(zoom, homeBBox, coupleId, effectiveAlbumId)
-        val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
 
         val (locationFuture, albumsFuture, photosFuture) =
             StructuredConcurrency.run { scope ->
@@ -160,12 +159,8 @@ class MapQueryService(
                         }
                     },
                     scope.fork {
-                        if (versionUnchanged) {
-                            null
-                        } else {
-                            dbSemaphore.withPermit {
-                                getPhotos(zoom, homeBBox, userId, effectiveAlbumId)
-                            }
+                        dbSemaphore.withPermit {
+                            getPhotos(zoom, homeBBox, userId, effectiveAlbumId)
                         }
                     },
                 )

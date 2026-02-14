@@ -197,7 +197,7 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     )
 
     companion object {
-        private const val TARGET_BOUNDARY_MERGE_DISTANCE_METERS = 2751.7
+        private const val TARGET_BOUNDARY_MERGE_DISTANCE_METERS = 917.2
         private const val REFERENCE_BOUNDARY_MERGE_RATIO = 0.6
         private const val REFERENCE_GRID_SIZE_METERS =
             TARGET_BOUNDARY_MERGE_DISTANCE_METERS / REFERENCE_BOUNDARY_MERGE_RATIO
