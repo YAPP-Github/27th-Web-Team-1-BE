@@ -54,32 +54,74 @@ jobs:
             -   name: Build coverage summary
                 id: coverage
                 if: always()
+                shell: bash
                 run: |
+                    set -euo pipefail
+
                     XML_PATH="build/reports/jacoco/test/jacocoTestReport.xml"
+
+                    write_outputs_zero() {
+                        echo "line_rate=0.00" >> "$GITHUB_OUTPUT"
+                        echo "branch_rate=0.00" >> "$GITHUB_OUTPUT"
+                        echo "line_covered=0" >> "$GITHUB_OUTPUT"
+                        echo "line_total=0" >> "$GITHUB_OUTPUT"
+                        echo "branch_covered=0" >> "$GITHUB_OUTPUT"
+                        echo "branch_total=0" >> "$GITHUB_OUTPUT"
+                    }
+
+                    summary_fail() {
+                        local msg="$1"
+                        {
+                            echo "### JaCoCo Coverage"
+                            echo ""
+                            echo "- ${msg}"
+                        } >> "$GITHUB_STEP_SUMMARY"
+                    }
+
+                    is_int() { [[ "${1:-}" =~ ^[0-9]+$ ]]; }
+
                     if [ ! -f "$XML_PATH" ]; then
-                      echo "line_rate=0.00" >> "$GITHUB_OUTPUT"
-                      echo "branch_rate=0.00" >> "$GITHUB_OUTPUT"
-                      {
-                        echo "### JaCoCo Coverage"
-                        echo ""
-                        echo "- 리포트 생성 실패 (XML 없음)"
-                      } >> "$GITHUB_STEP_SUMMARY"
-                      exit 0
+                        write_outputs_zero
+                        summary_fail "리포트 생성 실패 (XML 없음: \`$XML_PATH\`)"
+                        exit 0
                     fi
 
-                    LINE_COUNTER=$(grep '<counter type="LINE"' "$XML_PATH" | tail -1)
-                    BRANCH_COUNTER=$(grep '<counter type="BRANCH"' "$XML_PATH" | tail -1)
+                    # JaCoCo XML에는 counter가 여러 개 존재함.
+                    # 파일 끝에서부터 첫 번째로 만나는 counter가 보통 report(total) counter라서 이걸 사용.
+                    LINE_COUNTER="$(tac "$XML_PATH" | grep -m1 '<counter type="LINE"' || true)"
+                    BRANCH_COUNTER="$(tac "$XML_PATH" | grep -m1 '<counter type="BRANCH"' || true)"
 
-                    LINE_MISSED=$(echo "$LINE_COUNTER" | sed -E 's/.*missed="([0-9]+)".*/\1/')
-                    LINE_COVERED=$(echo "$LINE_COUNTER" | sed -E 's/.*covered="([0-9]+)".*/\1/')
-                    BRANCH_MISSED=$(echo "$BRANCH_COUNTER" | sed -E 's/.*missed="([0-9]+)".*/\1/')
-                    BRANCH_COVERED=$(echo "$BRANCH_COUNTER" | sed -E 's/.*covered="([0-9]+)".*/\1/')
+                    if [ -z "$LINE_COUNTER" ] || [ -z "$BRANCH_COUNTER" ]; then
+                        write_outputs_zero
+                        summary_fail "XML 파싱 실패 (counter 없음)"
+                        exit 0
+                    fi
+
+                    LINE_MISSED="$(sed -nE 's/.*missed="([0-9]+)".*/\1/p' <<<"$LINE_COUNTER")"
+                    LINE_COVERED="$(sed -nE 's/.*covered="([0-9]+)".*/\1/p' <<<"$LINE_COUNTER")"
+                    BRANCH_MISSED="$(sed -nE 's/.*missed="([0-9]+)".*/\1/p' <<<"$BRANCH_COUNTER")"
+                    BRANCH_COVERED="$(sed -nE 's/.*covered="([0-9]+)".*/\1/p' <<<"$BRANCH_COUNTER")"
+
+                    if ! is_int "$LINE_MISSED" || ! is_int "$LINE_COVERED" || ! is_int "$BRANCH_MISSED" || ! is_int "$BRANCH_COVERED"; then
+                        write_outputs_zero
+                        summary_fail "XML 파싱 실패 (missed/covered 추출 실패)"
+                        exit 0
+                    fi
 
                     LINE_TOTAL=$((LINE_MISSED + LINE_COVERED))
                     BRANCH_TOTAL=$((BRANCH_MISSED + BRANCH_COVERED))
 
-                    if [ "$LINE_TOTAL" -eq 0 ]; then LINE_RATE="0.00"; else LINE_RATE=$(awk "BEGIN {printf \"%.2f\", ($LINE_COVERED/$LINE_TOTAL)*100}"); fi
-                    if [ "$BRANCH_TOTAL" -eq 0 ]; then BRANCH_RATE="0.00"; else BRANCH_RATE=$(awk "BEGIN {printf \"%.2f\", ($BRANCH_COVERED/$BRANCH_TOTAL)*100}"); fi
+                    if [ "$LINE_TOTAL" -eq 0 ]; then
+                        LINE_RATE="0.00"
+                    else
+                        LINE_RATE="$(awk -v c="$LINE_COVERED" -v t="$LINE_TOTAL" 'BEGIN { printf "%.2f", (c/t)*100 }')"
+                    fi
+
+                    if [ "$BRANCH_TOTAL" -eq 0 ]; then
+                        BRANCH_RATE="0.00"
+                    else
+                        BRANCH_RATE="$(awk -v c="$BRANCH_COVERED" -v t="$BRANCH_TOTAL" 'BEGIN { printf "%.2f", (c/t)*100 }')"
+                    fi
 
                     echo "line_rate=$LINE_RATE" >> "$GITHUB_OUTPUT"
                     echo "branch_rate=$BRANCH_RATE" >> "$GITHUB_OUTPUT"
@@ -89,11 +131,11 @@ jobs:
                     echo "branch_total=$BRANCH_TOTAL" >> "$GITHUB_OUTPUT"
 
                     {
-                      echo "### JaCoCo Coverage"
-                      echo ""
-                      echo "- Line: ${LINE_RATE}% (${LINE_COVERED}/${LINE_TOTAL})"
-                      echo "- Branch: ${BRANCH_RATE}% (${BRANCH_COVERED}/${BRANCH_TOTAL})"
-                      echo "- HTML Report: workflow artifact \`jacoco-report\`"
+                        echo "### JaCoCo Coverage"
+                        echo ""
+                        echo "- Line: ${LINE_RATE}% (${LINE_COVERED}/${LINE_TOTAL})"
+                        echo "- Branch: ${BRANCH_RATE}% (${BRANCH_COVERED}/${BRANCH_TOTAL})"
+                        echo "- HTML Report: workflow artifact \`jacoco-report\`"
                     } >> "$GITHUB_STEP_SUMMARY"
 
             -   name: Comment coverage on PR
@@ -116,25 +158,25 @@ jobs:
                         - 상세 리포트: workflow artifact \`jacoco-report\``;
 
                         const { data: comments } = await github.rest.issues.listComments({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: context.issue.number,
-                        });
-                        const existing = comments.find((c) => c.user.type === "Bot" && c.body.includes(marker));
-                        if (existing) {
-                          await github.rest.issues.updateComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            comment_id: existing.id,
-                            body,
-                          });
-                        } else {
-                          await github.rest.issues.createComment({
                             owner: context.repo.owner,
                             repo: context.repo.repo,
                             issue_number: context.issue.number,
-                            body,
-                          });
+                        });
+                        const existing = comments.find((c) => c.user.type === "Bot" && c.body.includes(marker));
+                        if (existing) {
+                            await github.rest.issues.updateComment({
+                                owner: context.repo.owner,
+                                repo: context.repo.repo,
+                                comment_id: existing.id,
+                                body,
+                            });
+                        } else {
+                            await github.rest.issues.createComment({
+                                owner: context.repo.owner,
+                                repo: context.repo.repo,
+                                issue_number: context.issue.number,
+                                body,
+                            });
                         }
 
             -   name: Notify Discord (CI)
@@ -156,8 +198,9 @@ jobs:
                     - Run: ${RUN_URL}"
 
                     curl -fsS -X POST "${DISCORD_WEBHOOK_URL}" \
-                      -H "Content-Type: application/json" \
-                      -d "$(jq -n --arg sender "GitHub" --arg content "$MSG" '{sender: $sender, content: $content}')"
+                        -H "Content-Type: application/json" \
+                        -d "$(jq -n --arg sender "GitHub" --arg content "$MSG" '{username: $sender, content: $content}')"
+
 
     cd:
         if: github.event_name == 'push'
