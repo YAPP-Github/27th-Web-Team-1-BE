@@ -4,8 +4,8 @@ import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kotlin.math.PI
-import kotlin.math.asin
 import kotlin.math.abs
+import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -190,6 +190,6 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     )
 
     companion object {
-        private const val BOUNDARY_MERGE_RATIO = 0.20
+        private const val BOUNDARY_MERGE_RATIO = 0.30
     }
 }
