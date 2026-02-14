@@ -114,3 +114,8 @@ cors:
 redirect:
     local-host: ${LOCAL_HOST:}
     allowed-domain: ${ALLOWED_DOMAIN:}
+
+map:
+    cluster:
+        boundary-merge:
+            strategy: distance

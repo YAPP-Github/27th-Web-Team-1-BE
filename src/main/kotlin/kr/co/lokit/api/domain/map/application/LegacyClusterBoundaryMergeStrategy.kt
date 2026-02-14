@@ -1,9 +1,7 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
-import org.springframework.stereotype.Component
 
-@Component
 class LegacyClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     override fun mergeClusters(
         clusters: List<ClusterResponse>,

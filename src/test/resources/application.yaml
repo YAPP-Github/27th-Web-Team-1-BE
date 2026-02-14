@@ -77,3 +77,8 @@ cors:
 redirect:
     local-host: localhost:3000
     allowed-domain: localhost
+
+map:
+    cluster:
+        boundary-merge:
+            strategy: distance

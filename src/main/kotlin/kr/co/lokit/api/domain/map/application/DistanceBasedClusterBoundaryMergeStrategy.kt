@@ -3,14 +3,12 @@ package kr.co.lokit.api.domain.map.application
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
-import org.springframework.stereotype.Component
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.sqrt
 import kotlin.math.tan
 
-@Component
 class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     private val earthRadius = 6378137.0
 
