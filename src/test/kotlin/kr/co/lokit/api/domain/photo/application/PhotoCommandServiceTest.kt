@@ -202,7 +202,7 @@ class PhotoCommandServiceTest {
     }
 
     @Test
-    fun `사진 생성 시 coupleId가 있으면 캐시가 제거된다`() {
+    fun `사진 생성 시 위치 기반 캐시가 제거된다`() {
         val photo = createPhoto(albumId = 1L, location = createLocation(127.0, 37.5))
         val savedPhoto = createPhoto(id = 1L, albumId = 1L, coupleId = 1L, location = createLocation(127.0, 37.5))
         val mockCache = mock(Cache::class.java)
@@ -215,20 +215,28 @@ class PhotoCommandServiceTest {
 
         photoCommandService.create(photo)
 
-        verify(mapPhotosCacheService).evictForCouple(1L)
+        verify(mapPhotosCacheService).evictForPhotoMutation(1L, 1L, 127.0, 37.5)
         verify(mockCache).evict(1L)
     }
 
     @Test
-    fun `사진 삭제 시 coupleId가 있으면 캐시가 제거된다`() {
-        val photo = createPhoto(id = 1L, url = "https://example.com/photo.jpg", uploadedById = 1L, coupleId = 1L)
+    fun `사진 삭제 시 위치 기반 캐시가 제거된다`() {
+        val photo =
+            createPhoto(
+                id = 1L,
+                url = "https://example.com/photo.jpg",
+                uploadedById = 1L,
+                coupleId = 1L,
+                albumId = 2L,
+                location = createLocation(127.1, 37.6),
+            )
         val mockCache = mock(Cache::class.java)
         `when`(photoRepository.findById(1L)).thenReturn(photo)
         `when`(cacheManager.getCache("coupleAlbums")).thenReturn(mockCache)
 
         photoCommandService.delete(1L, 1L)
 
-        verify(mapPhotosCacheService).evictForCouple(1L)
+        verify(mapPhotosCacheService).evictForPhotoMutation(1L, 2L, 127.1, 37.6)
         verify(mockCache).evict(1L)
     }
 }

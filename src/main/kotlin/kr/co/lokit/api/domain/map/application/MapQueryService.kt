@@ -46,7 +46,7 @@ class MapQueryService(
         longitude: Double,
         latitude: Double,
     ): HomeResponse {
-        val bBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude)
+        val bBox = BBox.fromCenter(GridValues.HOME_ZOOM_LEVEL, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
         val coupleId = coupleRepository.findByUserId(userId)?.id
 
         val (locationFuture, albumsFuture) =
@@ -81,12 +81,10 @@ class MapQueryService(
         userId: Long?,
         albumId: Long?,
     ): MapPhotosResponse {
+        val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoom)
         val coupleId = userId?.let { coupleRepository.findByUserId(it)?.id }
         if (userId != null && coupleId == null) {
-            return MapPhotosResponse(
-                clusters = if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
-                photos = if (zoom >= GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
-            )
+            return emptyPhotosResponse(zoom)
         }
 
         val effectiveAlbumId =
@@ -98,11 +96,11 @@ class MapQueryService(
             }
 
         return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
-            mapPhotosCacheService.getClusteredPhotos(zoom, bbox, coupleId, effectiveAlbumId)
+            mapPhotosCacheService.getClusteredPhotos(zoom, boundedBbox, coupleId, effectiveAlbumId)
         } else {
             mapPhotosCacheService.getIndividualPhotos(
                 zoom = zoom,
-                bbox = bbox,
+                bbox = boundedBbox,
                 coupleId = coupleId,
                 albumId = effectiveAlbumId,
             )
@@ -119,7 +117,7 @@ class MapQueryService(
             return emptyList()
         }
         val gridCell = ClusterId.parse(clusterId)
-        val bbox = gridCell.toBBox()
+        val bbox = gridCell.toBBox().clampToKorea() ?: return emptyList()
 
         return mapQueryPort
             .findPhotosInGridCell(
@@ -152,9 +150,9 @@ class MapQueryService(
         albumId: Long?,
         lastDataVersion: Long?,
     ): MapMeResponse {
-        val homeBBox = BBox.fromCenter(zoom, longitude, latitude)
+        val homeBBox = BBox.fromCenter(zoom, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
         val coupleId = coupleRepository.findByUserId(userId)?.id
-        val currentVersion = mapPhotosCacheService.getVersion(coupleId)
+        val currentVersion = mapPhotosCacheService.getVersion(zoom, homeBBox, coupleId, albumId)
         val versionUnchanged = lastDataVersion != null && lastDataVersion == currentVersion
 
         val (locationFuture, albumsFuture, photosFuture) =
@@ -222,4 +220,10 @@ class MapQueryService(
 
     override fun searchPlaces(query: String): PlaceSearchResponse =
         PlaceSearchResponse(places = mapClientPort.searchPlaces(query))
+
+    private fun emptyPhotosResponse(zoom: Int): MapPhotosResponse =
+        MapPhotosResponse(
+            clusters = if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
+            photos = if (zoom >= GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
+        )
 }
