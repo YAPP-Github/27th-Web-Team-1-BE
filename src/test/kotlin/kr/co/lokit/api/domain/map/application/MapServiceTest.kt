@@ -6,7 +6,6 @@ import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
-import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
@@ -202,7 +201,7 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findById(defaultAlbumId)).thenReturn(createAlbum(id = defaultAlbumId, isDefault = true))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
-        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull())).thenReturn(
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), any())).thenReturn(
             MapPhotosResponse(clusters = emptyList()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
@@ -216,15 +215,41 @@ class MapServiceTest {
                 userId = 1L,
                 longitude = 127.0,
                 latitude = 37.5,
-                zoom = 14,
-                bbox = BBox(126.9, 37.4, 127.1, 37.6),
+                zoom = 14.0,
                 albumId = defaultAlbumId,
                 lastDataVersion = currentVersion,
             )
 
         assertEquals(currentVersion, result.dataVersion)
         verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), anyOrNull())
-        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull())
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), eq(true))
+    }
+
+    @Test
+    fun `lastDataVersion이 다르면 셀 캐시 재사용 없이 전체 셀을 재조회한다`() {
+        val currentVersion = 9L
+        val staleVersion = 8L
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
+        `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), any())).thenReturn(
+            MapPhotosResponse(clusters = emptyList()),
+        )
+        `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
+            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+        )
+        `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
+        `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
+
+        mapService.getMe(
+            userId = 1L,
+            longitude = 127.0,
+            latitude = 37.5,
+            zoom = 14.0,
+            albumId = null,
+            lastDataVersion = staleVersion,
+        )
+
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), eq(false))
     }
 
     @Test
@@ -245,8 +270,7 @@ class MapServiceTest {
             userId = 1L,
             longitude = 127.0,
             latitude = 37.5,
-            zoom = zoom,
-            bbox = BBox(126.9, 37.4, 127.1, 37.6),
+            zoom = zoom.toDouble(),
             albumId = null,
             lastDataVersion = 3L,
         )
@@ -268,15 +292,14 @@ class MapServiceTest {
                 userId = 1L,
                 longitude = 127.0,
                 latitude = 37.5,
-                zoom = 14,
-                bbox = BBox(126.9, 37.4, 127.1, 37.6),
+                zoom = 14.0,
                 albumId = null,
                 lastDataVersion = null,
             )
 
         assertNotNull(result.clusters)
         assertTrue(result.clusters!!.isEmpty())
-        verify(mapPhotosCacheService, org.mockito.Mockito.never()).getClusteredPhotos(any(), any(), anyOrNull(), anyOrNull())
+        verify(mapPhotosCacheService, org.mockito.Mockito.never()).getClusteredPhotos(any(), any(), anyOrNull(), anyOrNull(), any(), any())
     }
 
     @Test
@@ -285,7 +308,7 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findById(albumId)).thenReturn(createAlbum(id = albumId, isDefault = false))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), eq(albumId))).thenReturn(10L)
-        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), eq(albumId))).thenReturn(
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any(), any())).thenReturn(
             MapPhotosResponse(clusters = emptyList()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
@@ -298,14 +321,13 @@ class MapServiceTest {
             userId = 1L,
             longitude = 127.0,
             latitude = 37.5,
-            zoom = 14,
-            bbox = BBox(126.9, 37.4, 127.1, 37.6),
+            zoom = 14.0,
             albumId = albumId,
             lastDataVersion = null,
         )
 
         verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), eq(albumId))
-        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), eq(albumId))
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any(), any())
     }
 
     @Test

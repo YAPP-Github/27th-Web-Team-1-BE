@@ -14,6 +14,7 @@ import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
+import kr.co.lokit.api.domain.map.domain.MapZoom
 import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
@@ -51,20 +52,26 @@ class MapQueryService(
 
     private fun getPhotos(
         zoom: Int,
+        zoomLevel: Double,
         bbox: BBox,
         context: MapViewerContext,
+        lastDataVersion: Long?,
+        currentDataVersion: Long,
     ): MapPhotosResponse {
         val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoom)
         if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
             return emptyPhotosResponse(zoom)
         }
+        val canReuseCellCache = lastDataVersion != null && lastDataVersion == currentDataVersion
 
-        return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) {
+        return if (zoomLevel < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) {
             mapPhotosCacheService.getClusteredPhotos(
                 zoom = zoom,
+                zoomLevel = zoomLevel,
                 bbox = boundedBbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
+                canReuseCellCache = canReuseCellCache,
             )
         } else {
             mapPhotosCacheService.getIndividualPhotos(
@@ -144,16 +151,16 @@ class MapQueryService(
         userId: Long,
         longitude: Double,
         latitude: Double,
-        zoom: Int,
-        bbox: BBox,
+        zoom: Double,
         albumId: Long?,
-        @Suppress("UNUSED_PARAMETER") lastDataVersion: Long?,
+        lastDataVersion: Long?,
     ): MapMeResponse {
-        val homeBBox = BBox.fromCenter(zoom, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
+        val mapZoom = MapZoom.from(zoom)
+        val homeBBox = BBox.fromCenter(mapZoom.discrete, longitude, latitude).clampToKorea() ?: BBox.KOREA_BOUNDS
         val context = resolveViewerContext(userId = userId, albumId = albumId)
         val currentVersion =
             mapPhotosCacheService.getDataVersion(
-                _zoom = zoom,
+                _zoom = mapZoom.discrete,
                 _bbox = homeBBox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
@@ -170,7 +177,14 @@ class MapQueryService(
                     },
                     scope.fork {
                         dbSemaphore.withPermit {
-                            getPhotos(zoom, homeBBox, context)
+                            getPhotos(
+                                zoom = mapZoom.discrete,
+                                zoomLevel = mapZoom.level,
+                                bbox = homeBBox,
+                                context = context,
+                                lastDataVersion = lastDataVersion,
+                                currentDataVersion = currentVersion,
+                            )
                         }
                     },
                 )

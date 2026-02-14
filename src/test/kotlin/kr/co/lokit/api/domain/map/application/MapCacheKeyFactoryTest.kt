@@ -19,6 +19,7 @@ class MapCacheKeyFactoryTest {
         assertEquals(-200, parsed.cellY)
         assertEquals(3L, parsed.coupleId)
         assertEquals(4L, parsed.albumId)
+        assertEquals(9L, parsed.version)
     }
 
     @Test
@@ -54,4 +55,3 @@ class MapCacheKeyFactoryTest {
         assertEquals("z15_c7_a0", key)
     }
 }
-

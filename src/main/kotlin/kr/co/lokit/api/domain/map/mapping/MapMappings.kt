@@ -17,6 +17,7 @@ fun ClusterProjection.toResponse(zoom: Int): ClusterResponse =
         thumbnailUrl = thumbnailUrl,
         longitude = centerLongitude,
         latitude = centerLatitude,
+        takenAt = takenAt,
     )
 
 fun PhotoProjection.toMapPhotoResponse(): MapPhotoResponse =

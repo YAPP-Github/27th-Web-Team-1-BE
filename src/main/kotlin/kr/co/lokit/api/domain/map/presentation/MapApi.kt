@@ -64,11 +64,11 @@ interface MapApi {
         )
         @RequestParam latitude: Double,
         @Parameter(
-            description = "줌 레벨. 15 미만이면 클러스터링, 15 이상이면 개별 사진 반환",
-            example = "12",
+            description = "줌 레벨(소수점 지원). 15 미만이면 클러스터링, 15 이상이면 개별 사진 반환",
+            example = "12.5",
             required = true,
         )
-        @RequestParam zoom: Int,
+        @RequestParam zoom: Double,
         @Parameter(
             description = "앨범 ID (선택). 지정 시 해당 앨범의 사진만 조회",
             example = "1",

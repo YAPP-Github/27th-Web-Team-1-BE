@@ -9,6 +9,7 @@ object MapCacheKeyFactory {
         val cellY: Long,
         val coupleId: Long,
         val albumId: Long,
+        val version: Long,
     )
 
     data class ParsedIndividualKey(
@@ -28,7 +29,16 @@ object MapCacheKeyFactory {
         coupleId: Long?,
         albumId: Long?,
         version: Long,
-    ): String = "z${zoom}_x${cellX}_y${cellY}_c${normalizeId(coupleId)}_a${normalizeId(albumId)}_v$version"
+    ): String = "${buildCellBaseKey(zoom, cellX, cellY, coupleId, albumId)}_v$version"
+
+    @JvmStatic
+    fun buildCellBaseKey(
+        zoom: Int,
+        cellX: Long,
+        cellY: Long,
+        coupleId: Long?,
+        albumId: Long?,
+    ): String = "z${zoom}_x${cellX}_y${cellY}_c${normalizeId(coupleId)}_a${normalizeId(albumId)}"
 
     @JvmStatic
     fun buildIndividualKey(
@@ -55,6 +65,7 @@ object MapCacheKeyFactory {
             cellY = match.groupValues[3].toLong(),
             coupleId = match.groupValues[4].toLong(),
             albumId = match.groupValues[5].toLong(),
+            version = match.groupValues[6].toLong(),
         )
     }
 

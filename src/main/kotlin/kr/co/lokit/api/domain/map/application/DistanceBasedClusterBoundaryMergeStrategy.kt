@@ -4,10 +4,13 @@ import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
+import java.time.LocalDateTime
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.hypot
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -15,13 +18,14 @@ import kotlin.math.sqrt
 class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     override fun mergeClusters(
         clusters: List<ClusterResponse>,
-        zoom: Int,
+        zoomLevel: Double,
     ): List<ClusterResponse> {
         if (clusters.size < 2) {
             return clusters
         }
-        val gridSize = GridValues.getGridSize(zoom)
-        val epsMeters = getBoundaryMergeEpsMeters(zoom, gridSize)
+        val normalizedZoomLevel = normalizeZoomLevel(zoomLevel)
+        val zoom = floor(normalizedZoomLevel).toInt()
+        val epsMeters = getBoundaryMergeEpsMeters(normalizedZoomLevel)
         val parsed =
             clusters.mapNotNull { cluster ->
                 runCatching { ClusterId.parse(cluster.clusterId) }
@@ -34,6 +38,7 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                             thumbnailUrl = cluster.thumbnailUrl,
                             longitude = cluster.longitude,
                             latitude = cluster.latitude,
+                            takenAt = cluster.takenAt,
                         )
                     }
             }
@@ -59,13 +64,14 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
             val totalCount = nodes.sumOf { it.count }
             val sumLon = nodes.sumOf { it.longitude * it.count }
             val sumLat = nodes.sumOf { it.latitude * it.count }
-            val dominant = nodes.maxByOrNull { it.count } ?: representative
+            val latestTakenAtNode = nodes.maxByOrNull { it.takenAt ?: LocalDateTime.MIN } ?: representative
             ClusterResponse(
                 clusterId = ClusterId.format(zoom, representative.cellX, representative.cellY),
                 count = totalCount,
-                thumbnailUrl = dominant.thumbnailUrl,
+                thumbnailUrl = latestTakenAtNode.thumbnailUrl,
                 longitude = if (totalCount > 0) sumLon / totalCount else representative.longitude,
                 latitude = if (totalCount > 0) sumLat / totalCount else representative.latitude,
+                takenAt = latestTakenAtNode.takenAt,
             )
         }
     }
@@ -88,7 +94,7 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                 GeoPoint(lon, lat, totalWeight)
             }
         val gridSize = GridValues.getGridSize(zoom)
-        val epsMeters = getBoundaryMergeEpsMeters(zoom, gridSize)
+        val epsMeters = getBoundaryMergeEpsMeters(zoom.toDouble())
 
         val groups =
             buildGroups(cells, epsMeters) { cell ->
@@ -154,16 +160,35 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         centerResolver: (CellCoord) -> GeoPoint,
     ): List<List<Int>> = buildGroups(cells, thresholdMeters, { it }, centerResolver)
 
-    private fun getBoundaryMergeEpsMeters(
-        @Suppress("UNUSED_PARAMETER") zoom: Int,
-        gridSize: Double,
-    ): Double = gridSize * getBoundaryMergeRatio(gridSize)
+    internal fun getBoundaryMergeEpsMeters(zoomLevel: Double): Double {
+        val gridSize = getGridSizeAtZoomLevel(zoomLevel)
+        val metersPerPixel = gridSize / GRID_PIXELS
+        val thresholdPx = getPoiOverlapThresholdPx()
+        return thresholdPx * metersPerPixel
+    }
 
-    private fun getBoundaryMergeRatio(gridSize: Double): Double =
-        (TARGET_BOUNDARY_MERGE_DISTANCE_METERS / gridSize) *
-            (gridSize / REFERENCE_GRID_SIZE_METERS).pow(
-                GRID_SCALE_EXPONENT,
-            )
+    private fun getPoiOverlapThresholdPx(): Double {
+        val poiWidth = BASE_LIBRARY_POI_WIDTH_PX * POI_WIDTH_MULTIPLIER
+        val poiHeight = BASE_LIBRARY_POI_HEIGHT_PX * POI_HEIGHT_MULTIPLIER
+        val overlapThresholdX = poiWidth * (1.0 - REQUIRED_OVERLAP_RATIO)
+        val overlapThresholdY = poiHeight * (1.0 - REQUIRED_OVERLAP_RATIO)
+        return hypot(overlapThresholdX, overlapThresholdY)
+    }
+
+    internal fun getGridSizeAtZoomLevel(zoomLevel: Double): Double {
+        val normalizedZoomLevel = normalizeZoomLevel(zoomLevel)
+        val lowerZoom = floor(normalizedZoomLevel).toInt()
+        val upperZoom = (lowerZoom + 1).coerceAtMost(MAX_ZOOM_LEVEL)
+        if (lowerZoom == upperZoom) {
+            return GridValues.getGridSize(lowerZoom, GRID_PIXELS)
+        }
+        val progress = normalizedZoomLevel - lowerZoom
+        val lowerGrid = GridValues.getGridSize(lowerZoom, GRID_PIXELS)
+        val upperGrid = GridValues.getGridSize(upperZoom, GRID_PIXELS)
+        return lowerGrid * (upperGrid / lowerGrid).pow(progress)
+    }
+
+    private fun normalizeZoomLevel(zoomLevel: Double): Double = zoomLevel.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
 
     private fun toRad(degree: Double): Double = degree * PI / 180.0
 
@@ -193,13 +218,16 @@ class DistanceBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         val thumbnailUrl: String,
         val longitude: Double,
         val latitude: Double,
+        val takenAt: LocalDateTime?,
     )
 
     companion object {
-        private const val TARGET_BOUNDARY_MERGE_DISTANCE_METERS = 366.88
-        private const val REFERENCE_BOUNDARY_MERGE_RATIO = 0.6
-        private const val REFERENCE_GRID_SIZE_METERS =
-            TARGET_BOUNDARY_MERGE_DISTANCE_METERS / REFERENCE_BOUNDARY_MERGE_RATIO
-        private const val GRID_SCALE_EXPONENT = 0.5
+        private const val MAX_ZOOM_LEVEL = 22
+        private const val GRID_PIXELS = 60
+        private const val BASE_LIBRARY_POI_WIDTH_PX = 12.0
+        private const val BASE_LIBRARY_POI_HEIGHT_PX = 12.0
+        private const val POI_WIDTH_MULTIPLIER = 4.0
+        private const val POI_HEIGHT_MULTIPLIER = 5.0
+        private const val REQUIRED_OVERLAP_RATIO = 1.0 / 3.0
     }
 }

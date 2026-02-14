@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.map.dto
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin
@@ -39,6 +40,9 @@ data class ClusterResponse(
         required = true,
     )
     var latitude: Double,
+    @field:JsonIgnore
+    @Schema(hidden = true)
+    val takenAt: LocalDateTime? = null,
 )
 
 @Schema(description = "개별 사진 응답 (줌 >= 15)")

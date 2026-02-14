@@ -1,6 +1,5 @@
 package kr.co.lokit.api.domain.map.application.port.`in`
 
-import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
 import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.MapMeResponse
@@ -10,8 +9,7 @@ interface GetMapUseCase {
         userId: Long,
         longitude: Double,
         latitude: Double,
-        zoom: Int,
-        bbox: BBox,
+        zoom: Double,
         albumId: Long? = null,
         lastDataVersion: Long? = null,
     ): MapMeResponse

@@ -529,6 +529,201 @@ class MapPhotosCacheServiceTest {
     }
 
     @Test
+    fun `셀 캐시 재사용이 비활성화되면 캐시 hit가 있어도 요청 범위를 전체 재조회한다`() {
+        val caffeineCache = CaffeineCache("mapCells", Caffeine.newBuilder().build())
+        `when`(cacheManager.getCache("mapCells")).thenReturn(caffeineCache)
+
+        val zoom = 14
+        val gridSize = GridValues.getGridSize(zoom)
+        val baseX = 3000L
+        val baseY = 4000L
+        val cellY = baseY
+
+        val westMeters = baseX * gridSize + 1.0
+        val southMeters = baseY * gridSize + 1.0
+        val eastMeters = (baseX + 2) * gridSize - 1.0
+        val northMeters = (baseY + 1) * gridSize - 1.0
+        val bbox =
+            BBox(
+                west = MercatorProjection.metersToLongitude(westMeters),
+                south = MercatorProjection.metersToLatitude(southMeters),
+                east = MercatorProjection.metersToLongitude(eastMeters),
+                north = MercatorProjection.metersToLatitude(northMeters),
+            )
+
+        val version = service.getVersion(zoom, bbox, null, null)
+        val cachedKey = service.buildCellKey(zoom, baseX, cellY, null, null, version)
+        caffeineCache.nativeCache.put(
+            cachedKey,
+            MapPhotosCacheService.CachedCell(
+                ClusterResponse(
+                    clusterId = ClusterId.format(zoom, baseX, cellY),
+                    count = 1,
+                    thumbnailUrl = "cached.jpg",
+                    longitude = MercatorProjection.metersToLongitude(baseX * gridSize + (gridSize / 2.0)),
+                    latitude = MercatorProjection.metersToLatitude(cellY * gridSize + (gridSize / 2.0)),
+                ),
+            ),
+        )
+
+        `when`(
+            mapQueryPort.findClustersWithinBBox(
+                west = anyDouble(),
+                south = anyDouble(),
+                east = anyDouble(),
+                north = anyDouble(),
+                gridSize = anyDouble(),
+                coupleId = isNull(),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                ClusterProjection(
+                    cellX = baseX + 1,
+                    cellY = cellY,
+                    count = 1,
+                    thumbnailUrl = "missed.jpg",
+                    centerLongitude = MercatorProjection.metersToLongitude((baseX + 1) * gridSize + (gridSize / 2.0)),
+                    centerLatitude = MercatorProjection.metersToLatitude(cellY * gridSize + (gridSize / 2.0)),
+                    takenAt = LocalDateTime.now(),
+                ),
+            ),
+        )
+
+        service.getClusteredPhotos(zoom, bbox, null, null, zoom.toDouble(), canReuseCellCache = false)
+
+        val westCaptor = ArgumentCaptor.forClass(Double::class.java)
+        val southCaptor = ArgumentCaptor.forClass(Double::class.java)
+        val eastCaptor = ArgumentCaptor.forClass(Double::class.java)
+        val northCaptor = ArgumentCaptor.forClass(Double::class.java)
+        verify(mapQueryPort).findClustersWithinBBox(
+            westCaptor.capture(),
+            southCaptor.capture(),
+            eastCaptor.capture(),
+            northCaptor.capture(),
+            eq(gridSize),
+            isNull(),
+            isNull(),
+        )
+
+        assertEquals(baseX * gridSize, westCaptor.value, 1e-6)
+        assertEquals(cellY * gridSize, southCaptor.value, 1e-6)
+        assertEquals((baseX + 2) * gridSize, eastCaptor.value, 1e-6)
+        assertEquals((cellY + 1) * gridSize, northCaptor.value, 1e-6)
+    }
+
+    @Test
+    fun `버전 불일치여도 변경 없는 셀은 재사용하고 변경 셀만 DB 재조회한다`() {
+        val caffeineCache = CaffeineCache("mapCells", Caffeine.newBuilder().build())
+        val mapPhotos = CaffeineCache("mapPhotos", Caffeine.newBuilder().build())
+        `when`(cacheManager.getCache("mapCells")).thenReturn(caffeineCache)
+        `when`(cacheManager.getCache("mapPhotos")).thenReturn(mapPhotos)
+
+        val zoom = 14
+        val gridSize = GridValues.getGridSize(zoom)
+        val baseX = 5000L
+        val baseY = 6000L
+        val firstCell = baseX to baseY
+        val secondCell = (baseX + 1) to baseY
+        val bbox =
+            BBox(
+                west = MercatorProjection.metersToLongitude(baseX * gridSize + 1.0),
+                south = MercatorProjection.metersToLatitude(baseY * gridSize + 1.0),
+                east = MercatorProjection.metersToLongitude((baseX + 2) * gridSize - 1.0),
+                north = MercatorProjection.metersToLatitude((baseY + 1) * gridSize - 1.0),
+            )
+        val coupleId = 1L
+
+        `when`(
+            mapQueryPort.findClustersWithinBBox(
+                west = anyDouble(),
+                south = anyDouble(),
+                east = anyDouble(),
+                north = anyDouble(),
+                gridSize = anyDouble(),
+                coupleId = eq(coupleId),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                ClusterProjection(
+                    cellX = firstCell.first,
+                    cellY = firstCell.second,
+                    count = 1,
+                    thumbnailUrl = "first.jpg",
+                    centerLongitude = MercatorProjection.metersToLongitude(firstCell.first * gridSize + (gridSize / 2.0)),
+                    centerLatitude = MercatorProjection.metersToLatitude(firstCell.second * gridSize + (gridSize / 2.0)),
+                    takenAt = LocalDateTime.now(),
+                ),
+                ClusterProjection(
+                    cellX = secondCell.first,
+                    cellY = secondCell.second,
+                    count = 1,
+                    thumbnailUrl = "second.jpg",
+                    centerLongitude = MercatorProjection.metersToLongitude(secondCell.first * gridSize + (gridSize / 2.0)),
+                    centerLatitude = MercatorProjection.metersToLatitude(secondCell.second * gridSize + (gridSize / 2.0)),
+                    takenAt = LocalDateTime.now(),
+                ),
+            ),
+        )
+
+        service.getClusteredPhotos(zoom, bbox, coupleId, null)
+
+        org.mockito.Mockito.reset(mapQueryPort)
+        `when`(
+            mapQueryPort.findClustersWithinBBox(
+                west = anyDouble(),
+                south = anyDouble(),
+                east = anyDouble(),
+                north = anyDouble(),
+                gridSize = anyDouble(),
+                coupleId = eq(coupleId),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                ClusterProjection(
+                    cellX = secondCell.first,
+                    cellY = secondCell.second,
+                    count = 2,
+                    thumbnailUrl = "second-new.jpg",
+                    centerLongitude = MercatorProjection.metersToLongitude(secondCell.first * gridSize + (gridSize / 2.0)),
+                    centerLatitude = MercatorProjection.metersToLatitude(secondCell.second * gridSize + (gridSize / 2.0)),
+                    takenAt = LocalDateTime.now(),
+                ),
+            ),
+        )
+
+        service.evictForPhotoMutation(
+            coupleId = coupleId,
+            albumId = null,
+            longitude = MercatorProjection.metersToLongitude(secondCell.first * gridSize + (gridSize / 2.0)),
+            latitude = MercatorProjection.metersToLatitude(secondCell.second * gridSize + (gridSize / 2.0)),
+        )
+
+        service.getClusteredPhotos(zoom, bbox, coupleId, null, zoom.toDouble(), canReuseCellCache = false)
+
+        val westCaptor = ArgumentCaptor.forClass(Double::class.java)
+        val southCaptor = ArgumentCaptor.forClass(Double::class.java)
+        val eastCaptor = ArgumentCaptor.forClass(Double::class.java)
+        val northCaptor = ArgumentCaptor.forClass(Double::class.java)
+        verify(mapQueryPort).findClustersWithinBBox(
+            westCaptor.capture(),
+            southCaptor.capture(),
+            eastCaptor.capture(),
+            northCaptor.capture(),
+            eq(gridSize),
+            eq(coupleId),
+            isNull(),
+        )
+
+        assertEquals(secondCell.first * gridSize, westCaptor.value, 1e-6)
+        assertEquals(secondCell.second * gridSize, southCaptor.value, 1e-6)
+        assertEquals((secondCell.first + 1) * gridSize, eastCaptor.value, 1e-6)
+        assertEquals((secondCell.second + 1) * gridSize, northCaptor.value, 1e-6)
+    }
+
+    @Test
     fun `인접 셀 경계에서 가까운 클러스터는 병합된다`() {
         `when`(cacheManager.getCache("mapCells")).thenReturn(null)
         val bbox = BBox(126.9, 37.3, 127.2, 37.4)
