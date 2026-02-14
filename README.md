@@ -95,11 +95,13 @@ val (locationFuture, albumsFuture, photosFuture) =
 
 | Cache            | TTL | Max Size | 용도                    |
 |------------------|-----|----------|-----------------------|
-| `mapCells`       | 3분  | 300      | 그리드 셀 단위 클러스터 캐시      |
-| `mapPhotos`      | 1분  | 500      | Bounding Box 기반 사진 캐시 |
-| `reverseGeocode` | 1시간 | 500      | 역지오코딩 결과              |
-| `userCouple`     | 1시간 | 500      | 사용자-커플 매핑             |
-| `presignedUrl`   | 5분  | 100      | S3 Presigned URL      |
+| `mapCells`       | 10분 | 400      | 그리드 셀 단위 클러스터 캐시      |
+| `mapPhotos`      | 10분 | 400      | Bounding Box 기반 사진 캐시 |
+| `coupleAlbums`   | 3분  | 200      | 커플 앨범 목록 캐시           |
+| `reverseGeocode` | 3분  | 100      | 역지오코딩 결과              |
+| `searchPlaces`   | 3분  | 50       | 장소 검색 결과              |
+| `presignedUrl`   | 3분  | 100      | S3 Presigned URL      |
+| `userCouple`     | 10분 | 200      | 사용자-커플 매핑             |
 
 **Grid Cell Caching**
 
@@ -107,8 +109,30 @@ val (locationFuture, albumsFuture, photosFuture) =
 
 **dataVersion (증분 캐시)**
 
-`/map/me` API에서 커플의 사진 데이터 버전(`dataVersion`)을 관리합니다. 클라이언트가 `lastDataVersion`을 전달하면, 데이터 변경이 없을 경우 클러스터/사진 데이터를 생략(null)
-하여 응답 크기를 대폭 줄입니다. 사진 업로드/삭제/앨범 이동 시에만 버전이 증가합니다.
+`/map/me` API에서 사진 데이터 버전(`dataVersion`)을 관리합니다. 클라이언트가 `lastDataVersion`을 전달하면, 데이터 변경이 없을 경우 클러스터/사진 데이터를 생략(null)
+하여 응답 크기를 줄입니다.
+
+- 적용 범위는 **요청 시점의 뷰포트(bbox) + album 필터 기준**입니다.
+- 값이 같으면 `clusters`/`photos`만 null로 내려가며, 위치/앨범 목록/집계 값은 계속 응답됩니다.
+- 현재 증분 버전 파라미터(`lastDataVersion`)는 `/map/me`에만 제공됩니다.
+
+> 참고: 기본 앨범(`isDefault=true`) 요청 시 `dataVersion` 계산에는 원본 `albumId`가 사용되고,
+> 실제 사진 조회에는 정규화된 `albumId(null)`가 사용됩니다.
+> 이 차이로 기본 앨범 화면에서 일부 변경을 놓칠 수 있어 보정이 필요합니다.
+
+**Technical Decisions & Trade-offs**
+
+| 주제                   | 선택                           | 이유                        | 트레이드오프               |
+|----------------------|------------------------------|---------------------------|----------------------|
+| `lastDataVersion` 범위 | `/map/me`에만 적용               | 지도 핵심 데이터 통합 응답이라 효과가 큼   | 다른 API는 HTTP 캐시에 의존  |
+| 버전 계산 단위             | 뷰포트(bbox)+앨범 필터 기준           | 화면과 무관한 변경으로 재조회되는 것 방지   | 필터 정합성/엣지 케이스 복잡도 증가 |
+| 클러스터 prefetch        | 방향/속도 기반 선행 적재               | 체감 지연 감소, 불필요 prefetch 억제 | 로직 복잡도 증가            |
+| 캐시 무효화               | 포인트 기반 + 필요 시 커플 단위          | 캐시 적중률 유지                 | 무효화 조건 관리 비용 증가      |
+| DB 병렬도               | 세마포어로 상한 제어                  | 커넥션 풀 고갈 방지, 안정성 확보       | 피크 순간 처리량 일부 희생      |
+| 공간 쿼리 범위             | grid margin 확장 조회            | 경계 셀 누락 완화                | 조회 범위 증가로 단건 비용 상승   |
+| 캐시 키 전략              | bbox를 격자 단위로 정렬              | 미세 pan에도 키 안정화, 재사용률 향상   | 키 계산/좌표 변환 로직 필요     |
+| 기본 앨범 모델             | 조회 시점 병합 집계                  | UX 단순화(전체 사진 보기)          | 조회/캐시 무효화 경계 복잡      |
+| Presigned URL 멱등성    | `X-Idempotency-Key` + 3분 TTL | 중복 발급 억제, 운영 단순화          | 영구 멱등성은 아님           |
 
 ### HTTP Caching
 
@@ -116,13 +140,13 @@ val (locationFuture, albumsFuture, photosFuture) =
 
 엔드포인트 특성에 따라 차등화된 `Cache-Control` 헤더를 설정합니다.
 
-| 패턴           | 정책                      |
-|--------------|-------------------------|
-| 역지오코딩, 장소 검색 | `private, max-age=3600` |
-| 앨범 정보, 사진 상세 | `private, max-age=300`  |
-| 목록 조회        | `private, max-age=60`   |
-| 지도 홈         | `private, max-age=30`   |
-| 쓰기 / 인증      | `no-store`              |
+| 패턴                | 정책                      |
+|-------------------|-------------------------|
+| 역지오코딩, 장소 검색      | `private, max-age=3600` |
+| 앨범 정보, 사진 상세      | `private, max-age=300`  |
+| 목록 조회             | `private, max-age=60`   |
+| 지도 ME (`/map/me`) | `private, max-age=30`   |
+| 쓰기 / 인증           | `no-store`              |
 
 **ETag**
 
