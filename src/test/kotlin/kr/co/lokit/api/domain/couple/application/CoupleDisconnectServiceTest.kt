@@ -34,7 +34,6 @@ class CoupleDisconnectServiceTest {
         val couple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(1L, 2L),
             status = CoupleStatus.CONNECTED,
         )
@@ -63,7 +62,6 @@ class CoupleDisconnectServiceTest {
         val couple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(1L),
             status = CoupleStatus.DISCONNECTED,
             disconnectedByUserId = 1L,
@@ -80,7 +78,6 @@ class CoupleDisconnectServiceTest {
         val couple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(2L),
             status = CoupleStatus.DISCONNECTED,
             disconnectedByUserId = 1L,

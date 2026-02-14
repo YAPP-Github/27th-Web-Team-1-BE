@@ -27,14 +27,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 
 @WebMvcTest(MapController::class)
 class MapControllerTest {
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> anyObject(): T = org.mockito.ArgumentMatchers.any<T>() as T
-
     @Autowired
     lateinit var mockMvc: MockMvc
 
@@ -121,22 +118,28 @@ class MapControllerTest {
     }
 
     @Test
-    fun `지도 ME v1_1 조회 성공`() {
-        doReturn(createMapMeResponse()).`when`(getMapUseCase).getMe(anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyObject(), anyObject())
+    fun `지도 ME 조회 성공`() {
+        doReturn(createMapMeResponse())
+            .`when`(getMapUseCase)
+            .getMe(
+                anyLong(),
+                anyDouble(),
+                anyDouble(),
+                anyDouble(),
+                org.mockito.ArgumentMatchers.isNull<Long>(),
+                org.mockito.ArgumentMatchers.isNull<Long>(),
+            )
 
         mockMvc
             .perform(
                 get("/map/me")
                     .with(authentication(userAuth()))
-                    .header("X-API-VERSION", "1.1")
-                    .param("west", "126.9")
-                    .param("south", "37.4")
-                    .param("east", "127.1")
-                    .param("north", "37.6")
+                    .param("longitude", "127.0")
+                    .param("latitude", "37.5")
                     .param("zoom", "12.0"),
             ).andExpect(status().isOk)
 
-        verify(getMapUseCase).getMe(eq(1L), eq(126.9), eq(37.4), eq(127.1), eq(37.6), eq(12.0), eq(null), eq(null))
+        verify(getMapUseCase).getMe(eq(1L), eq(127.0), eq(37.5), eq(12.0), eq(null), eq(null))
     }
 
     @Test

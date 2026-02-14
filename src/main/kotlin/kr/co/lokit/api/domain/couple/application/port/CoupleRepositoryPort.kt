@@ -12,8 +12,6 @@ interface CoupleRepositoryPort {
         userId: Long,
     ): Couple
 
-    fun findByInviteCode(inviteCode: String): Couple?
-
     fun findByDisconnectedByUserId(userId: Long): Couple?
 
     fun addUser(

@@ -28,8 +28,12 @@ CREATE INDEX IF NOT EXISTS idx_refresh_token_expires_at ON refresh_token (expire
 
 CREATE INDEX IF NOT EXISTS idx_album_couple_id_active ON album (couple_id) WHERE is_deleted = false;
 
-CREATE INDEX IF NOT EXISTS idx_couple_invite_code_active ON couple (invite_code) WHERE is_deleted = false;
-
 CREATE INDEX IF NOT EXISTS idx_photo_couple_location_active ON photo USING gist(location) WHERE is_deleted = false AND couple_id IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_user_email_is_deleted ON users (email, is_deleted);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_couple_user_one_active_per_user ON couple_user (user_id) WHERE is_deleted = false;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_invite_code_code_active ON invite_code (code) WHERE is_deleted = false;
+
+CREATE INDEX IF NOT EXISTS idx_invite_code_creator_status_expires ON invite_code (created_by, status, expires_at) WHERE is_deleted = false;

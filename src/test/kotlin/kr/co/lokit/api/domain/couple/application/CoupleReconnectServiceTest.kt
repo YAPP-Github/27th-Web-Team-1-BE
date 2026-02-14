@@ -36,7 +36,6 @@ class CoupleReconnectServiceTest {
         val disconnectedCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(2L),
             status = CoupleStatus.DISCONNECTED,
             disconnectedAt = LocalDateTime.now().minusDays(10),
@@ -45,7 +44,6 @@ class CoupleReconnectServiceTest {
         val reconnectedCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(1L, 2L),
             status = CoupleStatus.CONNECTED,
         )
@@ -69,7 +67,6 @@ class CoupleReconnectServiceTest {
         val disconnectedCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(2L),
             status = CoupleStatus.DISCONNECTED,
             disconnectedAt = LocalDateTime.now().minusDays(5),
@@ -78,13 +75,11 @@ class CoupleReconnectServiceTest {
         val existingSoloCouple = createCouple(
             id = 3L,
             name = "솔로",
-            inviteCode = "87654321",
             userIds = listOf(1L),
         )
         val reconnectedCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(1L, 2L),
             status = CoupleStatus.CONNECTED,
         )
@@ -106,7 +101,6 @@ class CoupleReconnectServiceTest {
         val connectedCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(1L, 2L),
             status = CoupleStatus.CONNECTED,
         )
@@ -122,7 +116,6 @@ class CoupleReconnectServiceTest {
         val expiredCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = listOf(2L),
             status = CoupleStatus.DISCONNECTED,
             disconnectedAt = LocalDateTime.now().minusDays(32),
@@ -149,7 +142,6 @@ class CoupleReconnectServiceTest {
         val disconnectedCouple = createCouple(
             id = 1L,
             name = "우리 커플",
-            inviteCode = "12345678",
             userIds = emptyList(),
             status = CoupleStatus.DISCONNECTED,
             disconnectedAt = LocalDateTime.now().minusDays(2),

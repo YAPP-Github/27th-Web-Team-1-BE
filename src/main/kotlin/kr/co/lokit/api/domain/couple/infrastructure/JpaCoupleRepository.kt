@@ -59,10 +59,6 @@ class JpaCoupleRepository(
     }
 
     @Transactional(readOnly = true)
-    override fun findByInviteCode(inviteCode: String): Couple? =
-        coupleJpaRepository.findByInviteCode(inviteCode)?.toDomain()
-
-    @Transactional(readOnly = true)
     override fun findByDisconnectedByUserId(userId: Long): Couple? =
         coupleJpaRepository.findByDisconnectedByUserId(userId)?.toDomain()
 
@@ -72,7 +68,7 @@ class JpaCoupleRepository(
         userId: Long,
     ): Couple {
         val coupleEntity =
-            coupleJpaRepository.findByIdFetchUsers(coupleId)
+            coupleJpaRepository.findByIdForUpdate(coupleId)
                 ?: throw entityNotFound<Couple>(coupleId)
         val userEntity =
             userJpaRepository.findByIdOrNull(userId)

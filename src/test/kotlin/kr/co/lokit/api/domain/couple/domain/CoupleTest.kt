@@ -1,7 +1,6 @@
 package kr.co.lokit.api.domain.couple.domain
 
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertNotNull
 import kotlin.test.assertEquals
 
 class CoupleTest {
@@ -18,7 +17,6 @@ class CoupleTest {
         val couple = Couple(name = "테스트")
 
         assertEquals(0L, couple.id)
-        assertNotNull(couple.inviteCode)
         assertEquals(emptyList(), couple.userIds)
     }
 
@@ -28,13 +26,11 @@ class CoupleTest {
             Couple(
                 id = 1L,
                 name = "우리 커플",
-                inviteCode = "12345678",
                 userIds = listOf(1L, 2L),
             )
 
         assertEquals(1L, couple.id)
         assertEquals("우리 커플", couple.name)
-        assertEquals("12345678", couple.inviteCode)
         assertEquals(listOf(1L, 2L), couple.userIds)
     }
 }

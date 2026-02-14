@@ -21,7 +21,7 @@ class MapController(
     private val getMapUseCase: GetMapUseCase,
     private val searchLocationUseCase: SearchLocationUseCase,
 ) : MapApi {
-    @GetMapping("me", version = "1.0")
+    @GetMapping("me")
     override fun getMe(
         @CurrentUserId userId: Long,
         @RequestParam longitude: Double,
@@ -37,29 +37,6 @@ class MapController(
             zoom,
             albumId,
             lastDataVersion,
-        )
-    }
-
-    @GetMapping("me", version = "1.1")
-    override fun getMe(
-        @CurrentUserId userId: Long,
-        @RequestParam west: Double,
-        @RequestParam south: Double,
-        @RequestParam east: Double,
-        @RequestParam north: Double,
-        @RequestParam zoom: Double,
-        @RequestParam(required = false) albumId: Long?,
-        @RequestParam(required = false) lastDataVersion: Long?,
-    ): MapMeResponse {
-        return getMapUseCase.getMe(
-            userId = userId,
-            west = west,
-            south = south,
-            east = east,
-            north = north,
-            zoom = zoom,
-            albumId = albumId,
-            lastDataVersion = lastDataVersion,
         )
     }
 

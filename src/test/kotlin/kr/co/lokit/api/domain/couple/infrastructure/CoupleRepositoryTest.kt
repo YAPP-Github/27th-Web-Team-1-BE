@@ -13,7 +13,6 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 @DataJpaTest
 @Import(JpaCoupleRepository::class)
@@ -40,25 +39,7 @@ class CoupleRepositoryTest {
 
         assertNotNull(saved.id)
         assertEquals("우리 커플", saved.name)
-        assertNotNull(saved.inviteCode)
-        assertEquals(listOf(user.id), saved.userIds)
-    }
-
-    @Test
-    fun `초대 코드로 커플을 조회할 수 있다`() {
-        val saved = coupleRepository.saveWithUser(createCouple(name = "커플"), user.nonNullId())
-
-        val found = coupleRepository.findByInviteCode(saved.inviteCode!!)
-
-        assertNotNull(found)
-        assertEquals(saved.id, found.id)
-    }
-
-    @Test
-    fun `존재하지 않는 초대 코드로 조회하면 null을 반환한다`() {
-        val found = coupleRepository.findByInviteCode("nonexist")
-
-        assertNull(found)
+        assertEquals(listOf(user.nonNullId()), saved.userIds)
     }
 
     @Test
@@ -69,8 +50,8 @@ class CoupleRepositoryTest {
         val updated = coupleRepository.addUser(saved.id, user2.nonNullId())
 
         assertEquals(2, updated.userIds.size)
-        assert(updated.userIds.contains(user.id))
-        assert(updated.userIds.contains(user2.id))
+        assert(updated.userIds.contains(user.nonNullId()))
+        assert(updated.userIds.contains(user2.nonNullId()))
     }
 
     @Test

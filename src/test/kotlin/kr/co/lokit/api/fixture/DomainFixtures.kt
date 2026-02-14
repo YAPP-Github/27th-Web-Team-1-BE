@@ -3,7 +3,6 @@ package kr.co.lokit.api.fixture
 import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.UserRole
-import kr.co.lokit.api.common.util.InviteCodeGenerator
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
@@ -44,12 +43,11 @@ fun createUser(
 fun createCouple(
     id: Long = 0L,
     name: String = "테스트",
-    inviteCode: String = InviteCodeGenerator.generate(),
     userIds: List<Long> = emptyList(),
     status: CoupleStatus = CoupleStatus.CONNECTED,
     disconnectedAt: LocalDateTime? = null,
     disconnectedByUserId: Long? = null,
-) = Couple(id = id, name = name, inviteCode = inviteCode, userIds = userIds, status = status, disconnectedAt = disconnectedAt, disconnectedByUserId = disconnectedByUserId)
+) = Couple(id = id, name = name, userIds = userIds, status = status, disconnectedAt = disconnectedAt, disconnectedByUserId = disconnectedByUserId)
 
 fun createAlbum(
     id: Long = 0L,

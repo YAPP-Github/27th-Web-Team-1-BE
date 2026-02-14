@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.couple.infrastructure
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDateTime
 
@@ -10,20 +12,14 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
         select c from Couple c
         left join fetch c.coupleUsers cu
         left join fetch cu.user
-        where c.inviteCode = :inviteCode
-        """,
-    )
-    fun findByInviteCode(inviteCode: String): CoupleEntity?
-
-    @Query(
-        """
-        select c from Couple c
-        left join fetch c.coupleUsers cu
-        left join fetch cu.user
         where c.id = :id
         """,
     )
     fun findByIdFetchUsers(id: Long): CoupleEntity?
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Couple c where c.id = :id")
+    fun findByIdForUpdate(id: Long): CoupleEntity?
 
     @Query(
         """

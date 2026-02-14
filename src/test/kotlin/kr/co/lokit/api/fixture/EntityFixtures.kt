@@ -3,7 +3,6 @@ package kr.co.lokit.api.fixture
 import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.constant.UserRole
 import kr.co.lokit.api.common.entity.BaseEntity
-import kr.co.lokit.api.common.util.InviteCodeGenerator
 import kr.co.lokit.api.config.security.UserPrincipal
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity
@@ -49,7 +48,7 @@ fun createCoupleEntity(
     name: String = "테스트",
     status: kr.co.lokit.api.common.constant.CoupleStatus = kr.co.lokit.api.common.constant.CoupleStatus.CONNECTED,
 ): CoupleEntity {
-    val entity = CoupleEntity(name = name, inviteCode = InviteCodeGenerator.generate(), status = status)
+    val entity = CoupleEntity(name = name, status = status)
     id?.let { setEntityId(entity, it) }
     return entity
 }
