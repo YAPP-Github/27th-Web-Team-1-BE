@@ -6,6 +6,7 @@ import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
+import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
@@ -27,6 +28,7 @@ import kr.co.lokit.api.domain.map.mapping.toResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.Semaphore
+import kotlin.math.floor
 
 @Service
 class MapQueryService(
@@ -36,6 +38,7 @@ class MapQueryService(
     private val coupleRepository: CoupleRepositoryPort,
     private val mapClientPort: MapClientPort,
     private val mapPhotosCacheService: MapPhotosCacheService,
+    private val clusterBoundaryMergeStrategy: ClusterBoundaryMergeStrategy,
 ) : GetMapUseCase,
     SearchLocationUseCase {
     private val dbSemaphore = Semaphore(6)
@@ -76,16 +79,41 @@ class MapQueryService(
             return emptyList()
         }
         val gridCell = ClusterId.parse(clusterId)
-        val bbox = gridCell.toBBox().clampToKorea() ?: return emptyList()
-
-        return mapQueryPort
-            .findPhotosInGridCell(
-                west = bbox.west,
-                south = bbox.south,
-                east = bbox.east,
-                north = bbox.north,
+        val expandedBBox = expandedClusterSearchBBox(gridCell) ?: return emptyList()
+        val photos =
+            mapQueryPort.findPhotosInGridCell(
+                west = expandedBBox.west,
+                south = expandedBBox.south,
+                east = expandedBBox.east,
+                north = expandedBBox.north,
                 coupleId = coupleId,
-            ).toClusterPhotosPageResponse()
+            )
+        if (photos.isEmpty()) {
+            return emptyList()
+        }
+
+        val gridSize = GridValues.getGridSize(gridCell.zoom)
+        val photosByCell =
+            photos.groupBy {
+                CellCoord(
+                    x = floor(lonToMeters(it.longitude) / gridSize).toLong(),
+                    y = floor(latToMeters(it.latitude) / gridSize).toLong(),
+                )
+            }
+
+        val mergedCells =
+            clusterBoundaryMergeStrategy.resolveClusterCells(
+                zoom = gridCell.zoom,
+                photosByCell = photosByCell.mapValues { (_, v) -> v.map { GeoPoint(it.longitude, it.latitude) } },
+                targetCell = CellCoord(gridCell.cellX, gridCell.cellY),
+            )
+        val target = CellCoord(gridCell.cellX, gridCell.cellY)
+        val memberCells = if (mergedCells.isEmpty()) setOf(target) else mergedCells
+        return photos
+            .filter {
+                val cell = CellCoord(floor(lonToMeters(it.longitude) / gridSize).toLong(), floor(latToMeters(it.latitude) / gridSize).toLong())
+                cell in memberCells
+            }.toClusterPhotosPageResponse()
     }
 
     @Transactional(readOnly = true)
@@ -192,6 +220,21 @@ class MapQueryService(
         } else {
             albumId
         }
+
+    private fun expandedClusterSearchBBox(cell: kr.co.lokit.api.domain.map.domain.GridCell): BBox? {
+        val sw = kr.co.lokit.api.domain.map.domain.GridCell(cell.zoom, cell.cellX - 1, cell.cellY - 1).toBBox()
+        val ne = kr.co.lokit.api.domain.map.domain.GridCell(cell.zoom, cell.cellX + 1, cell.cellY + 1).toBBox()
+        return BBox(
+            west = sw.west,
+            south = sw.south,
+            east = ne.east,
+            north = ne.north,
+        ).clampToKorea()
+    }
+
+    private fun lonToMeters(lon: Double): Double = lon * (Math.PI * 6378137.0 / 180.0)
+
+    private fun latToMeters(lat: Double): Double = Math.log(Math.tan((90.0 + lat) * Math.PI / 360.0)) * 6378137.0
 
     private fun emptyPhotosResponse(zoom: Int): MapPhotosResponse =
         MapPhotosResponse(
