@@ -21,7 +21,6 @@ env:
 
 jobs:
     ci:
-        if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
         permissions:
             contents: read
@@ -96,7 +95,7 @@ jobs:
                     } >> "$GITHUB_STEP_SUMMARY"
 
             -   name: Comment coverage on PR
-                if: always()
+                if: always() && github.event_name == 'pull_request'
                 uses: actions/github-script@v7
                 with:
                     script: |
@@ -135,6 +134,29 @@ jobs:
                             body,
                           });
                         }
+
+            -   name: Notify Discord (CI)
+                if: always() && secrets.DISCORD_WEBHOOK_URL != ''
+                env:
+                    DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+                    LINE_RATE: ${{ steps.coverage.outputs.line_rate }}
+                    BRANCH_RATE: ${{ steps.coverage.outputs.branch_rate }}
+                    GITHUB_EVENT_NAME: ${{ github.event_name }}
+                    GITHUB_REF_NAME: ${{ github.ref_name }}
+                    GITHUB_REPOSITORY: ${{ github.repository }}
+                    GITHUB_SERVER_URL: ${{ github.server_url }}
+                    GITHUB_RUN_ID: ${{ github.run_id }}
+                run: |
+                    RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+                    MSG="CI 완료 (${GITHUB_EVENT_NAME})
+                    - Branch: ${GITHUB_REF_NAME}
+                    - Line Coverage: ${LINE_RATE:-N/A}%
+                    - Branch Coverage: ${BRANCH_RATE:-N/A}%
+                    - Run: ${RUN_URL}"
+
+                    curl -sS -X POST "${DISCORD_WEBHOOK_URL}" \
+                      -H "Content-Type: application/json" \
+                      -d "$(jq -n --arg content "$MSG" '{content: $content}')"
 
     cd:
         if: github.event_name == 'push'
