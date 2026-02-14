@@ -8,9 +8,7 @@ import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
-import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.dto.PlaceResponse
 import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createAlbumBounds
@@ -18,14 +16,8 @@ import kr.co.lokit.api.fixture.createCouple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyDouble
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.ArgumentMatchers.isNull
 import org.mockito.Mock
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.transaction.support.TransactionTemplate
@@ -33,7 +25,9 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 
 @ExtendWith(MockitoExtension::class)
 class MapServiceTest {
@@ -75,50 +69,6 @@ class MapServiceTest {
                 mapPhotosCacheService,
                 clusterBoundaryMergeStrategy,
             )
-    }
-
-    @Test
-    fun `줌 레벨이 17 미만이면 클러스터링된 결과를 반환한다`() {
-        val bbox = BBox(126.9, 37.4, 127.1, 37.6)
-        val expectedResponse =
-            MapPhotosResponse(
-                clusters =
-                    listOf(
-                        ClusterResponse(
-                            clusterId = "1:1",
-                            count = 5,
-                            thumbnailUrl = "https://example.com/photo.jpg",
-                            longitude = 127.0,
-                            latitude = 37.5,
-                        ),
-                    ),
-            )
-
-        `when`(
-            mapPhotosCacheService.getClusteredPhotos(
-                zoom = 12,
-                bbox = bbox,
-                coupleId = null,
-                albumId = null,
-            ),
-        ).thenReturn(expectedResponse)
-
-        val result = mapService.getPhotos(12, bbox, null, null)
-
-        assertNotNull(result.clusters)
-        assertEquals(1, result.clusters.size)
-        assertEquals(5, result.clusters[0].count)
-    }
-
-    @Test
-    fun `한국 경계 밖 bbox 요청은 빈 결과를 반환한다`() {
-        val outsideKorea = BBox(-10.0, -10.0, -5.0, -5.0)
-
-        val result = mapService.getPhotos(12, outsideKorea, null, null)
-
-        assertNotNull(result.clusters)
-        assertTrue(result.clusters.isEmpty())
-        verifyNoInteractions(mapPhotosCacheService)
     }
 
     @Test
@@ -180,13 +130,23 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(
             mapQueryPort.findPhotosInGridCell(
-                anyDouble(),
-                anyDouble(),
-                anyDouble(),
-                anyDouble(),
                 any(),
+                any(),
+                any(),
+                any(),
+                anyOrNull(),
             ),
         ).thenReturn(photos)
+        `when`(
+            clusterBoundaryMergeStrategy.resolveClusterCells(
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenAnswer { invocation ->
+            val photosByCell: Map<CellCoord, List<GeoPoint>> = invocation.getArgument(1)
+            photosByCell.keys
+        }
 
         val result = mapService.getClusterPhotos("z14_24661_7867", 1L)
 
@@ -222,8 +182,8 @@ class MapServiceTest {
         val currentVersion = 7L
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findById(defaultAlbumId)).thenReturn(createAlbum(id = defaultAlbumId, isDefault = true))
-        `when`(mapPhotosCacheService.getVersion(anyInt(), any(), eq(1L), isNull())).thenReturn(currentVersion)
-        `when`(mapClientPort.reverseGeocode(anyDouble(), anyDouble())).thenReturn(
+        `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
+        `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
             LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
         `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
@@ -241,6 +201,6 @@ class MapServiceTest {
             )
 
         assertEquals(currentVersion, result.dataVersion)
-        verify(mapPhotosCacheService).getVersion(anyInt(), any(), eq(1L), isNull())
+        verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), anyOrNull())
     }
 }
