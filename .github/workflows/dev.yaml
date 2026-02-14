@@ -86,8 +86,6 @@ jobs:
                         exit 0
                     fi
 
-                    # JaCoCo XML에는 counter가 여러 개 존재함.
-                    # 파일 끝에서부터 첫 번째로 만나는 counter가 보통 report(total) counter라서 이걸 사용.
                     LINE_COUNTER="$(tac "$XML_PATH" | grep -m1 '<counter type="LINE"' || true)"
                     BRANCH_COUNTER="$(tac "$XML_PATH" | grep -m1 '<counter type="BRANCH"' || true)"
 
@@ -189,17 +187,38 @@ jobs:
                     GITHUB_REPOSITORY: ${{ github.repository }}
                     GITHUB_SERVER_URL: ${{ github.server_url }}
                     GITHUB_RUN_ID: ${{ github.run_id }}
+                shell: bash
                 run: |
-                    RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-                    MSG="CI 완료 (${GITHUB_EVENT_NAME})
-                    - Branch: ${GITHUB_REF_NAME}
-                    - Line Coverage: ${LINE_RATE:-N/A}%
-                    - Branch Coverage: ${BRANCH_RATE:-N/A}%
-                    - Run: ${RUN_URL}"
+                    set -euo pipefail
 
-                    curl -fsS -X POST "${DISCORD_WEBHOOK_URL}" \
-                        -H "Content-Type: application/json" \
-                        -d "$(jq -n --arg sender "GitHub" --arg content "$MSG" '{username: $sender, content: $content}')"
+                    RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+                    MSG=$'CI 완료 ('"${GITHUB_EVENT_NAME}"$')\n'"- Branch: ${GITHUB_REF_NAME}"$'\n'"- Line Coverage: ${LINE_RATE:-N/A}%"$'\n'"- Branch Coverage: ${BRANCH_RATE:-N/A}%"$'\n'"- Run: ${RUN_URL}"
+
+                    payload="$(jq -n --arg username "GitHub" --arg content "$MSG" '{username:$username, content:$content}')"
+
+                    echo "Discord payload bytes: $(printf %s "$payload" | wc -c)"
+                    echo "Discord message bytes: $(printf %s "$MSG" | wc -c)"
+
+                    http_code="$(
+                        curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
+                            -H "Content-Type: application/json" \
+                            -d "$payload" \
+                            -o /tmp/discord_resp.json \
+                            -w "%{http_code}" || true
+                    )"
+
+                    echo "Discord HTTP: $http_code"
+                    if [ -s /tmp/discord_resp.json ]; then
+                        echo "Discord response:"
+                        cat /tmp/discord_resp.json
+                        echo ""
+                    fi
+
+                    if [ "$http_code" != "204" ]; then
+                        exit 1
+                    fi
+
 
 
     cd:
