@@ -94,9 +94,14 @@ class PhotoCommandService(
             )
         }
         val coupleId = saved.coupleId
-        if (coupleId != null) {
+        if (coupleId != null && saved.hasLocation()) {
             cacheManager.getCache("coupleAlbums")?.evict(coupleId)
-            mapPhotosCacheService.evictForCouple(coupleId)
+            mapPhotosCacheService.evictForPhotoMutation(
+                coupleId = coupleId,
+                albumId = saved.albumId,
+                longitude = saved.location.longitude,
+                latitude = saved.location.latitude,
+            )
         }
         return saved
     }
@@ -138,7 +143,22 @@ class PhotoCommandService(
         val coupleId = result.coupleId
         if (coupleId != null) {
             cacheManager.getCache("coupleAlbums")?.evict(coupleId)
-            mapPhotosCacheService.evictForCouple(coupleId)
+            if (photo.hasLocation()) {
+                mapPhotosCacheService.evictForPhotoMutation(
+                    coupleId = coupleId,
+                    albumId = photo.albumId,
+                    longitude = photo.location.longitude,
+                    latitude = photo.location.latitude,
+                )
+            }
+            if (result.hasLocation()) {
+                mapPhotosCacheService.evictForPhotoMutation(
+                    coupleId = coupleId,
+                    albumId = result.albumId,
+                    longitude = result.location.longitude,
+                    latitude = result.location.latitude,
+                )
+            }
         }
         return result
     }
@@ -152,9 +172,14 @@ class PhotoCommandService(
         val photo = photoRepository.findById(photoId)
         photoRepository.deleteById(photoId)
         val coupleId = photo.coupleId
-        if (coupleId != null) {
+        if (coupleId != null && photo.hasLocation()) {
             cacheManager.getCache("coupleAlbums")?.evict(coupleId)
-            mapPhotosCacheService.evictForCouple(coupleId)
+            mapPhotosCacheService.evictForPhotoMutation(
+                coupleId = coupleId,
+                albumId = photo.albumId,
+                longitude = photo.location.longitude,
+                latitude = photo.location.latitude,
+            )
         }
         eventPublisher.publishEvent(PhotoDeletedEvent(photoUrl = photo.url))
     }

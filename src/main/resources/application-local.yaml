@@ -84,3 +84,7 @@ admin.key: ${ADMIN_KEY:}
 
 cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+redirect:
+    local-host: ${LOCAL_HOST:}
+    allowed-domain: ${ALLOWED_DOMAIN:}

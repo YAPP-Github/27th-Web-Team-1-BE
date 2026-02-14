@@ -106,4 +106,25 @@ class ClusteringTest {
 
         assertEquals("z14_100_200", cell.toClusterId())
     }
+
+    @Test
+    fun `BBox를 한국 경계로 클램프할 수 있다`() {
+        val bbox = BBox(123.0, 32.0, 126.0, 35.0)
+
+        val clamped = bbox.clampToKorea()
+
+        assertEquals(124.0, clamped?.west)
+        assertEquals(33.0, clamped?.south)
+        assertEquals(126.0, clamped?.east)
+        assertEquals(35.0, clamped?.north)
+    }
+
+    @Test
+    fun `BBox가 한국 경계와 겹치지 않으면 null을 반환한다`() {
+        val bbox = BBox(-10.0, -10.0, -5.0, -5.0)
+
+        val clamped = bbox.clampToKorea()
+
+        assertEquals(null, clamped)
+    }
 }

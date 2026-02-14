@@ -5,6 +5,7 @@ import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -152,6 +153,59 @@ class MapPhotosCacheServiceTest {
         val version = service.getVersion(Long.MAX_VALUE)
 
         assertEquals(0L, version)
+    }
+
+    @Test
+    fun `evictForCouple은 해당 커플의 map 캐시 키만 제거한다`() {
+        val mapCells = CaffeineCache("mapCells", Caffeine.newBuilder().build())
+        val mapPhotos = CaffeineCache("mapPhotos", Caffeine.newBuilder().build())
+        `when`(cacheManager.getCache("mapCells")).thenReturn(mapCells)
+        `when`(cacheManager.getCache("mapPhotos")).thenReturn(mapPhotos)
+
+        val bbox = BBox(126.9, 37.4, 127.1, 37.6)
+        val targetCellKey = service.buildCellKey(14, 10, 20, 1L, null, 0L)
+        val targetPhotoKey = buildIndividualKey(bbox, 17, 1L, null, 0L)
+        val otherCellKey = service.buildCellKey(14, 10, 20, 2L, null, 0L)
+
+        mapCells.nativeCache.put(targetCellKey, MapPhotosCacheService.CachedCell(null))
+        mapPhotos.nativeCache.put(targetPhotoKey, MapPhotosResponse(photos = emptyList()))
+        mapCells.nativeCache.put(otherCellKey, MapPhotosCacheService.CachedCell(null))
+
+        service.evictForCouple(1L)
+
+        assertNull(mapCells.nativeCache.getIfPresent(targetCellKey))
+        assertNull(mapPhotos.nativeCache.getIfPresent(targetPhotoKey))
+        assertNotNull(mapCells.nativeCache.getIfPresent(otherCellKey))
+    }
+
+    @Test
+    fun `위치 기반 version은 bbox 내부 변경만 반영한다`() {
+        val mapCells = CaffeineCache("mapCells", Caffeine.newBuilder().build())
+        val mapPhotos = CaffeineCache("mapPhotos", Caffeine.newBuilder().build())
+        `when`(cacheManager.getCache("mapCells")).thenReturn(mapCells)
+        `when`(cacheManager.getCache("mapPhotos")).thenReturn(mapPhotos)
+
+        service.evictForPhotoMutation(coupleId = 1L, albumId = 10L, longitude = 127.0, latitude = 37.5)
+
+        val inside = BBox(126.9, 37.4, 127.1, 37.6)
+        val outside = BBox(128.0, 38.0, 128.1, 38.1)
+
+        assertTrue(service.getVersion(14, inside, 1L, null) > 0L)
+        assertEquals(0L, service.getVersion(14, outside, 1L, null))
+    }
+
+    @Test
+    fun `위치 기반 version은 album 필터를 구분한다`() {
+        val mapCells = CaffeineCache("mapCells", Caffeine.newBuilder().build())
+        val mapPhotos = CaffeineCache("mapPhotos", Caffeine.newBuilder().build())
+        `when`(cacheManager.getCache("mapCells")).thenReturn(mapCells)
+        `when`(cacheManager.getCache("mapPhotos")).thenReturn(mapPhotos)
+
+        val bbox = BBox(126.9, 37.4, 127.1, 37.6)
+        service.evictForPhotoMutation(coupleId = 1L, albumId = 10L, longitude = 127.0, latitude = 37.5)
+
+        assertTrue(service.getVersion(14, bbox, 1L, 10L) > 0L)
+        assertEquals(0L, service.getVersion(14, bbox, 1L, 11L))
     }
 
     // --- getClusteredPhotos 테스트 ---

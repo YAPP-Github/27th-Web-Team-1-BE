@@ -22,6 +22,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.Mock
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.transaction.support.TransactionTemplate
@@ -100,6 +101,17 @@ class MapServiceTest {
         assertNotNull(result.clusters)
         assertEquals(1, result.clusters.size)
         assertEquals(5, result.clusters[0].count)
+    }
+
+    @Test
+    fun `한국 경계 밖 bbox 요청은 빈 결과를 반환한다`() {
+        val outsideKorea = BBox(-10.0, -10.0, -5.0, -5.0)
+
+        val result = mapService.getPhotos(12, outsideKorea, null, null)
+
+        assertNotNull(result.clusters)
+        assertTrue(result.clusters.isEmpty())
+        verifyNoInteractions(mapPhotosCacheService)
     }
 
     @Test
@@ -201,7 +213,7 @@ class MapServiceTest {
             ),
         ).thenReturn(photos)
 
-        val result = mapService.getClusterPhotos("z14_100_200", 1L)
+        val result = mapService.getClusterPhotos("z14_24661_7867", 1L)
 
         assertEquals(1, result.size)
         assertEquals(1L, result[0].id)

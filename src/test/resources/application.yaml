@@ -73,3 +73,7 @@ admin.key: ""
 
 cors:
     allowed-origins: http://localhost:8080
+
+redirect:
+    local-host: localhost:3000
+    allowed-domain: localhost

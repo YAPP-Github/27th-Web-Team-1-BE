@@ -6,6 +6,8 @@ import kotlin.math.ceil
 import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.ln
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.tan
 
@@ -15,7 +17,30 @@ data class BBox(
     val east: Double,
     val north: Double,
 ) {
+    fun intersects(other: BBox): Boolean =
+        west < other.east && east > other.west && south < other.north && north > other.south
+
+    fun clampTo(other: BBox): BBox? {
+        val clampedWest = max(west, other.west)
+        val clampedSouth = max(south, other.south)
+        val clampedEast = min(east, other.east)
+        val clampedNorth = min(north, other.north)
+        return if (clampedWest < clampedEast && clampedSouth < clampedNorth) {
+            BBox(
+                west = clampedWest,
+                south = clampedSouth,
+                east = clampedEast,
+                north = clampedNorth,
+            )
+        } else {
+            null
+        }
+    }
+
+    fun clampToKorea(): BBox? = clampTo(KOREA_BOUNDS)
+
     companion object {
+        val KOREA_BOUNDS = BBox(west = 124.0, south = 33.0, east = 132.0, north = 39.5)
         private const val HORIZONTAL_MULTIPLIER = 2.5
         private const val VERTICAL_MULTIPLIER = 5.0
         private const val EARTH_RADIUS_METERS = 6378137.0

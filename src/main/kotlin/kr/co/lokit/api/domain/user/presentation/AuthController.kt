@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.domain.user.application.KakaoLoginService
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -23,6 +24,8 @@ class AuthController(
     private val kakaoLoginService: KakaoLoginService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
     private val cookieGenerator: CookieGenerator,
+    @Value("\${redirect.local-host}") private val localHostRedirect: String,
+    @Value("\${redirect.allowed-domain}") private val allowedDomain: String,
 ) : AuthApi {
     @ResponseStatus(HttpStatus.FOUND)
     @GetMapping("kakao")
@@ -79,7 +82,7 @@ class AuthController(
     private fun resolveRedirectFromReferer(req: HttpServletRequest): String? {
         val referer = req.getHeader("Referer") ?: return null
         val uri = URI.create(referer)
-        if (uri.host == LOCAL_HOST) {
+        if (uri.host == localHostRedirect) {
             val port = if (uri.port > 0) ":${uri.port}" else ""
             return "${uri.scheme}://${uri.host}$port"
         }
@@ -88,13 +91,8 @@ class AuthController(
 
     private fun isAllowedRedirect(uri: String): Boolean =
         try {
-            URI.create(uri).host?.endsWith(ALLOWED_DOMAIN) == true
+            URI.create(uri).host?.endsWith(allowedDomain) == true
         } catch (_: Exception) {
             false
         }
-
-    companion object {
-        private const val LOCAL_HOST = "local.lokit.co.kr"
-        private const val ALLOWED_DOMAIN = "lokit.co.kr"
-    }
 }
