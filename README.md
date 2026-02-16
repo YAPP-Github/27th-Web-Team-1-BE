@@ -1,17 +1,33 @@
 # Lokit
 
 > 우리만의 이야기를, 지도에 Lokit
+>
 > 함께 기록하고, 함께 쌓아가는 커플 아카이빙 서비스
 
-Lokit은 사진을 앨범 단위로 관리하고, 촬영 위치를 기반으로 지도 위에서 추억을 한눈에 돌아볼 수 있는 모바일 중심 서비스입니다.
+Lokit은 촬영 위치를 기반으로 지도 위에서 추억을 한눈에 돌아볼 수 있는 서비스입니다.
 
 <br>
 
 ## Highlights
 
-- **이미지 처리**: AWS S3 Presigned URL 기반 대용량 이미지 업로드 및 관리
-- **공간 데이터 처리**: PostGIS + Hibernate Spatial을 활용한 위치 기반 사진 저장 및 조회
-- **지도 클러스터링**: 줌 레벨에 따른 동적 그리드 기반 클러스터링으로 대량의 위치 데이터 시각화
+1. 지도 대용량 데이터 성능 최적화
+    - PostGIS 공간 쿼리 + POI 클러스터링 + multi level 캐시 + 방향 기반 prefetch로 지도 이동 시 지연 최소화
+2. PostgreSQL 인덱스 튜닝
+    - GiST(공간), BRIN(시계열), 복합 인덱스, DESC/NULLS LAST 정렬 인덱스 운영
+3. 캐시 일관성과 무효화 복잡도
+    - dataVersion 기반 증분 캐시를 설계해 불필요한 재조회/재전송을 줄이고 응답 지연을 개선
+4. 안정성을 고려한 비동기 병렬 처리로 성능 최적화
+    - Virtual Threads + Structured Concurrency로 로직/쿼리 병렬화, DB 세마포어로 과부하 제어.
+5. Soft delete 환경 최적화
+    - WHERE is_deleted = false 기반 partial index로 활성 데이터 조회 성능 최적화
+6. 무결성 제약 설계
+    - 부분 유니크 인덱스로 비즈니스 룰 강제
+7. 외부 스토리지 정합성 유지
+    - S3 비동기 삭제 실패를 허용하고(이벤트 핸들러), 스케줄러로 orphan object를 정리해 최종 정합성 확보.
+8. 데이터 수명주기/파기 자동화
+    - 유예기간 만료 처리, soft delete, 탈퇴 계정 비가역 익명화까지 스케줄러 기반 자동 운영.
+9. 모바일 wifi ↔ cellular 네트워크 전환 지원
+    - caddy 기반 http 2/3 활용
 
 <br>
 
