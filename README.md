@@ -10,24 +10,38 @@ Lokit은 촬영 위치를 기반으로 지도 위에서 추억을 한눈에 돌�
 
 ## Highlights
 
-1. 지도 대용량 데이터 성능 최적화
+### Tech
+
+1. **지도 대용량 데이터 성능 최적화**
     - PostGIS 공간 쿼리 + POI 클러스터링 + multi level 캐시 + 방향 기반 prefetch로 지도 이동 시 지연 최소화
-2. PostgreSQL 인덱스 튜닝
+2. **PostgreSQL 인덱스 튜닝**
     - GiST(공간), BRIN(시계열), 복합 인덱스, DESC/NULLS LAST 정렬 인덱스 운영
-3. 캐시 일관성과 무효화 복잡도
+3. **캐시 일관성과 무효화 복잡도**
     - dataVersion 기반 증분 캐시를 설계해 불필요한 재조회/재전송을 줄이고 응답 지연을 개선
-4. 안정성을 고려한 비동기 병렬 처리로 성능 최적화
+4. **안정성을 고려한 비동기 병렬 처리로 성능 최적화**
     - Virtual Threads + Structured Concurrency로 로직/쿼리 병렬화, DB 세마포어로 과부하 제어.
-5. Soft delete 환경 최적화
+5. **Soft delete 환경 최적화**
     - WHERE is_deleted = false 기반 partial index로 활성 데이터 조회 성능 최적화
-6. 무결성 제약 설계
+6. **무결성 제약 설계**
     - 부분 유니크 인덱스로 비즈니스 룰 강제
-7. 외부 스토리지 정합성 유지
+7. **외부 스토리지 정합성 유지**
     - S3 비동기 삭제 실패를 허용하고(이벤트 핸들러), 스케줄러로 orphan object를 정리해 최종 정합성 확보.
-8. 데이터 수명주기/파기 자동화
+8. **데이터 수명주기/파기 자동화**
     - 유예기간 만료 처리, soft delete, 탈퇴 계정 비가역 익명화까지 스케줄러 기반 자동 운영.
-9. 모바일 wifi ↔ cellular 네트워크 전환 지원
+9. **모바일 wifi ↔ cellular 네트워크 전환 지원**
     - caddy 기반 http 2/3 활용
+
+### Code Architecture
+
+1. **이벤트 기반 후속 처리 분리**
+    - 캐시 무효화, 스토리지 정리 같은 후속 작업을 도메인 이벤트로 분리해 결합도를 낮추고 운영 안정성을 높임.
+2. **Kotlin 친화적이고 안전한 코드베이스**
+    - data class/copy, null-safety, 확장 함수, 명확한 타입 모델로 변경 비용을 줄이고 읽기 쉬운 코드 지향.
+3. **도메인 중심 설계**
+    - 복잡한 비즈니스 규칙을 도메인 모델에 명확히 캡슐화.
+4. **헥사고날 아키텍처**
+    - Controller → UseCase(In Port) → Service → Out Port → Adapter 구조를 유지.
+    - 외부 시스템(S3/Kakao/DB) 변경이 도메인 로직에 전파되지 않도록 설계.
 
 <br>
 
