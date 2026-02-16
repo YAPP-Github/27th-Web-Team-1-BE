@@ -14,8 +14,6 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class OpenApiConfig(
-    @Value("\${spring.profiles.active:local}")
-    private val activeProfile: String,
     @Value("\${server.servlet.context-path:/}")
     private val contextPath: String,
 ) {
@@ -65,7 +63,7 @@ class OpenApiConfig(
     fun apiGroup(): GroupedOpenApi =
         GroupedOpenApi
             .builder()
-            .group("api")
+            .group("api-v1.0")
             .packagesToScan("kr.co.lokit.api")
             .build()
 }

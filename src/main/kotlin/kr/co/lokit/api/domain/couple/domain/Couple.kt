@@ -2,13 +2,11 @@ package kr.co.lokit.api.domain.couple.domain
 
 import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.constant.GracePeriodPolicy
-import kr.co.lokit.api.common.util.InviteCodeGenerator
 import java.time.LocalDateTime
 
 data class Couple(
     val id: Long = 0,
     val name: String,
-    var inviteCode: String = InviteCodeGenerator.generate(),
     val userIds: List<Long> = emptyList(),
     val status: CoupleStatus = CoupleStatus.CONNECTED,
     val disconnectedAt: LocalDateTime? = null,
@@ -16,7 +14,6 @@ data class Couple(
 ) {
     init {
         require(userIds.size <= MAX_MEMBERS)
-        require(inviteCode.length == INVITE_CODE_LENGTH)
     }
 
     fun isFull(): Boolean = userIds.size >= MAX_MEMBERS
@@ -36,7 +33,6 @@ data class Couple(
     companion object {
         const val DEFAULT_COUPLE_NAME = "default"
         const val MAX_MEMBERS = 2
-        const val INVITE_CODE_LENGTH = 8
     }
 }
 

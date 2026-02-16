@@ -180,6 +180,72 @@ sealed class BusinessException(
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.COUPLE_RECONNECT_NOT_ALLOWED, message, cause, errors)
+
+    class InviteInvalidFormatException(
+        message: String = ErrorCode.INVITE_INVALID_FORMAT.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_INVALID_FORMAT, message, cause, errors)
+
+    class InviteCodeNotFoundException(
+        message: String = ErrorCode.INVITE_CODE_NOT_FOUND.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_CODE_NOT_FOUND, message, cause, errors)
+
+    class InviteCodeExpiredException(
+        message: String = ErrorCode.INVITE_CODE_EXPIRED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_CODE_EXPIRED, message, cause, errors)
+
+    class InviteCodeRevokedException(
+        message: String = ErrorCode.INVITE_CODE_REVOKED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_CODE_REVOKED, message, cause, errors)
+
+    class InviteCodeUsedException(
+        message: String = ErrorCode.INVITE_CODE_USED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_CODE_USED, message, cause, errors)
+
+    class InviteAlreadyUsedException(
+        message: String = ErrorCode.INVITE_ALREADY_USED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_ALREADY_USED, message, cause, errors)
+
+    class InviteAlreadyCoupledException(
+        message: String = ErrorCode.INVITE_ALREADY_COUPLED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_ALREADY_COUPLED, message, cause, errors)
+
+    class SelfInviteNotAllowedException(
+        message: String = ErrorCode.INVITE_SELF_NOT_ALLOWED.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_SELF_NOT_ALLOWED, message, cause, errors)
+
+    class InviteNotOwnerException(
+        message: String = ErrorCode.INVITE_NOT_OWNER.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_NOT_OWNER, message, cause, errors)
+
+    class InviteTooManyRequestsException(
+        message: String = ErrorCode.INVITE_TOO_MANY_REQUESTS.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_TOO_MANY_REQUESTS, message, cause, errors)
+
+    class InviteRaceConflictException(
+        message: String = ErrorCode.INVITE_RACE_CONFLICT.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.INVITE_RACE_CONFLICT, message, cause, errors)
 }
 
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =

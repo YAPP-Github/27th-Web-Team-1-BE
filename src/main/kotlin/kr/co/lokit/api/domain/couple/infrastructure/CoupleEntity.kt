@@ -16,8 +16,6 @@ import java.time.LocalDateTime
 class CoupleEntity(
     @Column(nullable = false, length = 20)
     val name: String,
-    @Column(unique = true, length = 8)
-    var inviteCode: String,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: CoupleStatus = CoupleStatus.CONNECTED,

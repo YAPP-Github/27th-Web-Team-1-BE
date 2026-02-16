@@ -52,7 +52,7 @@ fun createCoupleRequest(
 ) = CreateCoupleRequest(name = name)
 
 fun createJoinCoupleRequest(
-    inviteCode: String = "12345678",
+    inviteCode: String = "123456",
 ) = JoinCoupleRequest(inviteCode = inviteCode)
 
 fun createUpdateNicknameRequest(

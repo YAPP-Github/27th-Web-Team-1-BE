@@ -6,10 +6,12 @@ import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
-import kr.co.lokit.api.domain.couple.application.port.`in`.JoinCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.ReconnectCoupleUseCase
+import kr.co.lokit.api.domain.couple.dto.CoupleLinkResponse
+import kr.co.lokit.api.domain.couple.dto.PartnerSummaryResponse
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createCoupleRequest
@@ -59,19 +61,16 @@ class CoupleControllerTest {
     lateinit var createCoupleUseCase: CreateCoupleUseCase
 
     @MockitoBean
-    lateinit var joinCoupleUseCase: JoinCoupleUseCase
-
-    @MockitoBean
     lateinit var disconnectCoupleUseCase: DisconnectCoupleUseCase
 
     @MockitoBean
     lateinit var reconnectCoupleUseCase: ReconnectCoupleUseCase
 
-    @Test
-    fun `커플 생성 성공`() {
-        val savedCouple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678")
-        doReturn(savedCouple).`when`(createCoupleUseCase).createIfNone(anyObject(), anyLong())
+    @MockitoBean
+    lateinit var coupleInviteUseCase: CoupleInviteUseCase
 
+    @Test
+    fun `커플 생성 엔드포인트 없음`() {
         mockMvc
             .perform(
                 post("/couples")
@@ -79,7 +78,7 @@ class CoupleControllerTest {
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(createCoupleRequest(name = "우리 커플"))),
-            ).andExpect(status().isCreated)
+            ).andExpect(status().isNotFound)
     }
 
     @Test
@@ -91,13 +90,17 @@ class CoupleControllerTest {
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(createCoupleRequest(name = ""))),
-            ).andExpect(status().isBadRequest)
+            ).andExpect(status().isNotFound)
     }
 
     @Test
     fun `초대 코드로 커플 합류 성공`() {
-        val couple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L, 2L))
-        doReturn(couple).`when`(joinCoupleUseCase).joinByInviteCode(anyString(), anyLong())
+        val linked =
+            CoupleLinkResponse(
+                coupleId = 1L,
+                partnerSummary = PartnerSummaryResponse(userId = 2L, nickname = "테스트", profileImageUrl = null),
+            )
+        doReturn(linked).`when`(coupleInviteUseCase).confirmInviteCode(anyLong(), anyString(), anyString())
 
         mockMvc
             .perform(
@@ -111,9 +114,9 @@ class CoupleControllerTest {
 
     @Test
     fun `초대 코드로 커플 합류 실패 - 잘못된 초대 코드`() {
-        doThrow(BusinessException.ResourceNotFoundException("유효하지 않은 초대 코드입니다"))
-            .`when`(joinCoupleUseCase)
-            .joinByInviteCode(anyString(), anyLong())
+        doThrow(BusinessException.InviteCodeNotFoundException())
+            .`when`(coupleInviteUseCase)
+            .confirmInviteCode(anyLong(), anyString(), anyString())
 
         mockMvc
             .perform(
@@ -121,12 +124,12 @@ class CoupleControllerTest {
                     .with(authentication(userAuth()))
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(createJoinCoupleRequest(inviteCode = "invalid1"))),
+                    .content(objectMapper.writeValueAsString(createJoinCoupleRequest(inviteCode = "123456"))),
             ).andExpect(status().isNotFound)
     }
 
     @Test
-    fun `초대 코드로 커플 합류 실패 - 초대 코드가 8자가 아님`() {
+    fun `초대 코드로 커플 합류 실패 - 초대 코드가 6자가 아님`() {
         mockMvc
             .perform(
                 post("/couples/join")
@@ -139,7 +142,7 @@ class CoupleControllerTest {
 
     @Test
     fun `재연결 성공`() {
-        val couple = createCouple(id = 1L, name = "우리 커플", inviteCode = "12345678", userIds = listOf(1L, 2L))
+        val couple = createCouple(id = 1L, name = "우리 커플", userIds = listOf(1L, 2L))
         doReturn(couple).`when`(reconnectCoupleUseCase).reconnect(anyLong())
 
         mockMvc
