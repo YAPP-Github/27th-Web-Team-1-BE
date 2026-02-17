@@ -52,6 +52,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                 zoomLevel = z,
                 nodes = parsed,
                 lonLatExtractor = { it.longitude to it.latitude },
+                weightExtractor = { it.count },
             )
 
         val merged =
@@ -114,6 +115,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                     val center = cellCenters[cell] ?: GeoPoint(0.0, 0.0)
                     center.longitude to center.latitude
                 },
+                weightExtractor = { cell -> (cellCenters[cell]?.weight ?: 1).coerceAtLeast(1) },
             )
 
         val idxByCell = cells.withIndex().associate { it.value to it.index }
@@ -141,6 +143,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         zoomLevel: Double,
         nodes: List<T>,
         lonLatExtractor: (T) -> Pair<Double, Double>,
+        weightExtractor: (T) -> Int,
     ): List<List<Int>> {
         if (nodes.isEmpty()) return emptyList()
 
@@ -158,10 +161,17 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
             dsu.unionIfCompleteLinkageSafe(edge.a, edge.b)
         }
 
-        return nodes.indices
+        val initialGroups =
+            nodes.indices
             .groupBy { dsu.find(it) }
             .values
             .map { it.toList() }
+
+        return absorbSingletonsByVisualCenter(
+            groups = initialGroups,
+            projected = projected,
+            weights = nodes.map(weightExtractor),
+        )
     }
 
     private fun buildCandidateEdges(nodes: List<ProjectedNode>): List<Edge> {
@@ -205,6 +215,82 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     }
 
     private fun normalizeZoomLevel(zoomLevel: Double): Double = zoomLevel.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
+
+    private fun absorbSingletonsByVisualCenter(
+        groups: List<List<Int>>,
+        projected: List<ProjectedNode>,
+        weights: List<Int>,
+    ): List<List<Int>> {
+        if (groups.size < 2) return groups
+
+        val mutableGroups = groups.map { it.toMutableList() }.toMutableList()
+
+        var changed: Boolean
+        do {
+            changed = false
+            val singletonIndexes = mutableGroups.indices.filter { mutableGroups[it].size == 1 }
+            if (singletonIndexes.isEmpty()) break
+
+            val multiStats =
+                mutableGroups.indices
+                    .filter { mutableGroups[it].size > 1 }
+                    .associateWith { groupIndex ->
+                        computeGroupCenter(
+                            indexes = mutableGroups[groupIndex],
+                            projected = projected,
+                            weights = weights,
+                        )
+                    }
+
+            if (multiStats.isEmpty()) break
+
+            singletonIndexes.forEach { singletonGroupIndex ->
+                val singletonNodeIndex = mutableGroups[singletonGroupIndex].first()
+                val node = projected[singletonNodeIndex]
+
+                val bestTarget =
+                    multiStats.entries
+                        .mapNotNull { (targetIndex, center) ->
+                            val dx = abs(node.x - center.x)
+                            val dy = abs(node.y - center.y)
+                            if (dx > VISUAL_ABSORB_DX_PX || dy > VISUAL_ABSORB_DY_PX) {
+                                null
+                            } else {
+                                val score = max(dx / VISUAL_ABSORB_DX_PX, dy / VISUAL_ABSORB_DY_PX)
+                                MergeTarget(targetIndex, score, dx, dy)
+                            }
+                        }.minWithOrNull(
+                            compareBy<MergeTarget> { it.score }
+                                .thenBy { it.dx }
+                                .thenBy { it.dy }
+                                .thenBy { it.targetGroupIndex },
+                        )
+
+                if (bestTarget != null) {
+                    mutableGroups[bestTarget.targetGroupIndex].add(singletonNodeIndex)
+                    mutableGroups[singletonGroupIndex].clear()
+                    changed = true
+                }
+            }
+
+            if (changed) {
+                mutableGroups.removeAll { it.isEmpty() }
+            }
+        } while (changed)
+
+        return mutableGroups.map { it.toList() }
+    }
+
+    private fun computeGroupCenter(
+        indexes: List<Int>,
+        projected: List<ProjectedNode>,
+        weights: List<Int>,
+    ): ProjectedNode {
+        val totalWeight = indexes.sumOf { weights[it].coerceAtLeast(1) }.coerceAtLeast(1)
+        val sumX = indexes.sumOf { projected[it].x * weights[it].coerceAtLeast(1) }
+        val sumY = indexes.sumOf { projected[it].y * weights[it].coerceAtLeast(1) }
+        return ProjectedNode(sumX / totalWeight, sumY / totalWeight)
+    }
 
     private class CompleteLinkageDsu(
         nodes: List<ProjectedNode>,
@@ -285,6 +371,13 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         val dy: Double,
     )
 
+    private data class MergeTarget(
+        val targetGroupIndex: Int,
+        val score: Double,
+        val dx: Double,
+        val dy: Double,
+    )
+
     companion object {
         private const val MAX_ZOOM_LEVEL = 22
 
@@ -294,5 +387,9 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
 
         private const val MERGE_DX_PX = (1.0 - REQUIRED_OVERLAP_RATIO) * POI_WIDTH_PX
         private const val MERGE_DY_PX = (1.0 - REQUIRED_OVERLAP_RATIO) * POI_HEIGHT_PX
+
+        // Secondary visual smoothing for isolated markers near a merged-cluster center.
+        private const val VISUAL_ABSORB_DX_PX = 56.0
+        private const val VISUAL_ABSORB_DY_PX = 76.0
     }
 }

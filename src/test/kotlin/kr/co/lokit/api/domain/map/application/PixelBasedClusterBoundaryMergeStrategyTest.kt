@@ -100,6 +100,24 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         assertTrue(CellCoord(12, 10) !in merged)
     }
 
+    @Test
+    fun `클러스터 중심과 겹치는 단일 마커는 시각적으로 흡수된다`() {
+        val zoom = 13.2
+        val base = lonLatToWorldPx(127.0, 37.3, zoom)
+        val clusters =
+            listOf(
+                cluster("z13_1_1", worldPxToLonLat(base.first + 0.0, base.second + 0.0, zoom)),
+                cluster("z13_2_1", worldPxToLonLat(base.first + 49.0, base.second + 0.0, zoom)),
+                cluster("z13_3_1", worldPxToLonLat(base.first + 49.0, base.second + 60.0, zoom)),
+                cluster("z13_4_1", worldPxToLonLat(base.first + 58.0, base.second + 20.0, zoom)),
+            )
+
+        val result = strategy.mergeClusters(clusters, zoom)
+
+        assertEquals(1, result.size)
+        assertEquals(4, result.first().count)
+    }
+
     private fun cluster(
         clusterId: String,
         lonLat: Pair<Double, Double>,
