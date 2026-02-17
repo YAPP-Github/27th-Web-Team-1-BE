@@ -120,20 +120,23 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
     }
 
     @Test
-    fun `동일 clusterId가 여러 그룹에서 생성되어도 최종 응답은 하나로 합쳐진다`() {
+    fun `동일 clusterId가 여러 그룹에서 생성되면 suffix를 붙여 고유 ID를 보장한다`() {
         val zoom = 14.0
-        val lon = 127.1
-        val lat = 37.36
+        val base = lonLatToWorldPx(127.1, 37.36, zoom)
+        val farEnough = worldPxToLonLat(base.first + 55.0, base.second, zoom)
+        val origin = worldPxToLonLat(base.first, base.second, zoom)
         val clusters =
             listOf(
-                ClusterResponse("z14_24681_7832", 1, "a.jpg", lon, lat),
-                ClusterResponse("z14_24681_7832", 2, "b.jpg", lon + 0.0001, lat + 0.0001),
+                ClusterResponse("z14_24681_7832", 1, "a.jpg", origin.first, origin.second),
+                ClusterResponse("z14_24681_7832", 2, "b.jpg", farEnough.first, farEnough.second),
             )
 
         val result = strategy.mergeClusters(clusters, zoom)
 
-        assertEquals(1, result.count { it.clusterId == "z14_24681_7832" })
-        assertEquals(3, result.single { it.clusterId == "z14_24681_7832" }.count)
+        assertEquals(2, result.size)
+        assertTrue(result.map { it.clusterId }.toSet().size == 2)
+        assertTrue(result.any { it.clusterId == "z14_24681_7832" })
+        assertTrue(result.any { it.clusterId == "z14_24681_7832_g2" })
     }
 
     private fun cluster(

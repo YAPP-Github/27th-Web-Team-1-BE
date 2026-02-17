@@ -53,6 +53,8 @@ class DiscordNotifier(
 
     private val pendingErrors = ConcurrentLinkedQueue<ErrorSnapshot>()
     private val flushScheduled = AtomicBoolean(false)
+    private val deploymentNotified = AtomicBoolean(false)
+    private val shutdownNotified = AtomicBoolean(false)
 
     companion object {
         private const val STACKTRACE_MAX_LENGTH = 800
@@ -73,6 +75,9 @@ class DiscordNotifier(
 
     @PreDestroy
     fun notifyShutdown() {
+        if (!shutdownNotified.compareAndSet(false, true)) {
+            return
+        }
         try {
             val timestamp = KST_FORMATTER.format(Instant.now())
             val payload =
@@ -97,6 +102,9 @@ class DiscordNotifier(
 
     @EventListener(ApplicationReadyEvent::class)
     fun notifyDeployment() {
+        if (!deploymentNotified.compareAndSet(false, true)) {
+            return
+        }
         Thread.startVirtualThread {
             try {
                 val timestamp = KST_FORMATTER.format(Instant.now())

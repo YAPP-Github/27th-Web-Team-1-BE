@@ -120,7 +120,7 @@ data class GridCell(
 }
 
 object ClusterId {
-    private val PATTERN = Regex("""^z(\d+)_(-?\d+)_(-?\d+)$""")
+    private val PATTERN = Regex("""^z(\d+)_(-?\d+)_(-?\d+)(?:_g\d+)?$""")
 
     fun format(
         zoom: Int,

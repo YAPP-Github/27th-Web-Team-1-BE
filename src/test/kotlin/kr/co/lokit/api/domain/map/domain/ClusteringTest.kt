@@ -50,8 +50,17 @@ class ClusteringTest {
     @Test
     fun `ClusterId 유효성을 검증할 수 있다`() {
         assertTrue(ClusterId.isValid("z14_130234_38456"))
+        assertTrue(ClusterId.isValid("z14_130234_38456_g2"))
         assertFalse(ClusterId.isValid("invalid"))
         assertFalse(ClusterId.isValid("z14_abc_123"))
+    }
+
+    @Test
+    fun `ClusterId suffix가 있어도 파싱할 수 있다`() {
+        val cell = ClusterId.parse("z14_130234_38456_g2")
+        assertEquals(14, cell.zoom)
+        assertEquals(130234L, cell.cellX)
+        assertEquals(38456L, cell.cellY)
     }
 
     @Test

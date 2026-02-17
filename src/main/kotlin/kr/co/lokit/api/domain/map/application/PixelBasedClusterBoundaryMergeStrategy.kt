@@ -81,8 +81,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                 )
             }
 
-        val mergedByClusterId = mergeSameClusterId(merged)
-        return mergedByClusterId + passthrough
+        return ensureUniqueClusterIds(merged) + passthrough
     }
 
     override fun resolveClusterCells(
@@ -209,28 +208,18 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
 
     private fun normalizeZoomLevel(zoomLevel: Double): Double = zoomLevel.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
 
-    private fun mergeSameClusterId(clusters: List<ClusterResponse>): List<ClusterResponse> =
-        clusters
-            .groupBy { it.clusterId }
-            .values
-            .map { sameId ->
-                if (sameId.size == 1) {
-                    sameId.first()
-                } else {
-                    val totalCount = sameId.sumOf { it.count }
-                    val sumLon = sameId.sumOf { it.longitude * it.count }
-                    val sumLat = sameId.sumOf { it.latitude * it.count }
-                    val latest = sameId.maxByOrNull { it.takenAt ?: LocalDateTime.MIN } ?: sameId.first()
-                    ClusterResponse(
-                        clusterId = sameId.first().clusterId,
-                        count = totalCount,
-                        thumbnailUrl = latest.thumbnailUrl,
-                        longitude = if (totalCount > 0) sumLon / totalCount else latest.longitude,
-                        latitude = if (totalCount > 0) sumLat / totalCount else latest.latitude,
-                        takenAt = latest.takenAt,
-                    )
-                }
+    private fun ensureUniqueClusterIds(clusters: List<ClusterResponse>): List<ClusterResponse> {
+        val seen = mutableMapOf<String, Int>()
+        return clusters.map { cluster ->
+            val seq = (seen[cluster.clusterId] ?: 0) + 1
+            seen[cluster.clusterId] = seq
+            if (seq == 1) {
+                cluster
+            } else {
+                cluster.copy(clusterId = "${cluster.clusterId}_g$seq")
             }
+        }
+    }
 
     private class CompleteLinkageDsu(
         nodes: List<ProjectedNode>,
