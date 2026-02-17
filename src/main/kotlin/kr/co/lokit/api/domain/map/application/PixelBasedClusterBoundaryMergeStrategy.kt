@@ -82,7 +82,8 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                 )
             }
 
-        return merged + passthrough
+        val mergedByClusterId = mergeSameClusterId(merged)
+        return mergedByClusterId + passthrough
     }
 
     override fun resolveClusterCells(
@@ -163,9 +164,9 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
 
         val initialGroups =
             nodes.indices
-            .groupBy { dsu.find(it) }
-            .values
-            .map { it.toList() }
+                .groupBy { dsu.find(it) }
+                .values
+                .map { it.toList() }
 
         return absorbSingletonsByVisualCenter(
             groups = initialGroups,
@@ -292,6 +293,29 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         return ProjectedNode(sumX / totalWeight, sumY / totalWeight)
     }
 
+    private fun mergeSameClusterId(clusters: List<ClusterResponse>): List<ClusterResponse> =
+        clusters
+            .groupBy { it.clusterId }
+            .values
+            .map { sameId ->
+                if (sameId.size == 1) {
+                    sameId.first()
+                } else {
+                    val totalCount = sameId.sumOf { it.count }
+                    val sumLon = sameId.sumOf { it.longitude * it.count }
+                    val sumLat = sameId.sumOf { it.latitude * it.count }
+                    val latest = sameId.maxByOrNull { it.takenAt ?: LocalDateTime.MIN } ?: sameId.first()
+                    ClusterResponse(
+                        clusterId = sameId.first().clusterId,
+                        count = totalCount,
+                        thumbnailUrl = latest.thumbnailUrl,
+                        longitude = if (totalCount > 0) sumLon / totalCount else latest.longitude,
+                        latitude = if (totalCount > 0) sumLat / totalCount else latest.latitude,
+                        takenAt = latest.takenAt,
+                    )
+                }
+            }
+
     private class CompleteLinkageDsu(
         nodes: List<ProjectedNode>,
     ) {
@@ -388,8 +412,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         private const val MERGE_DX_PX = (1.0 - REQUIRED_OVERLAP_RATIO) * POI_WIDTH_PX
         private const val MERGE_DY_PX = (1.0 - REQUIRED_OVERLAP_RATIO) * POI_HEIGHT_PX
 
-        // Secondary visual smoothing for isolated markers near a merged-cluster center.
-        private const val VISUAL_ABSORB_DX_PX = 56.0
-        private const val VISUAL_ABSORB_DY_PX = 76.0
+        private const val VISUAL_ABSORB_DX_PX = 52.0
+        private const val VISUAL_ABSORB_DY_PX = 72.0
     }
 }
