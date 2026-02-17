@@ -91,5 +91,6 @@ redirect:
 
 map:
     cluster:
+        server-side-raw: true
         boundary-merge:
             strategy: pixel

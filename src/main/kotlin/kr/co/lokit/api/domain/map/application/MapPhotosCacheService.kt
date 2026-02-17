@@ -5,12 +5,14 @@ import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.map.application.port.ClusterProjection
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import kr.co.lokit.api.domain.map.dto.ClusterResponse
 import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
 import kr.co.lokit.api.domain.map.mapping.toMapPhotoResponse
 import kr.co.lokit.api.domain.map.mapping.toResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCache
@@ -31,6 +33,8 @@ class MapPhotosCacheService(
     private val mapQueryPort: MapQueryPort,
     private val cacheManager: CacheManager,
     private val clusterBoundaryMergeStrategy: ClusterBoundaryMergeStrategy,
+    @Value("\${map.cluster.server-side-raw:false}")
+    private val serverSideRawClustering: Boolean = false,
 ) {
     data class CachedCell(
         val response: ClusterResponse?,
@@ -134,6 +138,16 @@ class MapPhotosCacheService(
         zoomLevel: Double = zoom.toDouble(),
         canReuseCellCache: Boolean = true,
     ): MapPhotosResponse {
+        if (serverSideRawClustering) {
+            return queryRawPoiClusters(
+                zoom = zoom,
+                bbox = bbox,
+                coupleId = coupleId,
+                albumId = albumId,
+                zoomLevel = zoomLevel,
+            )
+        }
+
         val gridSize = GridValues.getGridSize(zoom)
         val cache =
             cacheManager.getCache(CacheNames.MAP_CELLS) as? CaffeineCache
@@ -259,6 +273,39 @@ class MapPhotosCacheService(
                     zoomLevel,
                 ),
         )
+    }
+
+    private fun queryRawPoiClusters(
+        zoom: Int,
+        bbox: BBox,
+        coupleId: Long?,
+        albumId: Long?,
+        zoomLevel: Double,
+    ): MapPhotosResponse {
+        val gridSize = GridValues.getGridSize(zoom)
+        val clusters =
+            mapQueryPort.findPhotosWithinBBox(
+                west = bbox.west,
+                south = bbox.south,
+                east = bbox.east,
+                north = bbox.north,
+                coupleId = coupleId,
+                albumId = albumId,
+            ).map { photo ->
+                val cellX = floor(lonToM(photo.longitude) / gridSize).toLong()
+                val cellY = floor(latToM(photo.latitude) / gridSize).toLong()
+
+                ClusterResponse(
+                    clusterId = ClusterId.format(zoom, cellX, cellY),
+                    count = 1,
+                    thumbnailUrl = photo.url,
+                    longitude = photo.longitude,
+                    latitude = photo.latitude,
+                    takenAt = photo.takenAt,
+                )
+            }
+
+        return MapPhotosResponse(clusters = clusterBoundaryMergeStrategy.mergeClusters(clusters, zoomLevel))
     }
 
     private fun schedulePrefetch(

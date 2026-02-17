@@ -899,11 +899,105 @@ class MapPhotosCacheServiceTest {
         assertNotNull(result.photos)
     }
 
+    @Test
+    fun `server side raw clustering이 켜지면 원시 POI 조회를 사용한다`() {
+        val rawService =
+            MapPhotosCacheService(
+                mapQueryPort = mapQueryPort,
+                cacheManager = cacheManager,
+                clusterBoundaryMergeStrategy = PixelBasedClusterBoundaryMergeStrategy(),
+                serverSideRawClustering = true,
+            )
+        val zoomLevel = 13.4
+        val discreteZoom = 13
+        val bbox = BBox(126.95, 37.25, 127.05, 37.35)
+        val now = LocalDateTime.now()
+
+        val base = lonLatToWorldPx(127.0, 37.3, zoomLevel)
+        val near = worldPxToLonLat(base.first + 20.0, base.second + 20.0, zoomLevel)
+
+        `when`(
+            mapQueryPort.findPhotosWithinBBox(
+                west = eq(bbox.west),
+                south = eq(bbox.south),
+                east = eq(bbox.east),
+                north = eq(bbox.north),
+                coupleId = isNull(),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                PhotoProjection(
+                    id = 1L,
+                    url = "a.jpg",
+                    longitude = 127.0,
+                    latitude = 37.3,
+                    takenAt = now,
+                ),
+                PhotoProjection(
+                    id = 2L,
+                    url = "b.jpg",
+                    longitude = near.first,
+                    latitude = near.second,
+                    takenAt = now.plusMinutes(1),
+                ),
+            ),
+        )
+
+        val result = rawService.getClusteredPhotos(discreteZoom, bbox, null, null, zoomLevel)
+
+        verify(mapQueryPort).findPhotosWithinBBox(
+            west = eq(bbox.west),
+            south = eq(bbox.south),
+            east = eq(bbox.east),
+            north = eq(bbox.north),
+            coupleId = isNull(),
+            albumId = isNull(),
+        )
+        verify(mapQueryPort, never()).findClustersWithinBBox(
+            west = anyDouble(),
+            south = anyDouble(),
+            east = anyDouble(),
+            north = anyDouble(),
+            gridSize = anyDouble(),
+            coupleId = any(),
+            albumId = any(),
+        )
+
+        assertNotNull(result.clusters)
+        assertEquals(1, result.clusters!!.size)
+        assertEquals(2, result.clusters!!.first().count)
+    }
+
     companion object {
         private const val EARTH_RADIUS = 6378137.0
 
         fun lonToMHelper(lon: Double): Double = lon * (Math.PI * EARTH_RADIUS / 180.0)
 
         fun latToMHelper(lat: Double): Double = Math.log(Math.tan((90.0 + lat) * Math.PI / 360.0)) * EARTH_RADIUS
+
+        private fun lonLatToWorldPx(
+            lon: Double,
+            lat: Double,
+            zoom: Double,
+        ): Pair<Double, Double> {
+            val worldSize = 256.0 * Math.pow(2.0, zoom)
+            val x = (lon + 180.0) / 360.0 * worldSize
+            val siny = kotlin.math.sin(Math.toRadians(lat)).coerceIn(-0.9999, 0.9999)
+            val y = (0.5 - kotlin.math.ln((1 + siny) / (1 - siny)) / (4 * Math.PI)) * worldSize
+            return x to y
+        }
+
+        private fun worldPxToLonLat(
+            x: Double,
+            y: Double,
+            zoom: Double,
+        ): Pair<Double, Double> {
+            val worldSize = 256.0 * Math.pow(2.0, zoom)
+            val lon = (x / worldSize) * 360.0 - 180.0
+            val n = Math.PI - (2.0 * Math.PI * y) / worldSize
+            val lat = Math.toDegrees(kotlin.math.atan(kotlin.math.sinh(n)))
+            return lon to lat
+        }
     }
 }
