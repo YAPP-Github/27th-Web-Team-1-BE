@@ -54,7 +54,7 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         val clusters =
             listOf(
                 cluster("z12_1_1", worldPxToLonLat(base.first, base.second, zoom)),
-                cluster("z12_2_1", worldPxToLonLat(base.first + 49.3333, base.second + 66.6666, zoom)),
+                cluster("z12_2_1", worldPxToLonLat(base.first + 47.2, base.second + 64.5, zoom)),
             )
 
         val result = strategy.mergeClusters(clusters, zoom)
@@ -70,7 +70,7 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         val clusters =
             listOf(
                 cluster("z12_1_1", worldPxToLonLat(base.first, base.second, zoom)),
-                cluster("z12_2_1", worldPxToLonLat(base.first + 49.3334, base.second + 10.0, zoom)),
+                cluster("z12_2_1", worldPxToLonLat(base.first + 47.4, base.second + 10.0, zoom)),
             )
 
         val result = strategy.mergeClusters(clusters, zoom)
@@ -137,6 +137,25 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         assertTrue(result.map { it.clusterId }.toSet().size == 2)
         assertTrue(result.any { it.clusterId == "z14_24681_7832" })
         assertTrue(result.any { it.clusterId == "z14_24681_7832_g2" })
+    }
+
+    @Test
+    fun `매우 작은 줌 변화에서는 병합 결과가 안정적이다`() {
+        val baseZoom = 14.356
+        val nearZoom = 14.436
+        val base = lonLatToWorldPx(127.0, 37.3, baseZoom)
+        val clusters =
+            listOf(
+                cluster("z14_1_1", worldPxToLonLat(base.first, base.second, baseZoom)),
+                cluster("z14_2_1", worldPxToLonLat(base.first + 38.0, base.second + 18.0, baseZoom)),
+                cluster("z14_3_1", worldPxToLonLat(base.first + 45.0, base.second + 22.0, baseZoom)),
+                cluster("z14_4_1", worldPxToLonLat(base.first + 5.0, base.second + 88.0, baseZoom)),
+            )
+
+        val a = strategy.mergeClusters(clusters, baseZoom).map { it.count }.sorted()
+        val b = strategy.mergeClusters(clusters, nearZoom).map { it.count }.sorted()
+
+        assertEquals(a, b)
     }
 
     private fun cluster(

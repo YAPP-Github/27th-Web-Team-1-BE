@@ -65,15 +65,23 @@ data class BBox(
             longitude: Double,
             latitude: Double,
         ): BBox {
+            return fromCenter(zoom.toDouble(), longitude, latitude)
+        }
+
+        fun fromCenter(
+            zoomLevel: Double,
+            longitude: Double,
+            latitude: Double,
+        ): BBox {
             val mx = MercatorProjection.longitudeToMeters(longitude)
             val my = MercatorProjection.latitudeToMeters(latitude)
 
             val worldSize = 2 * PI * MercatorProjection.EARTH_RADIUS_METERS
-            val tileSizeAtZoom = worldSize / 2.0.pow(zoom.toDouble())
+            val tileSizeAtZoom = worldSize / 2.0.pow(zoomLevel)
             val hHalf = tileSizeAtZoom * HORIZONTAL_MULTIPLIER
             val vHalf = tileSizeAtZoom * VERTICAL_MULTIPLIER
 
-            val gridSize = GridValues.getGridSize(zoom)
+            val gridSize = GridValues.getGridSize(zoomLevel)
             val westM = floor((mx - hHalf) / gridSize) * gridSize
             val southM = floor((my - vHalf) / gridSize) * gridSize
             val eastM = ceil((mx + hHalf) / gridSize) * gridSize

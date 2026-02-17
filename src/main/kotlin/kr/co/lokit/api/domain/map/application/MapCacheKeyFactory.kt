@@ -44,6 +44,24 @@ object MapCacheKeyFactory {
     @JvmStatic
     fun buildIndividualKey(
         bbox: BBox,
+        zoomLevel: Double,
+        coupleId: Long?,
+        albumId: Long?,
+        version: Long,
+    ): String {
+        val west = toScaledInt(bbox.west)
+        val south = toScaledInt(bbox.south)
+        val east = toScaledInt(bbox.east)
+        val north = toScaledInt(bbox.north)
+        val zoomToken = java.lang.Double.doubleToRawLongBits(zoomLevel)
+        return "ind_z${zoomToken}_w${west}_s${south}_e${east}_n${north}_c${normalizeId(
+            coupleId,
+        )}_a${normalizeId(albumId)}_v$version"
+    }
+
+    @JvmStatic
+    fun buildIndividualKey(
+        bbox: BBox,
         zoom: Int,
         coupleId: Long?,
         albumId: Long?,

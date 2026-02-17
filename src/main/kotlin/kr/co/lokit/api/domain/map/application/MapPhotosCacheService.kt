@@ -69,7 +69,7 @@ class MapPhotosCacheService(
     fun getVersion(coupleId: Long?): Long = coupleId?.let { coupleVersions[it]?.get() }.orZero()
 
     fun getVersion(
-        _zoom: Int,
+        _zoomLevel: Double,
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
@@ -96,8 +96,9 @@ class MapPhotosCacheService(
         return maxSequence
     }
 
+
     fun getDataVersion(
-        _zoom: Int,
+        _zoomLevel: Double,
         _bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
@@ -108,6 +109,7 @@ class MapPhotosCacheService(
         val mutationVersion = getAlbumScopedMutationVersion(coupleId, albumId)
         return (fnv64(coupleId, albumId.orZero(), mutationVersion) and Long.MAX_VALUE)
     }
+
 
     private fun fnv64(vararg values: Long): Long {
         var hash = FNV64_OFFSET_BASIS
@@ -131,13 +133,13 @@ class MapPhotosCacheService(
     }
 
     fun getClusteredPhotos(
-        zoom: Int,
+        zoomLevel: Double,
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
-        zoomLevel: Double = zoom.toDouble(),
         canReuseCellCache: Boolean = true,
     ): MapPhotosResponse {
+        val zoom = floor(zoomLevel).toInt()
         if (serverSideRawClustering) {
             return queryRawPoiClusters(
                 zoom = zoom,
@@ -152,7 +154,7 @@ class MapPhotosCacheService(
         val cache =
             cacheManager.getCache(CacheNames.MAP_CELLS) as? CaffeineCache
                 ?: return queryDirectly(zoom, bbox, gridSize, coupleId, albumId, zoomLevel)
-        val version = getVersion(zoom, bbox, coupleId, albumId)
+        val version = getVersion(zoomLevel, bbox, coupleId, albumId)
         val sequence = getMutationSequence(coupleId)
 
         val cellXMin = floor(lonToM(bbox.west) / gridSize).toLong()
@@ -275,6 +277,7 @@ class MapPhotosCacheService(
         )
     }
 
+
     private fun queryRawPoiClusters(
         zoom: Int,
         bbox: BBox,
@@ -282,7 +285,8 @@ class MapPhotosCacheService(
         albumId: Long?,
         zoomLevel: Double,
     ): MapPhotosResponse {
-        val gridSize = GridValues.getGridSize(zoom)
+        val gridSize = GridValues.getGridSize(zoomLevel)
+        val clusterIdZoom = floor(zoomLevel).toInt()
         val clusters =
             mapQueryPort.findPhotosWithinBBox(
                 west = bbox.west,
@@ -296,7 +300,7 @@ class MapPhotosCacheService(
                 val cellY = floor(latToM(photo.latitude) / gridSize).toLong()
 
                 ClusterResponse(
-                    clusterId = ClusterId.format(zoom, cellX, cellY),
+                    clusterId = ClusterId.format(clusterIdZoom, cellX, cellY),
                     count = 1,
                     thumbnailUrl = photo.url,
                     longitude = photo.longitude,
@@ -718,11 +722,11 @@ class MapPhotosCacheService(
         cacheNames = [CacheNames.MAP_PHOTOS],
         key =
             "T(kr.co.lokit.api.domain.map.application.MapCacheKeyFactory)" +
-                ".buildIndividualKey(#bbox, #zoom, #coupleId, #albumId, @mapPhotosCacheService.getVersion(#zoom, #bbox, #coupleId, #albumId))",
+                ".buildIndividualKey(#bbox, #zoomLevel, #coupleId, #albumId, @mapPhotosCacheService.getVersion(#zoomLevel, #bbox, #coupleId, #albumId))",
         unless = "#result.photos == null || #result.photos.isEmpty()",
     )
     fun getIndividualPhotos(
-        zoom: Int,
+        zoomLevel: Double,
         bbox: BBox,
         coupleId: Long?,
         albumId: Long?,
@@ -738,6 +742,7 @@ class MapPhotosCacheService(
             )
         return MapPhotosResponse(photos = photos.map { it.toMapPhotoResponse() })
     }
+
 
     private fun queryDirectly(
         zoom: Int,

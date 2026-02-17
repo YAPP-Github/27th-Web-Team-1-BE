@@ -201,7 +201,7 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findById(defaultAlbumId)).thenReturn(createAlbum(id = defaultAlbumId, isDefault = true))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
-        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), any())).thenReturn(
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any())).thenReturn(
             MapPhotosResponse(clusters = emptyList()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
@@ -222,7 +222,7 @@ class MapServiceTest {
 
         assertEquals(currentVersion, result.dataVersion)
         verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), anyOrNull())
-        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), eq(true))
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), eq(true))
     }
 
     @Test
@@ -231,7 +231,7 @@ class MapServiceTest {
         val staleVersion = 8L
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
-        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), any())).thenReturn(
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any())).thenReturn(
             MapPhotosResponse(clusters = emptyList()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
@@ -249,7 +249,7 @@ class MapServiceTest {
             lastDataVersion = staleVersion,
         )
 
-        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any(), eq(false))
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), eq(false))
     }
 
     @Test
@@ -305,7 +305,6 @@ class MapServiceTest {
             anyOrNull(),
             anyOrNull(),
             any(),
-            any(),
         )
     }
 
@@ -315,7 +314,7 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(albumRepository.findById(albumId)).thenReturn(createAlbum(id = albumId, isDefault = false))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), eq(albumId))).thenReturn(10L)
-        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any(), any())).thenReturn(
+        `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any())).thenReturn(
             MapPhotosResponse(clusters = emptyList()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
@@ -334,7 +333,7 @@ class MapServiceTest {
         )
 
         verify(mapPhotosCacheService).getDataVersion(any(), any(), eq(1L), eq(albumId))
-        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any(), any())
+        verify(mapPhotosCacheService).getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any())
     }
 
     @Test

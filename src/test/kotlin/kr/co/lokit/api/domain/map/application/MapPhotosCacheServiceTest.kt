@@ -195,8 +195,8 @@ class MapPhotosCacheServiceTest {
         val inside = BBox(126.9, 37.4, 127.1, 37.6)
         val outside = BBox(128.0, 38.0, 128.1, 38.1)
 
-        assertTrue(service.getVersion(14, inside, 1L, null) > 0L)
-        assertEquals(0L, service.getVersion(14, outside, 1L, null))
+        assertTrue(service.getVersion(14.0, inside, 1L, null) > 0L)
+        assertEquals(0L, service.getVersion(14.0, outside, 1L, null))
     }
 
     @Test
@@ -210,8 +210,8 @@ class MapPhotosCacheServiceTest {
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
         service.evictForPhotoMutation(coupleId = coupleId, albumId = 10L, longitude = 127.0, latitude = 37.5)
 
-        assertTrue(service.getVersion(14, bbox, coupleId, 10L) > 0L)
-        assertEquals(0L, service.getVersion(14, bbox, coupleId, 11L))
+        assertTrue(service.getVersion(14.0, bbox, coupleId, 10L) > 0L)
+        assertEquals(0L, service.getVersion(14.0, bbox, coupleId, 11L))
     }
 
     @Test
@@ -226,8 +226,8 @@ class MapPhotosCacheServiceTest {
         val seoulBbox = BBox(126.9, 37.4, 127.1, 37.6)
         val busanBbox = BBox(129.0, 35.0, 129.2, 35.2)
 
-        val seoulVersion = service.getDataVersion(14, seoulBbox, 1L, 10L)
-        val busanVersion = service.getDataVersion(14, busanBbox, 1L, 10L)
+        val seoulVersion = service.getDataVersion(14.0, seoulBbox, 1L, 10L)
+        val busanVersion = service.getDataVersion(14.0, busanBbox, 1L, 10L)
 
         assertEquals(seoulVersion, busanVersion)
         assertTrue(seoulVersion > 0L)
@@ -244,8 +244,8 @@ class MapPhotosCacheServiceTest {
         service.evictForPhotoMutation(coupleId = 1L, albumId = 11L, longitude = 127.0, latitude = 37.5)
 
         val bbox = BBox(126.9, 37.4, 127.1, 37.6)
-        val v10 = service.getDataVersion(14, bbox, 1L, 10L)
-        val v11 = service.getDataVersion(14, bbox, 1L, 11L)
+        val v10 = service.getDataVersion(14.0, bbox, 1L, 10L)
+        val v11 = service.getDataVersion(14.0, bbox, 1L, 11L)
 
         assertTrue(v10 > 0L)
         assertTrue(v11 > 0L)
@@ -301,7 +301,7 @@ class MapPhotosCacheServiceTest {
             ),
         ).thenReturn(emptyList())
 
-        val result = service.getClusteredPhotos(14, bbox, null, null)
+        val result = service.getClusteredPhotos(14.0, bbox, null, null)
 
         assertNotNull(result)
         assertTrue(result.clusters.isNullOrEmpty())
@@ -337,7 +337,7 @@ class MapPhotosCacheServiceTest {
             ),
         ).thenReturn(emptyList())
 
-        val result = service.getClusteredPhotos(zoom, wideBbox, null, null)
+        val result = service.getClusteredPhotos(zoom.toDouble(), wideBbox, null, null)
 
         assertNotNull(result)
         verify(mapQueryPort).findClustersWithinBBox(
@@ -377,7 +377,7 @@ class MapPhotosCacheServiceTest {
             }
         }
 
-        val result = tempService.getClusteredPhotos(zoom, bbox, null, null)
+        val result = tempService.getClusteredPhotos(zoom.toDouble(), bbox, null, null)
 
         assertNotNull(result)
         verify(mapQueryPort, never()).findClustersWithinBBox(
@@ -424,7 +424,7 @@ class MapPhotosCacheServiceTest {
             ),
         ).thenReturn(dbResult)
 
-        val result = service.getClusteredPhotos(14, bbox, null, null)
+        val result = service.getClusteredPhotos(14.0, bbox, null, null)
 
         assertNotNull(result)
     }
@@ -459,7 +459,7 @@ class MapPhotosCacheServiceTest {
         val expectedEast = (missedCellX + 1) * gridSize
         val expectedNorth = (cellY + 1) * gridSize
 
-        val version = service.getVersion(zoom, bbox, null, null)
+        val version = service.getVersion(zoom.toDouble(), bbox, null, null)
         val cachedKey = service.buildCellKey(zoom, cachedCellX, cellY, null, null, version)
         val missedKey = service.buildCellKey(zoom, missedCellX, cellY, null, null, version)
 
@@ -500,7 +500,7 @@ class MapPhotosCacheServiceTest {
             ),
         )
 
-        val result = service.getClusteredPhotos(zoom, bbox, null, null)
+        val result = service.getClusteredPhotos(zoom.toDouble(), bbox, null, null)
 
         assertNotNull(result.clusters)
         assertEquals(2, result.clusters!!.size)
@@ -551,7 +551,7 @@ class MapPhotosCacheServiceTest {
                 north = MercatorProjection.metersToLatitude(northMeters),
             )
 
-        val version = service.getVersion(zoom, bbox, null, null)
+        val version = service.getVersion(zoom.toDouble(), bbox, null, null)
         val cachedKey = service.buildCellKey(zoom, baseX, cellY, null, null, version)
         caffeineCache.nativeCache.put(
             cachedKey,
@@ -590,7 +590,7 @@ class MapPhotosCacheServiceTest {
             ),
         )
 
-        service.getClusteredPhotos(zoom, bbox, null, null, zoom.toDouble(), canReuseCellCache = false)
+        service.getClusteredPhotos(zoom.toDouble(), bbox, null, null, canReuseCellCache = false)
 
         val westCaptor = ArgumentCaptor.forClass(Double::class.java)
         val southCaptor = ArgumentCaptor.forClass(Double::class.java)
@@ -667,7 +667,7 @@ class MapPhotosCacheServiceTest {
             ),
         )
 
-        service.getClusteredPhotos(zoom, bbox, coupleId, null)
+        service.getClusteredPhotos(zoom.toDouble(), bbox, coupleId, null)
 
         org.mockito.Mockito.reset(mapQueryPort)
         `when`(
@@ -701,7 +701,7 @@ class MapPhotosCacheServiceTest {
             latitude = MercatorProjection.metersToLatitude(secondCell.second * gridSize + (gridSize / 2.0)),
         )
 
-        service.getClusteredPhotos(zoom, bbox, coupleId, null, zoom.toDouble(), canReuseCellCache = false)
+        service.getClusteredPhotos(zoom.toDouble(), bbox, coupleId, null, canReuseCellCache = false)
 
         val westCaptor = ArgumentCaptor.forClass(Double::class.java)
         val southCaptor = ArgumentCaptor.forClass(Double::class.java)
@@ -762,7 +762,7 @@ class MapPhotosCacheServiceTest {
         ).thenReturn(dbResult)
 
         val result = MapPhotosCacheService(mapQueryPort, cacheManager, DistanceBasedClusterBoundaryMergeStrategy())
-            .getClusteredPhotos(11, bbox, null, null)
+            .getClusteredPhotos(11.0, bbox, null, null)
 
         assertNotNull(result.clusters)
         assertEquals(1, result.clusters!!.size)
@@ -808,7 +808,7 @@ class MapPhotosCacheServiceTest {
         ).thenReturn(dbResult)
 
         val result = MapPhotosCacheService(mapQueryPort, cacheManager, DistanceBasedClusterBoundaryMergeStrategy())
-            .getClusteredPhotos(11, bbox, null, null)
+            .getClusteredPhotos(11.0, bbox, null, null)
 
         assertNotNull(result.clusters)
         assertEquals(2, result.clusters!!.size)
@@ -849,7 +849,7 @@ class MapPhotosCacheServiceTest {
             ),
         ).thenReturn(photos)
 
-        val result = service.getIndividualPhotos(17, bbox, null, null)
+        val result = service.getIndividualPhotos(17.0, bbox, null, null)
 
         assertNotNull(result.photos)
         assertEquals(2, result.photos!!.size)
@@ -872,7 +872,7 @@ class MapPhotosCacheServiceTest {
             ),
         ).thenReturn(emptyList())
 
-        val result = service.getIndividualPhotos(17, bbox, null, null)
+        val result = service.getIndividualPhotos(17.0, bbox, null, null)
 
         assertNotNull(result.photos)
         assertTrue(result.photos!!.isEmpty())
@@ -894,7 +894,7 @@ class MapPhotosCacheServiceTest {
             ),
         ).thenReturn(emptyList())
 
-        val result = service.getIndividualPhotos(17, bbox, 1L, 2L)
+        val result = service.getIndividualPhotos(17.0, bbox, 1L, 2L)
 
         assertNotNull(result.photos)
     }
@@ -909,7 +909,6 @@ class MapPhotosCacheServiceTest {
                 serverSideRawClustering = true,
             )
         val zoomLevel = 13.4
-        val discreteZoom = 13
         val bbox = BBox(126.95, 37.25, 127.05, 37.35)
         val now = LocalDateTime.now()
 
@@ -944,7 +943,7 @@ class MapPhotosCacheServiceTest {
             ),
         )
 
-        val result = rawService.getClusteredPhotos(discreteZoom, bbox, null, null, zoomLevel)
+        val result = rawService.getClusteredPhotos(zoomLevel, bbox, null, null)
 
         verify(mapQueryPort).findPhotosWithinBBox(
             west = eq(bbox.west),

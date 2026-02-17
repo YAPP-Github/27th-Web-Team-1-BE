@@ -18,7 +18,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     ): List<ClusterResponse> {
         if (clusters.size < 2) return clusters
 
-        val z = normalizeZoomLevel(zoomLevel)
+        val z = stableClusteringZoom(zoomLevel)
         val zoomDiscrete = floor(z).toInt()
 
         val parsed = mutableListOf<MergeNode>()
@@ -219,7 +219,10 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         )
     }
 
-    private fun normalizeZoomLevel(zoomLevel: Double): Double = zoomLevel.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
+    private fun stableClusteringZoom(zoomLevel: Double): Double {
+        val normalized = zoomLevel.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
+        return floor(normalized / ZOOM_BUCKET_STEP) * ZOOM_BUCKET_STEP
+    }
 
     private fun ensureUniqueClusterIds(clusters: List<ClusterResponse>): List<ClusterResponse> {
         val seen = mutableMapOf<String, Int>()
@@ -320,8 +323,12 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         private const val POI_HEIGHT_PX = 100.0
         private const val REQUIRED_OVERLAP_RATIO = 1.0 / 3.0
 
-        private const val MERGE_DX_PX = (1.0 - REQUIRED_OVERLAP_RATIO) * POI_WIDTH_PX
-        private const val MERGE_DY_PX = (1.0 - REQUIRED_OVERLAP_RATIO) * POI_HEIGHT_PX
+        // Keep UI rule as baseline, but require a small extra closeness for more natural merges.
+        private const val EXTRA_CLOSENESS_PX_X = 2.0
+        private const val EXTRA_CLOSENESS_PX_Y = 2.0
+        private const val MERGE_DX_PX = ((1.0 - REQUIRED_OVERLAP_RATIO) * POI_WIDTH_PX) - EXTRA_CLOSENESS_PX_X
+        private const val MERGE_DY_PX = ((1.0 - REQUIRED_OVERLAP_RATIO) * POI_HEIGHT_PX) - EXTRA_CLOSENESS_PX_Y
+        private const val ZOOM_BUCKET_STEP = 0.1
 
     }
 }

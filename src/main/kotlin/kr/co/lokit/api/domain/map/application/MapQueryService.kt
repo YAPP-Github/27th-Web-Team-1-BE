@@ -51,22 +51,20 @@ class MapQueryService(
     private val dbSemaphore = Semaphore(6)
 
     private fun getPhotos(
-        zoom: Int,
         zoomLevel: Double,
         bbox: BBox,
         context: MapViewerContext,
         lastDataVersion: Long?,
         currentDataVersion: Long,
     ): MapPhotosResponse {
-        val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoom)
+        val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoomLevel)
         if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
-            return emptyPhotosResponse(zoom)
+            return emptyPhotosResponse(zoomLevel)
         }
         val canReuseCellCache = lastDataVersion != null && lastDataVersion == currentDataVersion
 
         return if (zoomLevel < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) {
             mapPhotosCacheService.getClusteredPhotos(
-                zoom = zoom,
                 zoomLevel = zoomLevel,
                 bbox = boundedBbox,
                 coupleId = context.coupleId,
@@ -75,7 +73,7 @@ class MapQueryService(
             )
         } else {
             mapPhotosCacheService.getIndividualPhotos(
-                zoom = zoom,
+                zoomLevel = zoomLevel,
                 bbox = boundedBbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
@@ -157,14 +155,14 @@ class MapQueryService(
     ): MapMeResponse {
         val bbox =
             BBox
-                .fromCenter(MapZoom.from(zoom).discrete, longitude, latitude)
+                .fromCenter(MapZoom.from(zoom).level, longitude, latitude)
                 .clampToKorea() ?: BBox.KOREA_BOUNDS
 
         val mapZoom = MapZoom.from(zoom)
         val context = resolveViewerContext(userId = userId, albumId = albumId)
         val currentVersion =
             mapPhotosCacheService.getDataVersion(
-                _zoom = mapZoom.discrete,
+                _zoomLevel = mapZoom.level,
                 _bbox = bbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
@@ -182,7 +180,6 @@ class MapQueryService(
                     scope.fork {
                         dbSemaphore.withPermit {
                             getPhotos(
-                                zoom = mapZoom.discrete,
                                 zoomLevel = mapZoom.level,
                                 bbox = bbox,
                                 context = context,
@@ -235,7 +232,7 @@ class MapQueryService(
         val context = resolveViewerContext(userId = userId, albumId = albumId)
         val currentVersion =
             mapPhotosCacheService.getDataVersion(
-                _zoom = mapZoom.discrete,
+                _zoomLevel = mapZoom.level,
                 _bbox = bbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
@@ -253,7 +250,6 @@ class MapQueryService(
                     scope.fork {
                         dbSemaphore.withPermit {
                             getPhotos(
-                                zoom = mapZoom.discrete,
                                 zoomLevel = mapZoom.level,
                                 bbox = bbox,
                                 context = context,
@@ -344,9 +340,9 @@ class MapQueryService(
 
     private fun latToMeters(lat: Double): Double = MercatorProjection.latitudeToMeters(lat)
 
-    private fun emptyPhotosResponse(zoom: Int): MapPhotosResponse =
+    private fun emptyPhotosResponse(zoomLevel: Double): MapPhotosResponse =
         MapPhotosResponse(
-            clusters = if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
-            photos = if (zoom >= GridValues.CLUSTER_ZOOM_THRESHOLD) emptyList() else null,
+            clusters = if (zoomLevel < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) emptyList() else null,
+            photos = if (zoomLevel >= GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) emptyList() else null,
         )
 }
