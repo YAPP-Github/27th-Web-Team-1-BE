@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.domain.user.dto.AdminActionResponse
 import kr.co.lokit.api.domain.user.dto.AdminPartnerResponse
@@ -12,6 +13,7 @@ import kr.co.lokit.api.domain.user.dto.AdminUserSummaryResponse
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Admin", description = "개발/운영 지원 API")
 interface AdminApi {
+    @SecurityRequirements
     @Operation(
         summary = "전체 사용자 목록 조회",
         description = "DB에 저장된 사용자 ID/이메일 목록을 조회합니다.",
@@ -22,6 +24,7 @@ interface AdminApi {
     )
     fun getUsers(key: String): List<AdminUserSummaryResponse>
 
+    @SecurityRequirements
     @Operation(
         summary = "이메일 기준 사용자 데이터 전체 삭제",
         description = "사용자와 연결된 커플/앨범/사진/토큰 데이터를 함께 삭제합니다.",
@@ -36,6 +39,7 @@ interface AdminApi {
         key: String,
     ): AdminActionResponse
 
+    @SecurityRequirements
     @Operation(
         summary = "전체 캐시 강제 비우기",
         description = "서버 캐시를 즉시 비웁니다.",
