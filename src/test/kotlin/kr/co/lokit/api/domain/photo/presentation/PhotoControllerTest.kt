@@ -11,7 +11,7 @@ import kr.co.lokit.api.config.web.CookieProperties
 import kr.co.lokit.api.domain.photo.application.port.`in`.CreatePhotoUseCase
 import kr.co.lokit.api.domain.photo.application.port.`in`.GetPhotoDetailUseCase
 import kr.co.lokit.api.domain.photo.application.port.`in`.UpdatePhotoUseCase
-import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
+import kr.co.lokit.api.domain.photo.domain.PhotoDetailReadModel
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.createPhoto
 import kr.co.lokit.api.fixture.createPhotoRequest
@@ -96,7 +96,7 @@ class PhotoControllerTest {
 
     @Test
     fun `사진 상세 조회 성공`() {
-        val response = PhotoDetailResponse(
+        val response = PhotoDetailReadModel(
             id = 1L,
             url = "https://example.com/photo.jpg",
             takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),

@@ -2,7 +2,6 @@ package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
-import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
@@ -21,7 +20,7 @@ import kr.co.lokit.api.domain.photo.domain.PhotoCreatedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoDeletedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoLocationUpdatedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoStorageKey
-import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import kr.co.lokit.api.domain.photo.domain.PresignedUpload
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -50,7 +49,7 @@ class PhotoCommandService(
     override fun generatePresignedUrl(
         idempotencyKey: String?,
         contentType: String,
-    ): PresignedUrl {
+    ): PresignedUpload {
         val uniqueKey = idempotencyKey ?: UUID.randomUUID().toString()
         val key = PhotoStorageKey.fromUniqueToken(uniqueKey)
         return photoStoragePort?.generatePresignedUrl(key, contentType)
@@ -66,7 +65,7 @@ class PhotoCommandService(
                     scope.fork { photoStoragePort?.verifyFileExists(photo.url) },
                     scope.fork { mapQueryService.getLocationInfo(photo.location.longitude, photo.location.latitude) },
                     scope.fork {
-                        if (!isValidId(photo.albumId)) {
+                        if (!photo.albumId.isPositiveId()) {
                             albumRepository.findDefaultByUserId(photo.uploadedById)
                                 ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
                                     errors = errorDetailsOf(ErrorField.UPLOADED_BY_ID to photo.uploadedById),
@@ -126,13 +125,14 @@ class PhotoCommandService(
         photo: Photo,
         coupleId: Long?,
     ) {
-        if (!photo.hasLocation() || coupleId == null) {
+        if (!photo.canPublishLocationEvent(coupleId)) {
             return
         }
+        val targetCoupleId = coupleId ?: return
         eventPublisher.publishEvent(
             PhotoCreatedEvent(
                 albumId = photo.albumId!!,
-                coupleId = coupleId,
+                coupleId = targetCoupleId,
                 longitude = photo.location.longitude,
                 latitude = photo.location.latitude,
             ),
@@ -143,13 +143,14 @@ class PhotoCommandService(
         photo: Photo,
         coupleId: Long?,
     ) {
-        if (!photo.hasLocation() || coupleId == null) {
+        if (!photo.canPublishLocationEvent(coupleId)) {
             return
         }
+        val targetCoupleId = coupleId ?: return
         eventPublisher.publishEvent(
             PhotoLocationUpdatedEvent(
                 albumId = photo.albumId!!,
-                coupleId = coupleId,
+                coupleId = targetCoupleId,
                 longitude = photo.location.longitude,
                 latitude = photo.location.latitude,
             ),
@@ -157,10 +158,10 @@ class PhotoCommandService(
     }
 
     private fun evictMapCachesForPhotoIfNeeded(photo: Photo) {
-        val coupleId = photo.coupleId
-        if (coupleId == null || !photo.hasLocation()) {
+        if (!photo.canEvictMapCache()) {
             return
         }
+        val coupleId = photo.coupleId!!
         cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, coupleId)
         mapPhotosCacheService.evictForPhotoMutation(
             coupleId = coupleId,
@@ -169,4 +170,6 @@ class PhotoCommandService(
             latitude = photo.location.latitude,
         )
     }
+
+    private fun Long?.isPositiveId(): Boolean = this != null && this > 0L
 }

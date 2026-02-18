@@ -6,9 +6,9 @@ import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.photo.domain.Photo
 import kr.co.lokit.api.domain.photo.domain.PhotoDetail
-import kr.co.lokit.api.domain.photo.mapping.toDomain
-import kr.co.lokit.api.domain.photo.mapping.toEntity
-import kr.co.lokit.api.domain.photo.mapping.toPhotoDetail
+import kr.co.lokit.api.domain.photo.infrastructure.mapping.toDomain
+import kr.co.lokit.api.domain.photo.infrastructure.mapping.toEntity
+import kr.co.lokit.api.domain.photo.infrastructure.mapping.toPhotoDetail
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import org.springframework.data.repository.findByIdOrNull

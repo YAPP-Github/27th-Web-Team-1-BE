@@ -110,11 +110,11 @@ fun createAlbumBoundsEntity(
 
 fun createRefreshTokenEntity(
     id: Long? = null,
-    token: String = "test-refresh-token",
+    tokenHash: String = "a".repeat(64),
     user: UserEntity = createUserEntity(id = 1L),
     expiresAt: LocalDateTime = LocalDateTime.now().plusDays(7),
 ): RefreshTokenEntity {
-    val entity = RefreshTokenEntity(token = token, user = user, expiresAt = expiresAt)
+    val entity = RefreshTokenEntity(tokenHash = tokenHash, user = user, expiresAt = expiresAt)
     id?.let { setEntityId(entity, it) }
     return entity
 }

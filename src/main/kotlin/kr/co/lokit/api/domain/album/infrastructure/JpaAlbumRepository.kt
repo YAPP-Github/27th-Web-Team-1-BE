@@ -4,8 +4,8 @@ import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
-import kr.co.lokit.api.domain.album.mapping.toDomain
-import kr.co.lokit.api.domain.album.mapping.toEntity
+import kr.co.lokit.api.domain.album.infrastructure.mapping.toDomain
+import kr.co.lokit.api.domain.album.infrastructure.mapping.toEntity
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.user.domain.User
@@ -120,7 +120,7 @@ class JpaAlbumRepository(
         val albumEntity =
             albumJpaRepository.findByIdOrNull(album.id)
                 ?: throw entityNotFound<Album>(album.id)
-        albumEntity.updateTitle(album.title)
+        albumEntity.apply(album)
         return albumEntity.toDomain()
     }
 

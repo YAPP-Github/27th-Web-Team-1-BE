@@ -68,6 +68,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -94,6 +95,14 @@ tasks.withType<JavaCompile> {
 tasks.withType<Test> {
     useJUnitPlatform()
     jvmArgs("--enable-preview", "-Xmx512m", "-XX:+UseZGC")
+
+    doFirst {
+        val mockitoAgentJar =
+            classpath.files.firstOrNull { file ->
+                file.name.startsWith("mockito-core-") && file.name.endsWith(".jar")
+            } ?: error("mockito-core jar not found on test runtime classpath")
+        jvmArgs("-javaagent:${mockitoAgentJar.absolutePath}")
+    }
 
     val defaultForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     maxParallelForks =

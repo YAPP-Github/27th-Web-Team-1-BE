@@ -39,7 +39,6 @@ class AuthServiceTest {
     fun `유효한 리프레시 토큰으로 새 토큰 쌍을 발급한다`() {
         val refreshTokenRecord =
             RefreshTokenRecord(
-                token = "valid-token",
                 userId = 1L,
                 expiresAt = LocalDateTime.now().plusDays(7),
             )
@@ -70,7 +69,6 @@ class AuthServiceTest {
     fun `만료된 리프레시 토큰이면 삭제 후 null을 반환한다`() {
         val expiredRecord =
             RefreshTokenRecord(
-                token = "expired-token",
                 userId = 1L,
                 expiresAt = LocalDateTime.now().minusDays(1),
             )
@@ -86,7 +84,6 @@ class AuthServiceTest {
     fun `토큰 재발급 시 새 리프레시 토큰이 저장된다`() {
         val refreshTokenRecord =
             RefreshTokenRecord(
-                token = "valid-token",
                 userId = 1L,
                 expiresAt = LocalDateTime.now().plusDays(7),
             )
@@ -109,7 +106,6 @@ class AuthServiceTest {
     fun `사용자를 찾을 수 없으면 UserNotFoundException이 발생한다`() {
         val refreshTokenRecord =
             RefreshTokenRecord(
-                token = "valid-token",
                 userId = 1L,
                 expiresAt = LocalDateTime.now().plusDays(7),
             )

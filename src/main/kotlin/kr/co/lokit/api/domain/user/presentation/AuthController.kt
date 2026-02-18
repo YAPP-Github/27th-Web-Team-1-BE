@@ -2,7 +2,7 @@ package kr.co.lokit.api.domain.user.presentation
 
 import jakarta.servlet.http.HttpServletRequest
 import kr.co.lokit.api.config.web.CookieGenerator
-import kr.co.lokit.api.domain.user.application.KakaoLoginService
+import kr.co.lokit.api.domain.user.application.LoginService
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets
 @RestController
 @RequestMapping("auth")
 class AuthController(
-    private val kakaoLoginService: KakaoLoginService,
+    private val loginService: LoginService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
     private val cookieGenerator: CookieGenerator,
     @Value("\${redirect.local-host}") private val localHostRedirect: String,
@@ -59,7 +59,7 @@ class AuthController(
         @RequestParam(required = false) state: String?,
         req: HttpServletRequest,
     ): ResponseEntity<Unit> {
-        val tokens = kakaoLoginService.login(code)
+        val tokens = loginService.login(code)
 
         val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, tokens.accessToken)
         val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, tokens.refreshToken)

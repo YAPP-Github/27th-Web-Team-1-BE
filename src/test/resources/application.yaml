@@ -77,9 +77,3 @@ cors:
 redirect:
     local-host: localhost:3000
     allowed-domain: localhost
-
-map:
-    cluster:
-        server-side-raw: true
-        boundary-merge:
-            strategy: pixel

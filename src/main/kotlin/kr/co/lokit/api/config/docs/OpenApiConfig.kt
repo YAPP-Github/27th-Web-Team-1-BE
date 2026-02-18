@@ -32,10 +32,14 @@ class OpenApiConfig(
             ).tags(
                 listOf(
                     Tag().name("Auth").description("인증 API"),
+                    Tag().name("User").description("사용자 API"),
+                    Tag().name("MyPage").description("마이페이지 API"),
                     Tag().name("Couple").description("커플 API"),
                     Tag().name("Album").description("앨범 API"),
                     Tag().name("Photo").description("사진 API"),
+                    Tag().name("Comment").description("댓글/이모지 API"),
                     Tag().name("Map").description("지도 API"),
+                    Tag().name("Admin").description("개발/운영 지원 API"),
                 ),
             ).components(
                 Components()

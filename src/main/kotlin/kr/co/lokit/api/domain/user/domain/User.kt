@@ -13,9 +13,22 @@ data class User(
     val status: AccountStatus = AccountStatus.ACTIVE,
     val withdrawnAt: LocalDateTime? = null,
 ) {
+    fun withNickname(nickname: String): User = copy(name = nickname)
+
+    fun withProfileImage(profileImageUrl: String?): User = copy(profileImageUrl = profileImageUrl)
+
     companion object {
         private const val EMAIL_LOCK_KEY_PREFIX = "email:"
+        private const val DEFAULT_NICKNAME = "사용자"
+        private const val MAX_NICKNAME_LENGTH = 10
 
         fun emailLockKey(email: String): String = "$EMAIL_LOCK_KEY_PREFIX$email"
+
+        fun defaultNicknameFor(email: String): String =
+            email
+                .substringBefore("@")
+                .trim()
+                .ifBlank { DEFAULT_NICKNAME }
+                .take(MAX_NICKNAME_LENGTH)
     }
 }

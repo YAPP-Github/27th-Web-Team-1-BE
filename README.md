@@ -93,7 +93,9 @@ domain/{bounded-context}/
 │   ├── *Entity.kt                   #   JPA Entity
 │   └── *Repository.kt              #   Output Port 구현체
 ├── dto/                             # Request/Response DTO
-└── mapping/                         # Domain <-> DTO 변환
+├── presentation/mapping/            # Controller DTO <-> Domain(ReadModel/Command) 변환
+├── application/mapping/             # Application ReadModel 변환
+└── infrastructure/mapping/          # Domain <-> Entity 변환
 ```
 
 <br>
@@ -161,6 +163,15 @@ val (locationFuture, albumsFuture, photosFuture) =
 | 캐시 키 전략              | bbox를 격자 단위로 정렬              | 미세 pan에도 키 안정화, 재사용률 향상   | 키 계산/좌표 변환 로직 필요        |
 | 기본 앨범 모델             | 조회 시점 병합 집계                  | UX 단순화(전체 사진 보기)          | 조회/캐시 무효화 경계 복잡         |
 | Presigned URL 멱등성    | `X-Idempotency-Key` + 3분 TTL | 중복 발급 억제, 운영 단순화          | 영구 멱등성은 아님              |
+
+**Locking & Consistency Decisions**
+
+| 주제 | 선택 | 이유 | 트레이드오프 |
+|---|---|---|---|
+| JVM 동시성 제어 | `LockManager.withLock` + `tryLock(timeout)` | 동일 프로세스 내 이메일 단위 경합 직렬화 | 멀티 인스턴스 환경에서는 DB/분산락 보완 필요 |
+| DB 쓰기 경합 제어 | 핵심 조회에 `PESSIMISTIC_WRITE` + lock timeout 힌트 | 초대코드/커플 연결처럼 선점이 중요한 시나리오 보호 | 대기/타임아웃 튜닝 필요 |
+| 엔티티 충돌 감지 | `BaseEntity.@Version` + `@OptimisticRetry`(핵심 커맨드 서비스) | 업데이트 손실 방지 + 일시 충돌 자동 재시도 | 충돌 잦으면 재시도 비용 증가 |
+| 실패 처리 방식 | 예외를 가드 절에서 먼저 던지고 본 로직은 직선 흐름 유지 | 코드 가독성/검증 포인트 명확화 | 분기별 예외 타입 설계 비용 증가 |
 
 ### Transport Optimization
 

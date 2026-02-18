@@ -39,13 +39,6 @@ data class KakaoUserInfoResponse(
 
 data class KakaoAccount(
     val email: String?,
-    val profile: KakaoProfile?,
     @JsonProperty("is_email_verified")
     val isEmailVerified: Boolean?,
-)
-
-data class KakaoProfile(
-    val nickname: String?,
-    @JsonProperty("profile_image_url")
-    val profileImageUrl: String?,
 )

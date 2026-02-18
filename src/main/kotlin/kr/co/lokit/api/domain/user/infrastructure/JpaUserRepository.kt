@@ -1,11 +1,10 @@
 package kr.co.lokit.api.domain.user.infrastructure
 
-import kr.co.lokit.api.common.constant.AccountStatus
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.User
-import kr.co.lokit.api.domain.user.mapping.toDomain
-import kr.co.lokit.api.domain.user.mapping.toEntity
+import kr.co.lokit.api.domain.user.infrastructure.mapping.toDomain
+import kr.co.lokit.api.domain.user.infrastructure.mapping.toEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -24,12 +23,15 @@ class JpaUserRepository(
     override fun findById(id: Long): User? = userJpaRepository.findByIdOrNull(id)?.toDomain()
 
     @Transactional
-    override fun findByEmail(
-        email: String,
-        name: String,
-    ): User {
+    override fun findByEmail(email: String): User {
         val userEntity =
-            userJpaRepository.findByEmail(email) ?: userJpaRepository.save(User(email = email, name = name).toEntity())
+            userJpaRepository.findByEmail(email)
+                ?: userJpaRepository.save(
+                    User(
+                        email = email,
+                        name = User.defaultNicknameFor(email),
+                    ).toEntity(),
+                )
         return userEntity.toDomain()
     }
 
@@ -38,9 +40,16 @@ class JpaUserRepository(
         val entity =
             userJpaRepository.findByIdOrNull(user.id)
                 ?: throw entityNotFound<UserEntity>(user.id)
-        entity.name = user.name
-        entity.profileImageUrl = user.profileImageUrl
+        entity.apply(user)
         return entity.toDomain()
+    }
+
+    @Transactional
+    override fun lockByIds(ids: List<Long>) {
+        if (ids.isEmpty()) {
+            return
+        }
+        userJpaRepository.findAllByIdInForUpdate(ids.sorted())
     }
 
     @Transactional
@@ -48,8 +57,7 @@ class JpaUserRepository(
         val entity =
             userJpaRepository.findByIdOrNull(userId)
                 ?: throw entityNotFound<UserEntity>(userId)
-        entity.status = AccountStatus.WITHDRAWN
-        entity.withdrawnAt = LocalDateTime.now()
+        entity.markWithdrawn(LocalDateTime.now())
     }
 
     @Transactional
@@ -57,7 +65,6 @@ class JpaUserRepository(
         val entity =
             userJpaRepository.findByIdOrNull(userId)
                 ?: throw entityNotFound<UserEntity>(userId)
-        entity.status = AccountStatus.ACTIVE
-        entity.withdrawnAt = null
+        entity.reactivate()
     }
 }

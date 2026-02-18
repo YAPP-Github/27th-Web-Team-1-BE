@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
+import kr.co.lokit.api.domain.map.domain.AlbumBounds
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 
 @Entity(name = "album_bounds")
@@ -27,4 +28,11 @@ class AlbumBoundsEntity(
     var minLatitude: Double,
     @Column(name = "max_latitude", nullable = false)
     var maxLatitude: Double,
-) : BaseEntity()
+) : BaseEntity() {
+    fun apply(bounds: AlbumBounds) {
+        minLongitude = bounds.minLongitude
+        maxLongitude = bounds.maxLongitude
+        minLatitude = bounds.minLatitude
+        maxLatitude = bounds.maxLatitude
+    }
+}

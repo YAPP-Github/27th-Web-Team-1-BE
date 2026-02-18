@@ -1,27 +1,31 @@
 package kr.co.lokit.api.domain.couple.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.annotation.RateLimit
+import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.clearPermissionCaches
 import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.InviteCodeRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
+import kr.co.lokit.api.domain.couple.domain.InviteCode
+import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodeIssueReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodePreviewReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodePolicy
+import kr.co.lokit.api.domain.couple.domain.InviteCodeRejectionReason
 import kr.co.lokit.api.domain.couple.domain.InviteCodeStatus
-import kr.co.lokit.api.domain.couple.dto.CoupleLinkResponse
-import kr.co.lokit.api.domain.couple.dto.CoupleStatusResponse
-import kr.co.lokit.api.domain.couple.dto.InviteCodePreviewResponse
-import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
-import kr.co.lokit.api.domain.couple.dto.PartnerSummaryResponse
-import kr.co.lokit.api.domain.couple.infrastructure.InviteCodeEntity
-import kr.co.lokit.api.domain.couple.infrastructure.InviteCodeJpaRepository
-import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
+import kr.co.lokit.api.domain.couple.application.mapping.toCoupledStatusReadModel
+import kr.co.lokit.api.domain.couple.application.mapping.toIssueReadModel
+import kr.co.lokit.api.domain.couple.application.mapping.toPreviewReadModel
+import kr.co.lokit.api.domain.couple.application.mapping.toUncoupledStatusReadModel
+import kr.co.lokit.api.domain.couple.application.mapping.uncoupledStatusReadModel
+import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
 import org.springframework.dao.DataIntegrityViolationException
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom
@@ -30,25 +34,24 @@ import java.time.LocalDateTime
 @Service
 class CoupleInviteService(
     private val coupleRepository: CoupleRepositoryPort,
-    private val userJpaRepository: UserJpaRepository,
-    private val inviteCodeJpaRepository: InviteCodeJpaRepository,
+    private val userRepository: UserRepositoryPort,
+    private val inviteCodeRepository: InviteCodeRepositoryPort,
     private val cacheManager: CacheManager,
     private val rateLimiter: CoupleInviteRateLimiter,
 ) : CoupleInviteUseCase {
     private val log = LoggerFactory.getLogger(javaClass)
+    private val secureRandom = SecureRandom()
 
     @Transactional(readOnly = true)
-    override fun getMyStatus(userId: Long): CoupleStatusResponse {
-        val couple = coupleRepository.findByUserId(userId) ?: return CoupleStatusResponse(isCoupled = false)
+    override fun getMyStatus(userId: Long): CoupleStatusReadModel {
+        val couple = coupleRepository.findByUserId(userId) ?: return uncoupledStatusReadModel()
         if (couple.status != CoupleStatus.CONNECTED || !couple.isFull()) {
-            return CoupleStatusResponse(isCoupled = false)
+            return couple.toUncoupledStatusReadModel()
         }
 
-        val partnerId = couple.userIds.firstOrNull { it != userId } ?: return CoupleStatusResponse(isCoupled = false)
-        return CoupleStatusResponse(
-            isCoupled = true,
-            partnerSummary = partnerSummary(partnerId),
-        )
+        val partnerId = couple.partnerIdFor(userId) ?: return couple.toUncoupledStatusReadModel()
+        val partner = userRepository.findById(partnerId) ?: throw BusinessException.UserNotFoundException()
+        return couple.toCoupledStatusReadModel(partner)
     }
 
     @Transactional
@@ -57,25 +60,22 @@ class CoupleInviteService(
         windowSeconds = 60,
         maxRequests = 5,
     )
-    override fun generateInviteCode(
-        userId: Long,
-    ): InviteCodeResponse {
+    override fun generateInviteCode(userId: Long): InviteCodeIssueReadModel {
         validateIssuerReady(userId)
 
         val now = LocalDateTime.now()
-        val active = inviteCodeJpaRepository.findActiveUnusedByUserIdForUpdate(userId, now).firstOrNull()
-        if (active != null) {
-            return InviteCodeResponse.from(active.code, active.expiresAt)
+        inviteCodeRepository.findActiveUnusedByUserIdForUpdate(userId, now).firstOrNull()?.let {
+            return it.toIssueReadModel()
         }
 
         val created = issueNewInviteCode(userId, now)
         log.info(
             "invite_created inviterUserId={} inviteId={} expiresAt={}",
             userId,
-            created.nonNullId(),
+            created.id,
             created.expiresAt,
         )
-        return InviteCodeResponse.from(created.code, created.expiresAt)
+        return created.toIssueReadModel()
     }
 
     @Transactional
@@ -84,23 +84,22 @@ class CoupleInviteService(
         windowSeconds = 60,
         maxRequests = 5,
     )
-    override fun refreshInviteCode(
-        userId: Long,
-    ): InviteCodeResponse {
+    override fun refreshInviteCode(userId: Long): InviteCodeIssueReadModel {
         validateIssuerReady(userId)
 
         val now = LocalDateTime.now()
-        inviteCodeJpaRepository.findActiveUnusedByUserIdForUpdate(userId, now).forEach {
-            inviteCodeJpaRepository.hardDeleteById(it.nonNullId())
-        }
+        inviteCodeRepository
+            .findActiveUnusedByUserIdForUpdate(userId, now)
+            .forEach { inviteCodeRepository.hardDeleteById(it.id) }
+
         val created = issueNewInviteCode(userId, now)
         log.info(
             "invite_created inviterUserId={} inviteId={} expiresAt={}",
             userId,
-            created.nonNullId(),
+            created.id,
             created.expiresAt,
         )
-        return InviteCodeResponse.from(created.code, created.expiresAt)
+        return created.toIssueReadModel()
     }
 
     @Transactional
@@ -108,19 +107,19 @@ class CoupleInviteService(
         userId: Long,
         inviteCode: String,
     ) {
-        val entity =
-            inviteCodeJpaRepository.findByCodeForUpdate(inviteCode)
+        val invite =
+            inviteCodeRepository.findByCodeForUpdate(inviteCode)
                 ?: throw BusinessException.InviteCodeNotFoundException()
 
-        if (entity.createdBy.nonNullId() != userId) {
+        if (!invite.isOwnedBy(userId)) {
             throw BusinessException.InviteNotOwnerException()
         }
-        if (entity.status == InviteCodeStatus.USED) {
+        if (invite.status == InviteCodeStatus.USED) {
             throw BusinessException.InviteAlreadyUsedException()
         }
-        if (entity.status == InviteCodeStatus.UNUSED) {
-            inviteCodeJpaRepository.hardDeleteById(entity.nonNullId())
-            log.info("invite_revoked_deleted inviterUserId={} inviteId={}", userId, entity.nonNullId())
+        if (invite.status == InviteCodeStatus.UNUSED) {
+            inviteCodeRepository.hardDeleteById(invite.id)
+            log.info("invite_revoked_deleted inviterUserId={} inviteId={}", userId, invite.id)
         }
     }
 
@@ -129,34 +128,30 @@ class CoupleInviteService(
         userId: Long,
         inviteCode: String,
         clientIp: String,
-    ): InviteCodePreviewResponse {
+    ): InviteCodePreviewReadModel {
         rateLimiter.checkVerificationAllowed(userId, clientIp)
-        if (!INVITE_CODE_FORMAT.matches(inviteCode)) {
+        if (!InviteCodePolicy.isValidFormat(inviteCode)) {
             rateLimiter.recordVerificationFailure(userId, clientIp)
             throw BusinessException.InviteInvalidFormatException()
         }
         validateNotCoupled(userId)
 
-        val entity =
-            inviteCodeJpaRepository.findByCode(inviteCode)
+        val invite =
+            inviteCodeRepository.findByCode(inviteCode)
                 ?: run {
                     rateLimiter.recordVerificationFailure(userId, clientIp)
                     throw BusinessException.InviteCodeNotFoundException()
                 }
 
-        if (entity.createdBy.nonNullId() == userId) {
+        if (invite.isOwnedBy(userId)) {
             rateLimiter.recordVerificationFailure(userId, clientIp)
             throw BusinessException.SelfInviteNotAllowedException()
         }
-        validateInviteState(entity, userId, clientIp)
+        validateInviteState(invite, userId, clientIp)
 
         rateLimiter.clearVerificationFailures(userId, clientIp)
-        log.info("invite_verified verifierUserId={} inviteId={}", userId, entity.nonNullId())
-        return InviteCodePreviewResponse(
-            inviterUserId = entity.createdBy.nonNullId(),
-            nickname = entity.createdBy.name,
-            profileImageUrl = entity.createdBy.profileImageUrl,
-        )
+        log.info("invite_verified verifierUserId={} inviteId={}", userId, invite.id)
+        return invite.toPreviewReadModel()
     }
 
     @Transactional
@@ -164,27 +159,27 @@ class CoupleInviteService(
         userId: Long,
         inviteCode: String,
         clientIp: String,
-    ): CoupleLinkResponse {
+    ): CoupleStatusReadModel {
         rateLimiter.checkVerificationAllowed(userId, clientIp)
-        if (!INVITE_CODE_FORMAT.matches(inviteCode)) {
+        if (!InviteCodePolicy.isValidFormat(inviteCode)) {
             rateLimiter.recordVerificationFailure(userId, clientIp)
             throw BusinessException.InviteInvalidFormatException()
         }
 
         val invite =
-            inviteCodeJpaRepository.findByCodeForUpdate(inviteCode)
+            inviteCodeRepository.findByCodeForUpdate(inviteCode)
                 ?: run {
                     rateLimiter.recordVerificationFailure(userId, clientIp)
                     throw BusinessException.InviteCodeNotFoundException()
                 }
-        val inviterId = invite.createdBy.nonNullId()
+
+        val inviterId = invite.createdBy.userId
         if (inviterId == userId) {
             rateLimiter.recordVerificationFailure(userId, clientIp)
             throw BusinessException.SelfInviteNotAllowedException()
         }
 
-        val lockIds = listOf(userId, inviterId).distinct().sorted()
-        userJpaRepository.findAllByIdInForUpdate(lockIds)
+        userRepository.lockByIds(listOf(userId, inviterId).distinct())
 
         if (isCoupled(userId) || isCoupled(inviterId)) {
             rateLimiter.recordVerificationFailure(userId, clientIp)
@@ -199,18 +194,16 @@ class CoupleInviteService(
 
         try {
             val joined = coupleRepository.addUser(inviterCouple.id, userId)
-            inviteCodeJpaRepository.hardDeleteById(invite.nonNullId())
+            inviteCodeRepository.hardDeleteById(invite.id)
 
             cacheManager.evictUserCoupleCache(userId, inviterId)
             cacheManager.clearPermissionCaches()
             rateLimiter.clearVerificationFailures(userId, clientIp)
 
-            val partnerId = joined.userIds.first { it != userId }
+            val partnerId = joined.partnerIdFor(userId) ?: throw BusinessException.UserNotFoundException()
+            val partner = userRepository.findById(partnerId) ?: throw BusinessException.UserNotFoundException()
             log.info("couple_linked inviterUserId={} joinerUserId={} coupleId={}", inviterId, userId, joined.id)
-            return CoupleLinkResponse(
-                coupleId = joined.id,
-                partnerSummary = partnerSummary(partnerId),
-            )
+            return joined.toCoupledStatusReadModel(partner)
         } catch (_: DataIntegrityViolationException) {
             throw BusinessException.InviteRaceConflictException(
                 errors = errorDetailsOf(ErrorField.USER_ID to userId),
@@ -229,90 +222,58 @@ class CoupleInviteService(
         if (couple.status != CoupleStatus.CONNECTED) {
             throw BusinessException.CoupleNotFoundException()
         }
-        if (couple.isFull()) {
+        if (couple.isConnectedAndFull()) {
             throw BusinessException.InviteAlreadyCoupledException()
         }
     }
 
     private fun isCoupled(userId: Long): Boolean {
         val couple = coupleRepository.findByUserId(userId) ?: return false
-        return couple.status == CoupleStatus.CONNECTED && couple.isFull()
+        return couple.isConnectedAndFull()
     }
 
     private fun validateInviteState(
-        invite: InviteCodeEntity,
+        invite: InviteCode,
         userId: Long,
         clientIp: String,
     ) {
-        if (invite.isExpired()) {
-            inviteCodeJpaRepository.hardDeleteById(invite.nonNullId())
-            rateLimiter.recordVerificationFailure(userId, clientIp)
-            throw BusinessException.InviteCodeExpiredException()
-        }
-
-        when (invite.status) {
-            InviteCodeStatus.UNUSED -> {
-                Unit
+        when (invite.rejectionReason(LocalDateTime.now())) {
+            InviteCodeRejectionReason.EXPIRED -> {
+                inviteCodeRepository.hardDeleteById(invite.id)
+                rateLimiter.recordVerificationFailure(userId, clientIp)
+                throw BusinessException.InviteCodeExpiredException()
             }
 
-            InviteCodeStatus.USED -> {
+            InviteCodeRejectionReason.USED -> {
                 rateLimiter.recordVerificationFailure(userId, clientIp)
                 throw BusinessException.InviteCodeUsedException()
             }
 
-            InviteCodeStatus.REVOKED -> {
+            InviteCodeRejectionReason.REVOKED -> {
                 rateLimiter.recordVerificationFailure(userId, clientIp)
                 throw BusinessException.InviteCodeRevokedException()
             }
 
-            InviteCodeStatus.EXPIRED -> {
-                rateLimiter.recordVerificationFailure(userId, clientIp)
-                throw BusinessException.InviteCodeExpiredException()
-            }
+            null -> Unit
         }
     }
 
     private fun issueNewInviteCode(
         userId: Long,
         now: LocalDateTime,
-    ): InviteCodeEntity {
-        val inviter =
-            userJpaRepository.findByIdOrNull(userId)
-                ?: throw BusinessException.UserNotFoundException()
+    ): InviteCode {
+        userRepository.findById(userId) ?: throw BusinessException.UserNotFoundException()
 
-        repeat(CODE_RETRY_LIMIT) {
-            val newCode = secureRandom.nextInt(CODE_BOUND).toString().padStart(INVITE_CODE_LENGTH, '0')
-            if (!inviteCodeJpaRepository.existsByCode(newCode)) {
-                return inviteCodeJpaRepository.save(
-                    InviteCodeEntity(
-                        code = newCode,
-                        createdBy = inviter,
-                        status = InviteCodeStatus.UNUSED,
-                        expiresAt = now.plusHours(INVITE_EXPIRATION_HOURS),
-                    ),
+        repeat(InviteCodePolicy.RETRY_LIMIT) {
+            val newCode = InviteCodePolicy.generateCode(secureRandom)
+            if (!inviteCodeRepository.existsByCode(newCode)) {
+                return inviteCodeRepository.createUnused(
+                    code = newCode,
+                    createdByUserId = userId,
+                    expiresAt = now.plusHours(InviteCodePolicy.EXPIRATION_HOURS),
                 )
             }
         }
         throw BusinessException.InviteRaceConflictException()
-    }
-
-    private fun partnerSummary(partnerId: Long): PartnerSummaryResponse {
-        val partner =
-            userJpaRepository.findByIdOrNull(partnerId)
-                ?: throw BusinessException.UserNotFoundException()
-        return PartnerSummaryResponse(
-            userId = partner.nonNullId(),
-            nickname = partner.name,
-            profileImageUrl = partner.profileImageUrl,
-        )
-    }
-
-    companion object {
-        private const val INVITE_EXPIRATION_HOURS = 24L
-        private const val CODE_RETRY_LIMIT = 5
-        private const val INVITE_CODE_LENGTH = 6
-        private const val CODE_BOUND = 1_000_000
-        private val INVITE_CODE_FORMAT = Regex("^\\d{6}$")
-        private val secureRandom = SecureRandom()
     }
 }

@@ -18,6 +18,7 @@ object ErrorField {
     const val WITHDRAWN_AT = "withdrawnAt"
     const val PROVIDER_ID = "providerId"
     const val UPLOADED_BY_ID = "uploadedById"
+    const val LOCK_KEY = "lockKey"
 }
 
 fun errorDetailsOf(vararg pairs: Pair<String, Any?>): Map<String, String> =

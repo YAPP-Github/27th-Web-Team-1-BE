@@ -38,16 +38,12 @@ class CommentService(
     ): List<CommentWithEmoticons> {
         val comments = commentRepository.findAllByPhotoIdWithEmoticons(photoId, currentUserId)
         val deIdentifyUserId = coupleRepository.findByUserId(currentUserId)?.deIdentifiedUserId()
-
-        if (deIdentifyUserId == null) return comments
-
-        return comments.map { commentWithEmoticons ->
-            if (commentWithEmoticons.comment.userId == deIdentifyUserId) {
-                commentWithEmoticons.deIdentified()
-            } else {
-                commentWithEmoticons
-            }
-        }
+        return deIdentifyUserId
+            ?.let { targetUserId ->
+                comments.map { comment ->
+                    if (comment.comment.userId == targetUserId) comment.deIdentified() else comment
+                }
+            } ?: comments
     }
 
     @Transactional
@@ -67,7 +63,7 @@ class CommentService(
             )
         }
         val count = emoticonRepository.countByCommentIdAndUserId(commentId, userId)
-        if (count >= Emoticon.MAX_PER_USER_PER_COMMENT) {
+        if (!Emoticon.canAdd(count)) {
             throw BusinessException.CommentMaxEmoticonsExceededException(
                 errors =
                     errorDetailsOf(

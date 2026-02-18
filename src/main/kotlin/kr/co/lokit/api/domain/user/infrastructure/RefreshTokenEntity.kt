@@ -11,11 +11,11 @@ import java.time.LocalDateTime
 
 @Entity(name = "RefreshToken")
 @Table(
-    indexes = [Index(columnList = "user_id"), Index(columnList = "token")],
+    indexes = [Index(columnList = "user_id"), Index(columnList = "token_hash")],
 )
 class RefreshTokenEntity(
-    @Column(nullable = false)
-    val token: String,
+    @Column(name = "token_hash", nullable = false, length = 64)
+    val tokenHash: String,
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     val user: UserEntity,

@@ -5,11 +5,11 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 
 interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenEntity, Long> {
-    fun findByToken(token: String): RefreshTokenEntity?
+    fun findByTokenHash(tokenHash: String): RefreshTokenEntity?
 
     fun deleteByUser(user: UserEntity)
 
-    fun deleteByToken(token: String)
+    fun deleteByTokenHash(tokenHash: String)
 
     @Modifying
     @Query("DELETE FROM RefreshToken rt WHERE rt.user.id = :userId")

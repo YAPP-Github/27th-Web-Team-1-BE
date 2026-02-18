@@ -1,5 +1,8 @@
 package kr.co.lokit.api.common.concurrency
 
+import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -11,20 +14,31 @@ import java.util.concurrent.locks.ReentrantLock
 class LockManager {
     companion object {
         private val locks = ConcurrentHashMap<String, ReentrantLock>()
-        const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun <T> withLock(
         key: String,
-        timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
+        timeoutSeconds: Long = LockPolicy.JVM_LOCK_TIMEOUT_SECONDS,
         operation: () -> T,
     ): T {
         val lock = getOrCreateLock(key)
-        val acquired = lock.tryLock(timeoutSeconds, TimeUnit.SECONDS)
+        val acquired =
+            runCatching { lock.tryLock(timeoutSeconds, TimeUnit.SECONDS) }
+                .getOrElse { throwable ->
+                    if (throwable is InterruptedException) {
+                        Thread.currentThread().interrupt()
+                    }
+                    throw BusinessException.LockTimeoutException(
+                        errors = errorDetailsOf(ErrorField.LOCK_KEY to key),
+                        cause = throwable,
+                    )
+                }
 
         if (!acquired) {
-            throw RuntimeException("Email lock timeout after ${timeoutSeconds}s: $key")
+            throw BusinessException.LockTimeoutException(
+                errors = errorDetailsOf(ErrorField.LOCK_KEY to key),
+            )
         }
 
         return try {
@@ -34,17 +48,17 @@ class LockManager {
         }
     }
 
-    private fun getOrCreateLock(email: String): ReentrantLock = locks.computeIfAbsent(email) { ReentrantLock(true) }
+    private fun getOrCreateLock(key: String): ReentrantLock = locks.computeIfAbsent(key) { ReentrantLock(true) }
 
     private fun unlockSafely(
-        email: String,
+        key: String,
         lock: ReentrantLock,
     ) {
         if (lock.isHeldByCurrentThread) {
             lock.unlock()
         }
         if (!lock.hasQueuedThreads()) {
-            locks.remove(email, lock)
+            locks.remove(key, lock)
         }
     }
 }

@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import kr.co.lokit.api.common.entity.BaseEntity
+import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity
 import kr.co.lokit.api.domain.photo.infrastructure.PhotoEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
@@ -62,5 +63,9 @@ class AlbumEntity(
 
     fun updateTitle(title: String) {
         this.title = title
+    }
+
+    fun apply(album: Album) {
+        updateTitle(album.title)
     }
 }

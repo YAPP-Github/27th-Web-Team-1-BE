@@ -10,7 +10,7 @@ import kr.co.lokit.api.domain.user.dto.UpdateNicknameRequest
 import kr.co.lokit.api.domain.user.dto.UpdateProfileImageRequest
 
 @SecurityRequirement(name = "Authorization")
-@Tag(name = "MyPage", description = "마이페이지 API")
+@Tag(name = "MyPage", description = "마이페이지 & 온보딩 API")
 interface MyPageApi {
     @Operation(
         summary = "닉네임 수정",

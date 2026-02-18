@@ -8,6 +8,7 @@ import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
 import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
 import kr.co.lokit.api.domain.map.dto.MapMeResponse
 import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
+import kr.co.lokit.api.domain.map.presentation.mapping.toResponse
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -37,29 +38,29 @@ class MapController(
             zoom,
             albumId,
             lastDataVersion,
-        )
+        ).toResponse()
 
     @GetMapping("clusters/{clusterId}/photos")
     override fun getClusterPhotos(
         @CurrentUserId userId: Long,
         @PathVariable clusterId: String,
-    ): List<ClusterPhotoResponse> = getMapUseCase.getClusterPhotos(clusterId, userId)
+    ): List<ClusterPhotoResponse> = getMapUseCase.getClusterPhotos(clusterId, userId).toResponse()
 
     @GetMapping("albums/{albumId}")
     @PreAuthorize("@permissionService.canAccessAlbum(#userId, #albumId)")
     override fun getAlbumMapInfo(
         @CurrentUserId userId: Long,
         @PathVariable albumId: Long,
-    ): AlbumMapInfoResponse = getMapUseCase.getAlbumMapInfo(albumId)
+    ): AlbumMapInfoResponse = getMapUseCase.getAlbumMapInfo(albumId).toResponse()
 
     @GetMapping("location")
     override fun getLocationInfo(
         @RequestParam longitude: Double,
         @RequestParam latitude: Double,
-    ): LocationInfoResponse = searchLocationUseCase.getLocationInfo(longitude, latitude)
+    ): LocationInfoResponse = searchLocationUseCase.getLocationInfo(longitude, latitude).toResponse()
 
     @GetMapping("places/search")
     override fun searchPlaces(
         @RequestParam query: String,
-    ): PlaceSearchResponse = searchLocationUseCase.searchPlaces(query)
+    ): PlaceSearchResponse = searchLocationUseCase.searchPlaces(query).toResponse()
 }

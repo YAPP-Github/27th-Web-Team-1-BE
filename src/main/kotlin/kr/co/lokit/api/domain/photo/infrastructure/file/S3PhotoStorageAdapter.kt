@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.photo.infrastructure.file
 
 import kr.co.lokit.api.domain.photo.application.port.PhotoStoragePort
-import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import kr.co.lokit.api.domain.photo.domain.PresignedUpload
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.retry.annotation.Backoff
@@ -21,7 +21,7 @@ class S3PhotoStorageAdapter(
     override fun generatePresignedUrl(
         key: String,
         contentType: String,
-    ): PresignedUrl = retryTransient { s3PresignedUrlGenerator.generate(key, contentType) }
+    ): PresignedUpload = retryTransient { s3PresignedUrlGenerator.generate(key, contentType) }
 
     override fun verifyFileExists(objectUrl: String) {
         retryTransient { s3FileVerifier.verify(objectUrl) }

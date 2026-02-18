@@ -1,16 +1,20 @@
 package kr.co.lokit.api.domain.couple.infrastructure
 
 import jakarta.persistence.LockModeType
+import jakarta.persistence.QueryHint
+import kr.co.lokit.api.common.concurrency.LockPolicy
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.QueryHints
 import java.time.LocalDateTime
 
 interface InviteCodeJpaRepository : JpaRepository<InviteCodeEntity, Long> {
     fun existsByCode(code: String): Boolean
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = LockPolicy.DB_PESSIMISTIC_LOCK_TIMEOUT_MILLIS_TEXT)])
     @Query(
         """
         select i from InviteCode i
@@ -29,6 +33,7 @@ interface InviteCodeJpaRepository : JpaRepository<InviteCodeEntity, Long> {
     fun findByCode(code: String): InviteCodeEntity?
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = LockPolicy.DB_PESSIMISTIC_LOCK_TIMEOUT_MILLIS_TEXT)])
     @Query(
         """
         select i from InviteCode i

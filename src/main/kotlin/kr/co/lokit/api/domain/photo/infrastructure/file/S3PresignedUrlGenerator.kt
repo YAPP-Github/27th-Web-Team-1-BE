@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.photo.infrastructure.file
 
-import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import kr.co.lokit.api.domain.photo.domain.PresignedUpload
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
@@ -20,7 +20,7 @@ class S3PresignedUrlGenerator(
     fun generate(
         key: String,
         contentType: String,
-    ): PresignedUrl {
+    ): PresignedUpload {
         s3FileVerifier.verifyNotExists(key)
 
         val request =
@@ -41,7 +41,7 @@ class S3PresignedUrlGenerator(
         val presignedUrl = s3Presigner.presignPutObject(presignRequest)
         val objectUrl = OBJECT_URL_TEMPLATE.format(bucket, region, key)
 
-        return PresignedUrl(
+        return PresignedUpload(
             presignedUrl = presignedUrl.url().toString(),
             objectUrl = objectUrl,
         )

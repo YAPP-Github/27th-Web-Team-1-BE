@@ -10,10 +10,9 @@ import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.ReconnectCoupleUseCase
-import kr.co.lokit.api.domain.couple.dto.CoupleLinkResponse
-import kr.co.lokit.api.domain.couple.dto.PartnerSummaryResponse
+import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
+import kr.co.lokit.api.domain.couple.domain.PartnerSummaryReadModel
 import kr.co.lokit.api.domain.user.application.AuthService
-import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createCoupleRequest
 import kr.co.lokit.api.fixture.createJoinCoupleRequest
 import kr.co.lokit.api.fixture.userAuth
@@ -96,9 +95,9 @@ class CoupleControllerTest {
     @Test
     fun `초대 코드로 커플 합류 성공`() {
         val linked =
-            CoupleLinkResponse(
-                coupleId = 1L,
-                partnerSummary = PartnerSummaryResponse(userId = 2L, nickname = "테스트", profileImageUrl = null),
+            CoupleStatusReadModel(
+                isCoupled = true,
+                partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
         doReturn(linked).`when`(coupleInviteUseCase).confirmInviteCode(anyLong(), anyString(), anyString())
 
@@ -142,8 +141,12 @@ class CoupleControllerTest {
 
     @Test
     fun `재연결 성공`() {
-        val couple = createCouple(id = 1L, name = "우리 커플", userIds = listOf(1L, 2L))
-        doReturn(couple).`when`(reconnectCoupleUseCase).reconnect(anyLong())
+        val coupled =
+            CoupleStatusReadModel(
+                isCoupled = true,
+                partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
+            )
+        doReturn(coupled).`when`(reconnectCoupleUseCase).reconnect(anyLong())
 
         mockMvc
             .perform(

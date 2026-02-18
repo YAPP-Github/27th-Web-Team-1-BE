@@ -21,4 +21,12 @@ data class Album(
     init {
         require(title.length <= 10) { "앨범 제목은 10자 이내여야 합니다." }
     }
+
+    fun hasSameTitle(other: String): Boolean = title == other
+
+    fun canBeRenamed(): Boolean = !isDefault
+
+    fun canBeDeleted(): Boolean = !isDefault
+
+    fun renamed(newTitle: String): Album = copy(title = newTitle)
 }

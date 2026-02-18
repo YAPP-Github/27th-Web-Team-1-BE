@@ -3,6 +3,7 @@ package kr.co.lokit.api.domain.user.infrastructure
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
+import kr.co.lokit.api.config.security.RefreshTokenHasher
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRecord
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import org.springframework.data.repository.findByIdOrNull
@@ -13,11 +14,11 @@ import java.time.LocalDateTime
 class JpaRefreshTokenRepository(
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
     private val userJpaRepository: UserJpaRepository,
+    private val refreshTokenHasher: RefreshTokenHasher,
 ) : RefreshTokenRepositoryPort {
     override fun findByToken(token: String): RefreshTokenRecord? =
-        refreshTokenJpaRepository.findByToken(token)?.let {
+        refreshTokenJpaRepository.findByTokenHash(refreshTokenHasher.hash(token))?.let {
             RefreshTokenRecord(
-                token = it.token,
                 userId = it.user.nonNullId(),
                 expiresAt = it.expiresAt,
             )
@@ -37,7 +38,7 @@ class JpaRefreshTokenRepository(
         refreshTokenJpaRepository.deleteByUserId(userId)
         refreshTokenJpaRepository.save(
             RefreshTokenEntity(
-                token = token,
+                tokenHash = refreshTokenHasher.hash(token),
                 user = userEntity,
                 expiresAt = expiresAt,
             ),
@@ -49,6 +50,6 @@ class JpaRefreshTokenRepository(
     }
 
     override fun deleteByToken(token: String) {
-        refreshTokenJpaRepository.deleteByToken(token)
+        refreshTokenJpaRepository.deleteByTokenHash(refreshTokenHasher.hash(token))
     }
 }

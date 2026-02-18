@@ -58,38 +58,38 @@ class MyPageControllerTest {
         val user = createUser(id = 1L, name = "새닉네임")
         doReturn(user).`when`(updateMyPageUseCase).updateNickname(anyLong(), anyString())
 
-        mockMvc.perform(
-            patch("/my-page/nickname")
-                .with(authentication(userAuth()))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createUpdateNicknameRequest())),
-        )
-            .andExpect(status().isOk)
+        mockMvc
+            .perform(
+                put("/my-page/nickname")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(createUpdateNicknameRequest())),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `닉네임 수정 실패 - 빈 값`() {
-        mockMvc.perform(
-            patch("/my-page/nickname")
-                .with(authentication(userAuth()))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(UpdateNicknameRequest(nickname = ""))),
-        )
-            .andExpect(status().isBadRequest)
+        mockMvc
+            .perform(
+                put("/my-page/nickname")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(UpdateNicknameRequest(nickname = ""))),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
     fun `닉네임 수정 실패 - 10자 초과`() {
-        mockMvc.perform(
-            patch("/my-page/nickname")
-                .with(authentication(userAuth()))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(UpdateNicknameRequest(nickname = "12345678901"))),
-        )
-            .andExpect(status().isBadRequest)
+        mockMvc
+            .perform(
+                put("/my-page/nickname")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(UpdateNicknameRequest(nickname = "12345678901"))),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
@@ -97,36 +97,36 @@ class MyPageControllerTest {
         val user = createUser(id = 1L)
         doReturn(user).`when`(updateMyPageUseCase).updateProfileImage(anyLong(), anyString())
 
-        mockMvc.perform(
-            put("/my-page/profile-image")
-                .with(authentication(userAuth()))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createUpdateProfileImageRequest())),
-        )
-            .andExpect(status().isOk)
+        mockMvc
+            .perform(
+                put("/my-page/profile-image")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(createUpdateProfileImageRequest())),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `프로필 사진 수정 실패 - URL 빈 값`() {
-        mockMvc.perform(
-            put("/my-page/profile-image")
-                .with(authentication(userAuth()))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(UpdateProfileImageRequest(profileImageUrl = ""))),
-        )
-            .andExpect(status().isBadRequest)
+        mockMvc
+            .perform(
+                put("/my-page/profile-image")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(UpdateProfileImageRequest(profileImageUrl = ""))),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
     fun `인증되지 않은 사용자는 접근할 수 없다`() {
-        mockMvc.perform(
-            patch("/my-page/nickname")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createUpdateNicknameRequest())),
-        )
-            .andExpect(status().isUnauthorized)
+        mockMvc
+            .perform(
+                patch("/my-page/nickname")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(createUpdateNicknameRequest())),
+            ).andExpect(status().isUnauthorized)
     }
 }

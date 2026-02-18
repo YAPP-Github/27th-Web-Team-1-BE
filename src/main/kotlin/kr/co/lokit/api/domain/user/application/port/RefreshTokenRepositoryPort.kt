@@ -3,7 +3,6 @@ package kr.co.lokit.api.domain.user.application.port
 import java.time.LocalDateTime
 
 data class RefreshTokenRecord(
-    val token: String,
     val userId: Long,
     val expiresAt: LocalDateTime,
 )

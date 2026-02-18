@@ -25,6 +25,8 @@ CREATE INDEX IF NOT EXISTS idx_album_photo_added_at ON album USING BRIN(photo_ad
 CREATE INDEX IF NOT EXISTS idx_couple_user_covering_active ON couple_user (user_id) INCLUDE (couple_id) WHERE is_deleted = false;
 
 CREATE INDEX IF NOT EXISTS idx_refresh_token_expires_at ON refresh_token (expires_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_refresh_token_user_active ON refresh_token (user_id) WHERE is_deleted = false;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_refresh_token_token_hash_active ON refresh_token (token_hash) WHERE is_deleted = false;
 
 CREATE INDEX IF NOT EXISTS idx_album_couple_id_active ON album (couple_id) WHERE is_deleted = false;
 

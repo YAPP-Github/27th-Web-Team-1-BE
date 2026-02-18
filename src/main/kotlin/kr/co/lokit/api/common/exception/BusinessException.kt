@@ -246,6 +246,12 @@ sealed class BusinessException(
         cause: Throwable? = null,
         errors: Map<String, String> = emptyMap(),
     ) : BusinessException(ErrorCode.INVITE_RACE_CONFLICT, message, cause, errors)
+
+    class LockTimeoutException(
+        message: String = ErrorCode.LOCK_TIMEOUT.message,
+        cause: Throwable? = null,
+        errors: Map<String, String> = emptyMap(),
+    ) : BusinessException(ErrorCode.LOCK_TIMEOUT, message, cause, errors)
 }
 
 inline fun <reified T> entityNotFound(id: Long): BusinessException.ResourceNotFoundException =

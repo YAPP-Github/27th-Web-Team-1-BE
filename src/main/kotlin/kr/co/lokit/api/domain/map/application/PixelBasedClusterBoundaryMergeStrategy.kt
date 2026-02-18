@@ -1,7 +1,8 @@
 package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.map.domain.ClusterId
-import kr.co.lokit.api.domain.map.dto.ClusterResponse
+import kr.co.lokit.api.domain.map.domain.ClusterReadModel
+import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import kotlin.math.abs
 import kotlin.math.floor
@@ -11,18 +12,19 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
+@Component
 class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     override fun mergeClusters(
-        clusters: List<ClusterResponse>,
-        zoomLevel: Double,
-    ): List<ClusterResponse> {
+        clusters: List<ClusterReadModel>,
+        zoom: Double,
+    ): List<ClusterReadModel> {
         if (clusters.size < 2) return clusters
 
-        val z = normalizeZoom(zoomLevel)
+        val z = normalizeZoom(zoom)
         val zoomDiscrete = floor(z).toInt()
 
         val parsed = mutableListOf<MergeNode>()
-        val passthrough = mutableListOf<ClusterResponse>()
+        val passthrough = mutableListOf<ClusterReadModel>()
 
         clusters.forEach { cluster ->
             val parsedId =
@@ -57,7 +59,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
 
         val groups =
             buildGroupsByCompleteLinkage(
-                zoomLevel = z,
+                zoom = z,
                 nodes = sortedParsed,
                 lonLatExtractor = { it.longitude to it.latitude },
             )
@@ -79,7 +81,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                 val latestTakenAtNode =
                     nodes.maxByOrNull { it.takenAt ?: LocalDateTime.MIN } ?: representative
 
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = ClusterId.format(zoomDiscrete, representative.cellX, representative.cellY),
                     count = totalCount,
                     thumbnailUrl = latestTakenAtNode.thumbnailUrl,
@@ -121,7 +123,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
 
         val groups =
             buildGroupsByCompleteLinkage(
-                zoomLevel = z,
+                zoom = z,
                 nodes = cells,
                 lonLatExtractor = { cell ->
                     val center = cellCenters[cell] ?: GeoPoint(0.0, 0.0)
@@ -151,7 +153,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     }
 
     private fun <T> buildGroupsByCompleteLinkage(
-        zoomLevel: Double,
+        zoom: Double,
         nodes: List<T>,
         lonLatExtractor: (T) -> Pair<Double, Double>,
     ): List<List<Int>> {
@@ -160,7 +162,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         val projected =
             nodes.map { n ->
                 val (lon, lat) = lonLatExtractor(n)
-                val (x, y) = lonLatToWorldPx(lon, lat, zoomLevel)
+                val (x, y) = lonLatToWorldPx(lon, lat, zoom)
                 ProjectedNode(x, y)
             }
 
@@ -219,9 +221,9 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         )
     }
 
-    private fun normalizeZoom(zoomLevel: Double): Double = zoomLevel.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
+    private fun normalizeZoom(zoom: Double): Double = zoom.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
 
-    private fun ensureUniqueClusterIds(clusters: List<ClusterResponse>): List<ClusterResponse> {
+    private fun ensureUniqueClusterIds(clusters: List<ClusterReadModel>): List<ClusterReadModel> {
         val seen = mutableMapOf<String, Int>()
         return clusters.map { cluster ->
             val seq = (seen[cluster.clusterId] ?: 0) + 1

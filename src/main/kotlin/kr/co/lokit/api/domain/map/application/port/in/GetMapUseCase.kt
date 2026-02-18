@@ -1,8 +1,8 @@
 package kr.co.lokit.api.domain.map.application.port.`in`
 
-import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
-import kr.co.lokit.api.domain.map.dto.MapMeResponse
+import kr.co.lokit.api.domain.map.domain.AlbumMapInfoReadModel
+import kr.co.lokit.api.domain.map.domain.ClusterPhotos
+import kr.co.lokit.api.domain.map.domain.MapMeReadModel
 
 interface GetMapUseCase {
     fun getMe(
@@ -12,12 +12,12 @@ interface GetMapUseCase {
         zoom: Double,
         albumId: Long? = null,
         lastDataVersion: Long? = null,
-    ): MapMeResponse
+    ): MapMeReadModel
 
     fun getClusterPhotos(
         clusterId: String,
         userId: Long?,
-    ): List<ClusterPhotoResponse>
+    ): ClusterPhotos
 
-    fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse
+    fun getAlbumMapInfo(albumId: Long): AlbumMapInfoReadModel
 }
