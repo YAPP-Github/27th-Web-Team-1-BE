@@ -18,7 +18,7 @@ Lokit은 촬영 위치를 기반으로 지도 위에서 추억을 한눈에 돌�
     - GiST(공간), BRIN(시계열), 복합 인덱스, DESC/NULLS LAST 정렬 인덱스 운영
 3. **캐시 일관성과 무효화 복잡도**
     - dataVersion 기반 증분 캐시를 설계해 불필요한 재조회/재전송을 줄이고 응답 지연을 개선
-4. **안정성을 고려한 비동기 병렬 처리로 성능 최적화**
+4. **안정성을 고려한 VT 기반 비동기 병렬 처리로 성능 최적화와 세마포어로 쓰로틀링**
     - Virtual Threads + Structured Concurrency로 로직/쿼리 병렬화, DB 세마포어로 과부하 제어.
 5. **Soft delete 환경 최적화**
     - WHERE is_deleted = false 기반 partial index로 활성 데이터 조회 성능 최적화
@@ -30,6 +30,8 @@ Lokit은 촬영 위치를 기반으로 지도 위에서 추억을 한눈에 돌�
     - 유예기간 만료 처리, soft delete, 탈퇴 계정 비가역 익명화까지 스케줄러 기반 자동 운영.
 9. **모바일 wifi ↔ cellular 네트워크 전환 지원**
     - caddy 기반 http 2/3 활용
+10. **낙관락+메모리내 락 동시성 제어**
+    - 상황에 알맞은 락 전략 수립
 
 ### Code Architecture
 
@@ -166,12 +168,12 @@ val (locationFuture, albumsFuture, photosFuture) =
 
 **Locking & Consistency Decisions**
 
-| 주제 | 선택 | 이유 | 트레이드오프 |
-|---|---|---|---|
-| JVM 동시성 제어 | `LockManager.withLock` + `tryLock(timeout)` | 동일 프로세스 내 이메일 단위 경합 직렬화 | 멀티 인스턴스 환경에서는 DB/분산락 보완 필요 |
-| DB 쓰기 경합 제어 | 핵심 조회에 `PESSIMISTIC_WRITE` + lock timeout 힌트 | 초대코드/커플 연결처럼 선점이 중요한 시나리오 보호 | 대기/타임아웃 튜닝 필요 |
-| 엔티티 충돌 감지 | `BaseEntity.@Version` + `@OptimisticRetry`(핵심 커맨드 서비스) | 업데이트 손실 방지 + 일시 충돌 자동 재시도 | 충돌 잦으면 재시도 비용 증가 |
-| 실패 처리 방식 | 예외를 가드 절에서 먼저 던지고 본 로직은 직선 흐름 유지 | 코드 가독성/검증 포인트 명확화 | 분기별 예외 타입 설계 비용 증가 |
+| 주제          | 선택                                                     | 이유                           | 트레이드오프                     |
+|-------------|--------------------------------------------------------|------------------------------|----------------------------|
+| JVM 동시성 제어  | `LockManager.withLock` + `tryLock(timeout)`            | 동일 프로세스 내 이메일 단위 경합 직렬화      | 멀티 인스턴스 환경에서는 DB/분산락 보완 필요 |
+| DB 쓰기 경합 제어 | 핵심 조회에 `PESSIMISTIC_WRITE` + lock timeout 힌트           | 초대코드/커플 연결처럼 선점이 중요한 시나리오 보호 | 대기/타임아웃 튜닝 필요              |
+| 엔티티 충돌 감지   | `BaseEntity.@Version` + `@OptimisticRetry`(핵심 커맨드 서비스) | 업데이트 손실 방지 + 일시 충돌 자동 재시도    | 충돌 잦으면 재시도 비용 증가           |
+| 실패 처리 방식    | 예외를 가드 절에서 먼저 던지고 본 로직은 직선 흐름 유지                       | 코드 가독성/검증 포인트 명확화            | 분기별 예외 타입 설계 비용 증가         |
 
 ### Transport Optimization
 
