@@ -51,6 +51,8 @@ class ClusteringTest {
     fun `ClusterId 유효성을 검증할 수 있다`() {
         assertTrue(ClusterId.isValid("z14_130234_38456"))
         assertTrue(ClusterId.isValid("z14_130234_38456_g2"))
+        assertTrue(ClusterId.isValid("z14_130234_38456_mz14700"))
+        assertTrue(ClusterId.isValid("z14_130234_38456_g2_mz14700"))
         assertFalse(ClusterId.isValid("invalid"))
         assertFalse(ClusterId.isValid("z14_abc_123"))
     }
@@ -70,6 +72,23 @@ class ClusteringTest {
         assertEquals(130234L, parsed.cellX)
         assertEquals(38456L, parsed.cellY)
         assertEquals(2, parsed.groupSequence)
+        assertEquals(null, parsed.mergeZoom)
+    }
+
+    @Test
+    fun `ClusterId 상세 파싱은 merge zoom 토큰을 복원한다`() {
+        val parsed = ClusterId.parseDetailed("z14_130234_38456_g2_mz14700")
+        assertEquals(14, parsed.zoom)
+        assertEquals(130234L, parsed.cellX)
+        assertEquals(38456L, parsed.cellY)
+        assertEquals(2, parsed.groupSequence)
+        assertEquals(14.7, parsed.mergeZoom)
+    }
+
+    @Test
+    fun `ClusterId에 merge zoom 토큰을 추가할 수 있다`() {
+        val id = ClusterId.withMergeZoom("z14_130234_38456", 14.7)
+        assertEquals("z14_130234_38456_mz14700", id)
     }
 
     @Test

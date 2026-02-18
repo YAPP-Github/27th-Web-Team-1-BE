@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 
 @Schema(description = "클러스터 응답")
 data class ClusterResponse(
-    @Schema(description = "클러스터 ID (줌 레벨 + 그리드 셀 인덱스)", example = "z14_130234_38456")
+    @Schema(description = "클러스터 ID (줌/셀 + 선택적 그룹/병합줌 토큰)", example = "z14_130234_38456_mz14700")
     val clusterId: String,
     @Schema(description = "클러스터 내 사진 개수", example = "42")
     val count: Int,

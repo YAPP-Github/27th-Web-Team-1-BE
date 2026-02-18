@@ -127,7 +127,7 @@ class MapQueryService(
             }
         val memberPhotoIds =
             clusterBoundaryMergeStrategy.resolveClusterPhotoIds(
-                zoom = parsedClusterId.zoom,
+                zoom = parsedClusterId.mergeZoom ?: parsedClusterId.zoom.toDouble(),
                 photos = members,
                 targetClusterId = clusterId,
             )

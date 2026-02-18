@@ -139,7 +139,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
     }
 
     override fun resolveClusterPhotoIds(
-        zoom: Int,
+        zoom: Double,
         photos: List<ClusterPhotoMember>,
         targetClusterId: String,
     ): Set<Long> {
@@ -157,7 +157,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
             )
         val groups =
             buildGroupsByCompleteLinkage(
-                zoom = zoom.toDouble(),
+                zoom = zoom,
                 nodes = sortedPhotos,
                 lonLatExtractor = { photo -> photo.point.longitude to photo.point.latitude },
             )
@@ -170,7 +170,7 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
                     compareBy<ClusterPhotoMember> { it.cell.y }
                         .thenBy { it.cell.x },
                 )
-            val baseId = ClusterId.format(zoom, representative.cell.x, representative.cell.y)
+            val baseId = ClusterId.format(floor(zoom).toInt(), representative.cell.x, representative.cell.y)
             val seq = (seen[baseId] ?: 0) + 1
             seen[baseId] = seq
             val resolvedId = if (seq == 1) baseId else "${baseId}_g$seq"

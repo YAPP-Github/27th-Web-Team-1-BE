@@ -5,6 +5,7 @@ import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
 import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import org.junit.jupiter.api.BeforeEach
@@ -197,12 +198,16 @@ class MapPhotosCacheServiceTest {
 
         val result = service.getClusteredPhotos(zoom, bbox, 1L, null)
         val clusterId = result.clusters!!.asList().single().clusterId
+        val parsedClusterId = ClusterId.parseDetailed(clusterId)
 
         val discreteZoom = floor(zoom).toInt()
         val gridSize = GridValues.getGridSize(discreteZoom)
         val expectedX = floor(MercatorProjection.longitudeToMeters(longitude) / gridSize).toLong()
         val expectedY = floor(MercatorProjection.latitudeToMeters(latitude) / gridSize).toLong()
-        assertEquals("z${discreteZoom}_${expectedX}_$expectedY", clusterId)
+        assertEquals(discreteZoom, parsedClusterId.zoom)
+        assertEquals(expectedX, parsedClusterId.cellX)
+        assertEquals(expectedY, parsedClusterId.cellY)
+        assertEquals(zoom, parsedClusterId.mergeZoom)
     }
 
     @Test

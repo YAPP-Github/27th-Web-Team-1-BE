@@ -180,7 +180,7 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
                 ClusterPhotoMember(id = 2L, cell = cell, point = GeoPoint(farEnough.first, farEnough.second)),
             )
 
-        val result = strategy.resolveClusterPhotoIds(zoom = 14, photos = photos, targetClusterId = "z14_24681_7832_g2")
+        val result = strategy.resolveClusterPhotoIds(zoom = 14.0, photos = photos, targetClusterId = "z14_24681_7832_g2")
 
         assertEquals(setOf(2L), result)
     }
@@ -198,7 +198,7 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
                 ClusterPhotoMember(id = 2L, cell = cell, point = GeoPoint(farEnough.first, farEnough.second)),
             )
 
-        val result = strategy.resolveClusterPhotoIds(zoom = 14, photos = photos, targetClusterId = "z14_24681_7832")
+        val result = strategy.resolveClusterPhotoIds(zoom = 14.0, photos = photos, targetClusterId = "z14_24681_7832")
 
         assertEquals(setOf(1L), result)
     }

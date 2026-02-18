@@ -133,9 +133,10 @@ object ClusterId {
         val cellX: Long,
         val cellY: Long,
         val groupSequence: Int,
+        val mergeZoom: Double?,
     )
 
-    private val PATTERN = Regex("""^z(\d+)_(-?\d+)_(-?\d+)(?:_g(\d+))?$""")
+    private val PATTERN = Regex("""^z(\d+)_(-?\d+)_(-?\d+)(?:_g(\d+))?(?:_mz(\d+))?$""")
 
     fun format(
         zoom: Int,
@@ -161,8 +162,21 @@ object ClusterId {
             cellX = match.groupValues[2].toLong(),
             cellY = match.groupValues[3].toLong(),
             groupSequence = match.groupValues[4].ifEmpty { "1" }.toInt(),
+            mergeZoom = match.groupValues[5].ifEmpty { null }?.toDouble()?.div(MERGE_ZOOM_SCALE),
         )
     }
 
     fun isValid(clusterId: String): Boolean = PATTERN.matches(clusterId)
+
+    fun withMergeZoom(
+        clusterId: String,
+        mergeZoom: Double,
+    ): String {
+        if (!isValid(clusterId)) return clusterId
+        if (clusterId.contains("_mz")) return clusterId
+        val encoded = (mergeZoom * MERGE_ZOOM_SCALE).toInt().coerceAtLeast(0)
+        return "${clusterId}_mz$encoded"
+    }
+
+    private const val MERGE_ZOOM_SCALE = 1000.0
 }

@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.ClusterReadModel
+import kotlin.math.floor
 
 data class CellCoord(
     val x: Long,
@@ -38,14 +39,15 @@ interface ClusterBoundaryMergeStrategy {
     ): Set<CellCoord>
 
     fun resolveClusterPhotoIds(
-        zoom: Int,
+        zoom: Double,
         photos: List<ClusterPhotoMember>,
         targetClusterId: String,
     ): Set<Long> {
         val parsed = ClusterId.parse(targetClusterId)
         val targetCell = CellCoord(parsed.cellX, parsed.cellY)
         val photosByCell = photos.groupBy({ it.cell }, { it.point })
-        val cells = resolveClusterCells(zoom = zoom, photosByCell = photosByCell, targetCell = targetCell)
+        val cells =
+            resolveClusterCells(zoom = floor(zoom).toInt(), photosByCell = photosByCell, targetCell = targetCell)
         val memberCells = if (cells.isEmpty()) setOf(targetCell) else cells
         return photos.filter { it.cell in memberCells }.map { it.id }.toSet()
     }

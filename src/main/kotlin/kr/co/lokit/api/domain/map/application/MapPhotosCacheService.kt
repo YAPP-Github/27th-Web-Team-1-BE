@@ -3,19 +3,19 @@ package kr.co.lokit.api.domain.map.application
 import kr.co.lokit.api.common.util.orZero
 import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.config.cache.CachePolicy
+import kr.co.lokit.api.domain.map.application.mapping.toMapPhotoReadModel
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.ClusterId
-import kr.co.lokit.api.domain.map.domain.GridValues
-import kr.co.lokit.api.domain.map.domain.MapGridIndex
-import kr.co.lokit.api.domain.map.domain.MapPhotos
-import kr.co.lokit.api.domain.map.domain.MapMutationTracker
-import kr.co.lokit.api.domain.map.domain.MapViewportTracker
-import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import kr.co.lokit.api.domain.map.domain.ClusterReadModel
 import kr.co.lokit.api.domain.map.domain.Clusters
+import kr.co.lokit.api.domain.map.domain.GridValues
+import kr.co.lokit.api.domain.map.domain.MapGridIndex
+import kr.co.lokit.api.domain.map.domain.MapMutationTracker
+import kr.co.lokit.api.domain.map.domain.MapPhotos
 import kr.co.lokit.api.domain.map.domain.MapPhotosReadModel
-import kr.co.lokit.api.domain.map.application.mapping.toMapPhotoReadModel
+import kr.co.lokit.api.domain.map.domain.MapViewportTracker
+import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCache
@@ -93,14 +93,15 @@ class MapPhotosCacheService(
         val requestedWindow = MapGridIndex.toCellWindow(bbox, prefetchGridSize)
 
         val clusters =
-            mapQueryPort.findPhotosWithinBBox(
-                west = bbox.west,
-                south = bbox.south,
-                east = bbox.east,
-                north = bbox.north,
-                coupleId = coupleId,
-                albumId = albumId,
-            ).map { photo ->
+            mapQueryPort
+                .findPhotosWithinBBox(
+                    west = bbox.west,
+                    south = bbox.south,
+                    east = bbox.east,
+                    north = bbox.north,
+                    coupleId = coupleId,
+                    albumId = albumId,
+                ).map { photo ->
                     val (cellX, cellY) = MapGridIndex.toCell(photo.longitude, photo.latitude, clusterGridSize)
                     ClusterReadModel(
                         clusterId = ClusterId.format(discreteZoom, cellX, cellY),
@@ -130,7 +131,9 @@ class MapPhotosCacheService(
             coords = prefetchCoords,
         )
 
-        return MapPhotosReadModel(clusters = Clusters.of(clusterBoundaryMergeStrategy.mergeClusters(clusters, discreteZoom)))
+        val merged = clusterBoundaryMergeStrategy.mergeClusters(clusters, zoom)
+        val responseClusters = merged.map { cluster -> cluster.copy(clusterId = ClusterId.withMergeZoom(cluster.clusterId, zoom)) }
+        return MapPhotosReadModel(clusters = Clusters.of(responseClusters))
     }
 
     private fun scheduleRawPrefetch(
