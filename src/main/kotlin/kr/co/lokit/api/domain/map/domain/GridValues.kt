@@ -17,10 +17,10 @@ object GridValues {
     }
 
     fun getGridSize(
-        zoomLevel: Double,
+        zoom: Double,
         gridPx: Int = 60,
     ): Double {
-        val normalized = normalizeZoomLevel(zoomLevel)
+        val normalized = normalizeZoom(zoom)
         val lowerZoom = floor(normalized).toInt()
         val upperZoom = (lowerZoom + 1).coerceAtMost(MAX_ZOOM_LEVEL)
         if (lowerZoom == upperZoom) {
@@ -34,9 +34,9 @@ object GridValues {
 
     fun getSupportedZoomLevels(): Set<Int> = (0..22).toSet()
 
-    private fun normalizeZoomLevel(level: Double): Double {
-        if (!level.isFinite()) return 0.0
-        return level.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
+    private fun normalizeZoom(zoom: Double): Double {
+        if (!zoom.isFinite()) return 0.0
+        return zoom.coerceIn(0.0, MAX_ZOOM_LEVEL.toDouble())
     }
 
     private const val MAX_ZOOM_LEVEL = 22

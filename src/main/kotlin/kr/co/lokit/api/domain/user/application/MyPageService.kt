@@ -17,7 +17,7 @@ class MyPageService(
         nickname: String,
     ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        return userRepository.update(user.copy(name = nickname))
+        return userRepository.update(user.withNickname(nickname))
     }
 
     @Transactional
@@ -26,6 +26,6 @@ class MyPageService(
         profileImageUrl: String,
     ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        return userRepository.update(user.copy(profileImageUrl = profileImageUrl))
+        return userRepository.update(user.withProfileImage(profileImageUrl))
     }
 }

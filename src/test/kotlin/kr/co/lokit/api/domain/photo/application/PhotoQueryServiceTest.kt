@@ -5,7 +5,7 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.photo.domain.DeIdentifiedUserProfile
 import kr.co.lokit.api.fixture.createCouple
@@ -43,7 +43,7 @@ class PhotoQueryServiceTest {
         val photoDetail = createPhotoDetail(description = "테스트 사진", uploadedById = 2L)
         `when`(photoRepository.findDetailById(1L)).thenReturn(photoDetail)
         `when`(mapClientPort.reverseGeocode(127.0, 37.5)).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
         `when`(coupleRepository.findByUserId(1L)).thenReturn(
             createCouple(id = 1L, userIds = listOf(1L, 2L), status = CoupleStatus.CONNECTED),
@@ -81,7 +81,7 @@ class PhotoQueryServiceTest {
         )
         `when`(photoRepository.findDetailById(1L)).thenReturn(photoDetail)
         `when`(mapClientPort.reverseGeocode(127.0, 37.5)).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
         `when`(coupleRepository.findByUserId(viewerUserId)).thenReturn(
             createCouple(
@@ -109,7 +109,7 @@ class PhotoQueryServiceTest {
         )
         `when`(photoRepository.findDetailById(1L)).thenReturn(photoDetail)
         `when`(mapClientPort.reverseGeocode(127.0, 37.5)).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
         `when`(coupleRepository.findByUserId(viewerUserId)).thenReturn(
             createCouple(

@@ -7,10 +7,13 @@ import kr.co.lokit.api.domain.map.application.port.ClusterPhotoProjection
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
+import kr.co.lokit.api.domain.map.domain.Clusters
 import kr.co.lokit.api.domain.map.domain.GridValues
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
-import kr.co.lokit.api.domain.map.dto.PlaceResponse
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
+import kr.co.lokit.api.domain.map.domain.MapPhotos
+import kr.co.lokit.api.domain.map.domain.MapPhotosReadModel
+import kr.co.lokit.api.domain.map.domain.PlaceReadModel
+import kr.co.lokit.api.domain.map.domain.Places
 import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createAlbumBounds
 import kr.co.lokit.api.fixture.createCouple
@@ -123,7 +126,7 @@ class MapServiceTest {
     @Test
     fun `위치 정보를 조회할 수 있다`() {
         `when`(mapClientPort.reverseGeocode(127.0, 37.5)).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
 
         val result = mapService.getLocationInfo(127.0, 37.5)
@@ -168,15 +171,15 @@ class MapServiceTest {
 
         val result = mapService.getClusterPhotos("z14_24661_7867", 1L)
 
-        assertEquals(1, result.size)
-        assertEquals(1L, result[0].id)
+        assertEquals(1, result.asList().size)
+        assertEquals(1L, result.asList()[0].id)
     }
 
     @Test
     fun `searchPlaces는 mapClientPort에 위임한다`() {
         val places =
             listOf(
-                PlaceResponse(
+                PlaceReadModel(
                     placeName = "스타벅스 강남역점",
                     address = "역삼동 858",
                     roadAddress = "강남대로 396",
@@ -185,12 +188,12 @@ class MapServiceTest {
                     category = "카페",
                 ),
             )
-        `when`(mapClientPort.searchPlaces("스타벅스")).thenReturn(places)
+        `when`(mapClientPort.searchPlaces("스타벅스")).thenReturn(Places.of(places))
 
         val result = mapService.searchPlaces("스타벅스")
 
-        assertEquals(1, result.places.size)
-        assertEquals("스타벅스 강남역점", result.places[0].placeName)
+        assertEquals(1, result.places.asList().size)
+        assertEquals("스타벅스 강남역점", result.places.asList()[0].placeName)
         verify(mapClientPort).searchPlaces("스타벅스")
     }
 
@@ -202,10 +205,10 @@ class MapServiceTest {
         `when`(albumRepository.findById(defaultAlbumId)).thenReturn(createAlbum(id = defaultAlbumId, isDefault = true))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
         `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any())).thenReturn(
-            MapPhotosResponse(clusters = emptyList()),
+            MapPhotosReadModel(clusters = Clusters.empty()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
         `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
         `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
@@ -232,10 +235,10 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(currentVersion)
         `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), anyOrNull(), any())).thenReturn(
-            MapPhotosResponse(clusters = emptyList()),
+            MapPhotosReadModel(clusters = Clusters.empty()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
         `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
         `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
@@ -258,10 +261,10 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(createCouple(id = 1L))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), anyOrNull())).thenReturn(3L)
         `when`(mapPhotosCacheService.getIndividualPhotos(any(), any(), eq(1L), anyOrNull())).thenReturn(
-            MapPhotosResponse(photos = emptyList()),
+            MapPhotosReadModel(photos = MapPhotos.empty()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
         `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
         `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
@@ -283,7 +286,7 @@ class MapServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(null)
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), anyOrNull(), anyOrNull())).thenReturn(0L)
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
         `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)
 
@@ -315,10 +318,10 @@ class MapServiceTest {
         `when`(albumRepository.findById(albumId)).thenReturn(createAlbum(id = albumId, isDefault = false))
         `when`(mapPhotosCacheService.getDataVersion(any(), any(), eq(1L), eq(albumId))).thenReturn(10L)
         `when`(mapPhotosCacheService.getClusteredPhotos(any(), any(), eq(1L), eq(albumId), any())).thenReturn(
-            MapPhotosResponse(clusters = emptyList()),
+            MapPhotosReadModel(clusters = Clusters.empty()),
         )
         `when`(mapClientPort.reverseGeocode(any(), any())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = "역삼역", regionName = "강남구"),
         )
         `when`(albumRepository.findAllByCoupleId(1L)).thenReturn(emptyList())
         `when`(albumRepository.photoCountSumByUserId(1L)).thenReturn(0)

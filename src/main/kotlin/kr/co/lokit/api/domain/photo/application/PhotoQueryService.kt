@@ -8,7 +8,7 @@ import kr.co.lokit.api.domain.map.application.port.MapClientPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.`in`.GetPhotoDetailUseCase
 import kr.co.lokit.api.domain.photo.domain.DeIdentifiedUserProfile
-import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
+import kr.co.lokit.api.domain.photo.domain.PhotoDetailReadModel
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -29,7 +29,7 @@ class PhotoQueryService(
     override fun getPhotoDetail(
         photoId: Long,
         userId: Long,
-    ): PhotoDetailResponse {
+    ): PhotoDetailReadModel {
         val photoDetail = photoRepository.findDetailById(photoId)
 
         val locationInfo =
@@ -44,7 +44,7 @@ class PhotoQueryService(
         val uploaderProfileImageUrl =
             if (shouldDeIdentify) DeIdentifiedUserProfile.hiddenProfileImageUrl() else photoDetail.uploaderProfileImageUrl
 
-        return PhotoDetailResponse(
+        return PhotoDetailReadModel(
             id = photoDetail.id,
             url = photoDetail.url,
             takenAt = photoDetail.takenAt,

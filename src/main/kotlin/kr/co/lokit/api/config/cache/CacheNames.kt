@@ -17,17 +17,12 @@ object CacheNames {
 enum class CacheRegion(
     val cacheName: String,
 ) {
-    REVERSE_GEOCODE(CacheNames.REVERSE_GEOCODE),
-    SEARCH_PLACES(CacheNames.SEARCH_PLACES),
     USER_DETAILS(CacheNames.USER_DETAILS),
     PHOTO(CacheNames.PHOTO),
     ALBUM(CacheNames.ALBUM),
     ALBUM_COUPLE(CacheNames.ALBUM_COUPLE),
     USER_COUPLE(CacheNames.USER_COUPLE),
     COUPLE_ALBUMS(CacheNames.COUPLE_ALBUMS),
-    MAP_PHOTOS(CacheNames.MAP_PHOTOS),
-    MAP_CELLS(CacheNames.MAP_CELLS),
-    PRESIGNED_URL(CacheNames.PRESIGNED_URL),
 }
 
 object CacheRegionGroups {

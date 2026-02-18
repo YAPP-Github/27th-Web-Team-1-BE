@@ -38,6 +38,7 @@ enum class ErrorCode(
 
     // Concurrency
     CONFLICT(HttpStatus.CONFLICT, "COMMON_007", "동시 수정 충돌이 발생했습니다. 다시 시도해주세요"),
+    LOCK_TIMEOUT(HttpStatus.CONFLICT, "COMMON_008", "락 획득 시간이 초과되었습니다. 잠시 후 다시 시도해주세요"),
 
     // Business
     BUSINESS_RULE_VIOLATION(HttpStatus.BAD_REQUEST, "BUSINESS_001", "비즈니스 규칙 위반입니다"),

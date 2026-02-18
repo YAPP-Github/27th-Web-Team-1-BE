@@ -9,8 +9,8 @@ import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.domain.Couple
-import kr.co.lokit.api.domain.couple.mapping.toDomain
-import kr.co.lokit.api.domain.couple.mapping.toEntity
+import kr.co.lokit.api.domain.couple.infrastructure.mapping.toDomain
+import kr.co.lokit.api.domain.couple.infrastructure.mapping.toEntity
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import org.springframework.cache.annotation.Cacheable

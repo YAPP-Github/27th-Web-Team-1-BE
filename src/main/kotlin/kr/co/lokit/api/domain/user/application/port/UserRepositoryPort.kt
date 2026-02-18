@@ -7,12 +7,11 @@ interface UserRepositoryPort {
 
     fun findById(id: Long): User?
 
-    fun findByEmail(
-        email: String,
-        name: String,
-    ): User
+    fun findByEmail(email: String): User
 
     fun update(user: User): User
+
+    fun lockByIds(ids: List<Long>)
 
     fun withdraw(userId: Long)
 

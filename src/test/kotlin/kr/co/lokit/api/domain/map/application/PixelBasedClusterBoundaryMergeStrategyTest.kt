@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.map.application
 
-import kr.co.lokit.api.domain.map.dto.ClusterResponse
+import kr.co.lokit.api.domain.map.domain.ClusterReadModel
 import org.junit.jupiter.api.Test
 import kotlin.math.PI
 import kotlin.math.atan
@@ -72,8 +72,8 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         val origin = worldPxToLonLat(base.first, base.second, zoom)
         val clusters =
             listOf(
-                ClusterResponse("z14_24681_7832", 1, "a.jpg", origin.first, origin.second),
-                ClusterResponse("z14_24681_7832", 2, "b.jpg", farEnough.first, farEnough.second),
+                ClusterReadModel("z14_24681_7832", 1, "a.jpg", origin.first, origin.second),
+                ClusterReadModel("z14_24681_7832", 2, "b.jpg", farEnough.first, farEnough.second),
             )
 
         val result = strategy.mergeClusters(clusters, zoom)
@@ -108,21 +108,21 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         val zoom = 14.032868718412672
         val clusters =
             listOf(
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = "z14_24681_7833",
                     count = 1,
                     thumbnailUrl = "top.jpg",
                     longitude = 127.10613880132,
                     latitude = 37.370150892237,
                 ),
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = "z14_24681_7832",
                     count = 2,
                     thumbnailUrl = "left.jpg",
                     longitude = 127.10548686836512,
                     latitude = 37.366947878141566,
                 ),
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = "z14_24681_7832_g2",
                     count = 1,
                     thumbnailUrl = "right.jpg",
@@ -140,21 +140,21 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
         val zoom = 13.82475583775964
         val clusters =
             listOf(
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = "z14_24681_7833",
                     count = 1,
                     thumbnailUrl = "top.jpg",
                     longitude = 127.10613880132,
                     latitude = 37.370150892237,
                 ),
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = "z14_24681_7832",
                     count = 3,
                     thumbnailUrl = "bottom.jpg",
                     longitude = 127.10635706465808,
                     latitude = 37.366689849534346,
                 ),
-                ClusterResponse(
+                ClusterReadModel(
                     clusterId = "z14_24682_7828",
                     count = 1,
                     thumbnailUrl = "far.jpg",
@@ -170,8 +170,8 @@ class PixelBasedClusterBoundaryMergeStrategyTest {
     private fun cluster(
         clusterId: String,
         lonLat: Pair<Double, Double>,
-    ): ClusterResponse =
-        ClusterResponse(
+    ): ClusterReadModel =
+        ClusterReadModel(
             clusterId = clusterId,
             count = 1,
             thumbnailUrl = "$clusterId.jpg",

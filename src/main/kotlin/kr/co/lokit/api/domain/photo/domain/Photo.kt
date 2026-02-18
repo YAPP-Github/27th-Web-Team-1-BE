@@ -15,6 +15,10 @@ data class Photo(
 ) {
     fun hasLocation(): Boolean = location.longitude != 0.0 && location.latitude != 0.0
 
+    fun canEvictMapCache(): Boolean = coupleId != null && hasLocation()
+
+    fun canPublishLocationEvent(coupleId: Long?): Boolean = hasLocation() && coupleId != null && albumId != null
+
     fun withAddress(address: String?): Photo = copy(address = address)
 
     fun withDefaultAlbum(defaultAlbumId: Long?): Photo =
@@ -39,4 +43,10 @@ data class Photo(
                     latitude = latitude ?: location.latitude,
                 ),
         )
+
+    fun samePointAs(other: Photo): Boolean =
+        location.longitude == other.location.longitude &&
+            location.latitude == other.location.latitude &&
+            albumId == other.albumId &&
+            coupleId == other.coupleId
 }

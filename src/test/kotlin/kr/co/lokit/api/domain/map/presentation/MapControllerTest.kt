@@ -7,12 +7,14 @@ import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
 import kr.co.lokit.api.domain.map.application.port.`in`.GetMapUseCase
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
-import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.dto.BoundingBoxResponse
-import kr.co.lokit.api.domain.map.dto.HomeResponse
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.MapMeResponse
-import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
+import kr.co.lokit.api.domain.map.domain.AlbumThumbnails
+import kr.co.lokit.api.domain.map.domain.AlbumMapInfoReadModel
+import kr.co.lokit.api.domain.map.domain.BoundingBoxReadModel
+import kr.co.lokit.api.domain.map.domain.Clusters
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
+import kr.co.lokit.api.domain.map.domain.MapMeReadModel
+import kr.co.lokit.api.domain.map.domain.PlaceSearchReadModel
+import kr.co.lokit.api.domain.map.domain.Places
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.userAuth
 import org.junit.jupiter.api.Test
@@ -59,25 +61,25 @@ class MapControllerTest {
     @MockitoBean
     lateinit var permissionService: PermissionService
 
-    private fun createMapMeResponse(): MapMeResponse =
-        MapMeResponse(
-            location = LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
-            boundingBox = BoundingBoxResponse(west = 126.9, south = 37.4, east = 127.1, north = 37.6),
+    private fun createMapMeResponse(): MapMeReadModel =
+        MapMeReadModel(
+            location = LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            boundingBox = BoundingBoxReadModel(west = 126.9, south = 37.4, east = 127.1, north = 37.6),
             totalHistoryCount = 0,
-            albums = emptyList<HomeResponse.Companion.AlbumThumbnails>(),
+            albums = AlbumThumbnails.empty(),
             dataVersion = 1L,
-            clusters = emptyList(),
+            clusters = Clusters.empty(),
             photos = null,
         )
 
     @Test
     fun `앨범 지도 정보 조회 성공`() {
         val response =
-            AlbumMapInfoResponse(
+            AlbumMapInfoReadModel(
                 albumId = 1L,
                 centerLongitude = 127.0,
                 centerLatitude = 37.5,
-                boundingBox = BoundingBoxResponse(west = 126.0, south = 37.0, east = 128.0, north = 38.0),
+                boundingBox = BoundingBoxReadModel(west = 126.0, south = 37.0, east = 128.0, north = 38.0),
             )
         doReturn(response).`when`(getMapUseCase).getAlbumMapInfo(anyLong())
 
@@ -90,7 +92,7 @@ class MapControllerTest {
 
     @Test
     fun `위치 정보 조회 성공`() {
-        doReturn(LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"))
+        doReturn(LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"))
             .`when`(searchLocationUseCase)
             .getLocationInfo(anyDouble(), anyDouble())
 
@@ -105,7 +107,7 @@ class MapControllerTest {
 
     @Test
     fun `장소 검색 성공`() {
-        doReturn(PlaceSearchResponse(places = emptyList()))
+        doReturn(PlaceSearchReadModel(places = Places.empty()))
             .`when`(searchLocationUseCase)
             .searchPlaces(anyString())
 

@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.photo.application.port.`in`
 
 import kr.co.lokit.api.domain.album.domain.Album
-import kr.co.lokit.api.domain.photo.dto.PhotoDetailResponse
+import kr.co.lokit.api.domain.photo.domain.PhotoDetailReadModel
 
 interface GetPhotoDetailUseCase {
     fun getPhotosByAlbum(
@@ -12,5 +12,5 @@ interface GetPhotoDetailUseCase {
     fun getPhotoDetail(
         photoId: Long,
         userId: Long,
-    ): PhotoDetailResponse
+    ): PhotoDetailReadModel
 }

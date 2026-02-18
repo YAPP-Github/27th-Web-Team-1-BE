@@ -4,13 +4,13 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoStoragePort
 import kr.co.lokit.api.domain.photo.domain.PhotoCreatedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoDeletedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoLocationUpdatedEvent
-import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import kr.co.lokit.api.domain.photo.domain.PresignedUpload
 import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createLocation
 import kr.co.lokit.api.fixture.createPhoto
@@ -77,7 +77,7 @@ class PhotoCommandServiceTest {
             )
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
         `when`(photoRepository.save(anyObject())).thenReturn(savedPhoto)
 
@@ -144,7 +144,7 @@ class PhotoCommandServiceTest {
     @Test
     fun `presigned URL을 생성할 수 있다`() {
         val expected =
-            PresignedUrl(
+            PresignedUpload(
                 presignedUrl = "https://bucket.s3.amazonaws.com/presigned",
                 objectUrl = "https://bucket.s3.amazonaws.com/photos/test-key/image.jpg",
             )
@@ -159,7 +159,7 @@ class PhotoCommandServiceTest {
     @Test
     fun `idempotencyKey가 null이면 UUID가 생성된다`() {
         val expected =
-            PresignedUrl(
+            PresignedUpload(
                 presignedUrl = "https://bucket.s3.amazonaws.com/presigned",
                 objectUrl = "https://bucket.s3.amazonaws.com/photos/uuid/image.jpg",
             )
@@ -179,7 +179,7 @@ class PhotoCommandServiceTest {
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
         `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(defaultAlbum)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
         `when`(photoRepository.save(anyObject())).thenReturn(savedPhoto)
 
@@ -208,7 +208,7 @@ class PhotoCommandServiceTest {
         val mockCache = mock(Cache::class.java)
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
-            LocationInfoResponse(address = "서울 강남구", placeName = null, regionName = "강남구"),
+            LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
         `when`(photoRepository.save(anyObject())).thenReturn(savedPhoto)
         `when`(cacheManager.getCache("coupleAlbums")).thenReturn(mockCache)

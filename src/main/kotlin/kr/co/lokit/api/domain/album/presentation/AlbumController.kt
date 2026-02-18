@@ -11,8 +11,8 @@ import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.dto.SelectableAlbumResponse
 import kr.co.lokit.api.domain.album.dto.UpdateAlbumTitleRequest
-import kr.co.lokit.api.domain.album.mapping.toDomain
-import kr.co.lokit.api.domain.album.mapping.toSelectableResponse
+import kr.co.lokit.api.domain.album.presentation.mapping.toDomain
+import kr.co.lokit.api.domain.album.presentation.mapping.toSelectableResponse
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping

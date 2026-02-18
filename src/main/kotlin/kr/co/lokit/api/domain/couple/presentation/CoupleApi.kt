@@ -6,8 +6,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
-import kr.co.lokit.api.common.dto.IdResponse
-import kr.co.lokit.api.domain.couple.dto.CoupleLinkResponse
 import kr.co.lokit.api.domain.couple.dto.CoupleStatusResponse
 import kr.co.lokit.api.domain.couple.dto.InviteCodePreviewResponse
 import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
@@ -17,18 +15,6 @@ import kr.co.lokit.api.domain.couple.dto.VerifyInviteCodeRequest
 @SecurityRequirement(name = "Authorization")
 @Tag(name = "Couple", description = "커플 API")
 interface CoupleApi {
-    @Operation(
-        summary = "초대 코드 조회",
-        description = "초대 코드를 조회합니다.",
-        responses = [
-            ApiResponse(responseCode = "200", description = "커플 생성 성공"),
-            ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        ],
-    )
-    fun getCode(
-        @Parameter(hidden = true) userId: Long,
-    ): InviteCodeResponse
-
     @Operation(
         summary = "내 커플 상태 조회",
         description = "현재 로그인 사용자의 커플 연결 상태를 조회합니다.",
@@ -54,15 +40,6 @@ interface CoupleApi {
     ): InviteCodeResponse
 
     @Operation(
-        summary = "초대코드 철회",
-        description = "본인이 생성한 UNUSED 코드만 철회합니다.",
-    )
-    fun revokeInvite(
-        inviteCode: String,
-        @Parameter(hidden = true) userId: Long,
-    )
-
-    @Operation(
         summary = "초대코드 검증",
         description = "코드 유효성을 확인하고 초대자 최소 정보를 미리보기로 제공합니다.",
     )
@@ -80,7 +57,7 @@ interface CoupleApi {
         request: JoinCoupleRequest,
         @Parameter(hidden = true) userId: Long,
         @Parameter(hidden = true) httpRequest: HttpServletRequest,
-    ): CoupleLinkResponse
+    ): CoupleStatusResponse
 
     @Operation(
         summary = "초대 코드로 커플 합류",
@@ -94,7 +71,7 @@ interface CoupleApi {
         request: JoinCoupleRequest,
         @Parameter(hidden = true) userId: Long,
         @Parameter(hidden = true) httpRequest: HttpServletRequest,
-    ): IdResponse
+    ): CoupleStatusResponse
 
     @Operation(
         summary = "커플 재연결",
@@ -108,7 +85,7 @@ interface CoupleApi {
     )
     fun reconnect(
         @Parameter(hidden = true) userId: Long,
-    ): IdResponse
+    ): CoupleStatusResponse
 
     @Operation(
         summary = "커플 연결 끊기",

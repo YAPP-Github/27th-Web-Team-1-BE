@@ -45,7 +45,7 @@ object MapCacheKeyFactory {
     @JvmStatic
     fun buildIndividualKey(
         bbox: BBox,
-        zoomLevel: Double,
+        zoom: Double,
         coupleId: Long?,
         albumId: Long?,
         version: Long,
@@ -54,7 +54,7 @@ object MapCacheKeyFactory {
         val south = toScaledInt(bbox.south)
         val east = toScaledInt(bbox.east)
         val north = toScaledInt(bbox.north)
-        val zoomToken = if (zoomLevel >= GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) 1 else 0
+        val zoomToken = if (zoom >= GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) 1 else 0
         return "ind_z${zoomToken}_w${west}_s${south}_e${east}_n${north}_c${normalizeId(
             coupleId,
         )}_a${normalizeId(albumId)}_v$version"

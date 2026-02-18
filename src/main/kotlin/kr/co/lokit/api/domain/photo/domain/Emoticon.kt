@@ -8,5 +8,7 @@ data class Emoticon(
 ) {
     companion object {
         const val MAX_PER_USER_PER_COMMENT = 10
+
+        fun canAdd(currentCount: Long): Boolean = currentCount < MAX_PER_USER_PER_COMMENT
     }
 }

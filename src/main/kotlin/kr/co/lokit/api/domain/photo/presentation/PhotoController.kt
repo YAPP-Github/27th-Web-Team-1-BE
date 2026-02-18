@@ -14,8 +14,9 @@ import kr.co.lokit.api.domain.photo.dto.PhotoListResponse
 import kr.co.lokit.api.domain.photo.dto.PresignedUrl
 import kr.co.lokit.api.domain.photo.dto.PresignedUrlRequest
 import kr.co.lokit.api.domain.photo.dto.UpdatePhotoRequest
-import kr.co.lokit.api.domain.photo.mapping.toDomain
-import kr.co.lokit.api.domain.photo.mapping.toPhotoListResponse
+import kr.co.lokit.api.domain.photo.presentation.mapping.toDomain
+import kr.co.lokit.api.domain.photo.presentation.mapping.toPhotoListResponse
+import kr.co.lokit.api.domain.photo.presentation.mapping.toResponse
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -47,7 +48,7 @@ class PhotoController(
     override fun getPresignedUrl(
         @RequestHeader(value = "X-Idempotency-Key", required = false) idempotencyKey: String?,
         @RequestBody @Valid request: PresignedUrlRequest,
-    ): PresignedUrl = createPhotoUseCase.generatePresignedUrl(idempotencyKey, request.contentType)
+    ): PresignedUrl = createPhotoUseCase.generatePresignedUrl(idempotencyKey, request.contentType).toResponse()
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -64,7 +65,7 @@ class PhotoController(
     override fun getPhotoDetail(
         @CurrentUserId userId: Long,
         @PathVariable id: Long,
-    ): PhotoDetailResponse = getPhotoDetailUseCase.getPhotoDetail(id, userId)
+    ): PhotoDetailResponse = getPhotoDetailUseCase.getPhotoDetail(id, userId).toResponse()
 
     @PutMapping("{id}")
     @PreAuthorize("@permissionService.canModifyPhoto(#userId, #id)")

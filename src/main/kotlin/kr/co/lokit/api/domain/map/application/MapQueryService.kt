@@ -2,8 +2,8 @@ package kr.co.lokit.api.domain.map.application
 
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.common.concurrency.withPermit
-import kr.co.lokit.api.common.dto.isValidId
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.AlbumBoundsRepositoryPort
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
@@ -14,18 +14,24 @@ import kr.co.lokit.api.domain.map.domain.BBox
 import kr.co.lokit.api.domain.map.domain.BoundsIdType
 import kr.co.lokit.api.domain.map.domain.ClusterId
 import kr.co.lokit.api.domain.map.domain.GridValues
+import kr.co.lokit.api.domain.map.domain.AlbumThumbnailsReadModel
+import kr.co.lokit.api.domain.map.domain.AlbumThumbnails
 import kr.co.lokit.api.domain.map.domain.MapZoom
 import kr.co.lokit.api.domain.map.domain.MercatorProjection
-import kr.co.lokit.api.domain.map.dto.AlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.dto.ClusterPhotoResponse
-import kr.co.lokit.api.domain.map.dto.HomeResponse.Companion.toAlbumThumbnails
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.MapMeResponse
-import kr.co.lokit.api.domain.map.dto.MapPhotosResponse
-import kr.co.lokit.api.domain.map.dto.PlaceSearchResponse
-import kr.co.lokit.api.domain.map.mapping.toAlbumMapInfoResponse
-import kr.co.lokit.api.domain.map.mapping.toClusterPhotosPageResponse
-import kr.co.lokit.api.domain.map.mapping.toResponse
+import kr.co.lokit.api.domain.map.domain.AlbumMapInfoReadModel
+import kr.co.lokit.api.domain.map.domain.ClusterPhotoReadModel
+import kr.co.lokit.api.domain.map.domain.ClusterPhotos
+import kr.co.lokit.api.domain.map.domain.Clusters
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
+import kr.co.lokit.api.domain.map.domain.MapMeReadModel
+import kr.co.lokit.api.domain.map.domain.MapPhotosReadModel
+import kr.co.lokit.api.domain.map.domain.MapPhotos
+import kr.co.lokit.api.domain.map.domain.PlaceSearchReadModel
+import kr.co.lokit.api.domain.map.domain.Places
+import kr.co.lokit.api.domain.map.domain.ThumbnailUrls
+import kr.co.lokit.api.domain.map.application.mapping.toAlbumMapReadModel
+import kr.co.lokit.api.domain.map.application.mapping.toClusterPhotoReadModels
+import kr.co.lokit.api.domain.map.application.mapping.toBoundingBoxReadModel
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.Semaphore
@@ -51,21 +57,21 @@ class MapQueryService(
     private val dbSemaphore = Semaphore(6)
 
     private fun getPhotos(
-        zoomLevel: Double,
+        zoom: Double,
         bbox: BBox,
         context: MapViewerContext,
         lastDataVersion: Long?,
         currentDataVersion: Long,
-    ): MapPhotosResponse {
-        val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoomLevel)
+    ): MapPhotosReadModel {
+        val boundedBbox = bbox.clampToKorea() ?: return emptyPhotosResponse(zoom)
         if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
-            return emptyPhotosResponse(zoomLevel)
+            return emptyPhotosResponse(zoom)
         }
         val canReuseCellCache = lastDataVersion != null && lastDataVersion == currentDataVersion
 
-        return if (zoomLevel < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) {
+        return if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) {
             mapPhotosCacheService.getClusteredPhotos(
-                zoomLevel = zoomLevel,
+                zoom = zoom,
                 bbox = boundedBbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
@@ -73,7 +79,7 @@ class MapQueryService(
             )
         } else {
             mapPhotosCacheService.getIndividualPhotos(
-                zoomLevel = zoomLevel,
+                zoom = zoom,
                 bbox = boundedBbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
@@ -85,13 +91,13 @@ class MapQueryService(
     override fun getClusterPhotos(
         clusterId: String,
         userId: Long?,
-    ): List<ClusterPhotoResponse> {
+    ): ClusterPhotos {
         val context = resolveViewerContext(userId = userId, albumId = null)
         if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
-            return emptyList()
+            return ClusterPhotos.empty()
         }
         val gridCell = ClusterId.parse(clusterId)
-        val expandedBBox = expandedClusterSearchBBox(gridCell) ?: return emptyList()
+        val expandedBBox = expandedClusterSearchBBox(gridCell) ?: return ClusterPhotos.empty()
         val photos =
             mapQueryPort.findPhotosInGridCell(
                 west = expandedBBox.west,
@@ -101,7 +107,7 @@ class MapQueryService(
                 coupleId = context.coupleId,
             )
         if (photos.isEmpty()) {
-            return emptyList()
+            return ClusterPhotos.empty()
         }
 
         val gridSize = GridValues.getGridSize(gridCell.zoom)
@@ -121,7 +127,8 @@ class MapQueryService(
             )
         val target = CellCoord(gridCell.cellX, gridCell.cellY)
         val memberCells = if (mergedCells.isEmpty()) setOf(target) else mergedCells
-        return photos
+        return ClusterPhotos.of(
+            photos
             .filter {
                 val cell =
                     CellCoord(
@@ -129,11 +136,12 @@ class MapQueryService(
                         floor(latToMeters(it.latitude) / gridSize).toLong(),
                     )
                 cell in memberCells
-            }.toClusterPhotosPageResponse()
+            }.toClusterPhotoReadModels(),
+        )
     }
 
     @Transactional(readOnly = true)
-    override fun getAlbumMapInfo(albumId: Long): AlbumMapInfoResponse {
+    override fun getAlbumMapInfo(albumId: Long): AlbumMapInfoReadModel {
         val album = albumRepository.findById(albumId)
         val (standardId, idType) =
             if (album?.isDefault == true) {
@@ -142,7 +150,7 @@ class MapQueryService(
                 albumId to BoundsIdType.ALBUM
             }
         val bounds = albumBoundsRepository.findByStandardIdAndIdType(standardId, idType)
-        return bounds.toAlbumMapInfoResponse(albumId)
+        return bounds.toAlbumMapReadModel(albumId)
     }
 
     override fun getMe(
@@ -152,7 +160,7 @@ class MapQueryService(
         zoom: Double,
         albumId: Long?,
         lastDataVersion: Long?,
-    ): MapMeResponse {
+    ): MapMeReadModel {
         val bbox =
             BBox
                 .fromCenter(MapZoom.from(zoom).level, longitude, latitude)
@@ -162,8 +170,8 @@ class MapQueryService(
         val context = resolveViewerContext(userId = userId, albumId = albumId)
         val currentVersion =
             mapPhotosCacheService.getDataVersion(
-                _zoomLevel = mapZoom.level,
-                _bbox = bbox,
+                zoom = mapZoom.level,
+                bbox = bbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
             )
@@ -180,7 +188,7 @@ class MapQueryService(
                     scope.fork {
                         dbSemaphore.withPermit {
                             getPhotos(
-                                zoomLevel = mapZoom.level,
+                                zoom = mapZoom.level,
                                 bbox = bbox,
                                 context = context,
                                 lastDataVersion = lastDataVersion,
@@ -195,13 +203,13 @@ class MapQueryService(
         val photosResponse = photosFuture.get()
         val albums = albumsFuture.get()
 
-        return MapMeResponse(
+        return MapMeReadModel(
             location = formattedLocation,
-            boundingBox = bbox.toResponse(),
-            albums = albums.toAlbumThumbnails(),
+            boundingBox = bbox.toBoundingBoxReadModel(),
+            albums = albums.toAlbumThumbnailsReadModels(),
             dataVersion = currentVersion,
-            clusters = photosResponse?.clusters,
-            photos = photosResponse?.photos,
+            clusters = photosResponse.clusters,
+            photos = photosResponse.photos,
             totalHistoryCount = albumRepository.photoCountSumByUserId(userId),
         )
     }
@@ -209,15 +217,15 @@ class MapQueryService(
     override fun getLocationInfo(
         longitude: Double,
         latitude: Double,
-    ): LocationInfoResponse {
+    ): LocationInfoReadModel {
         val raw = mapClientPort.reverseGeocode(longitude, latitude)
         val header = AddressFormatter.toRoadHeader(raw.address.orEmpty(), raw.roadName.orEmpty())
         val formattedAddress = AddressFormatter.removeProvinceAndCity(header)
         return raw.copy(address = formattedAddress)
     }
 
-    override fun searchPlaces(query: String): PlaceSearchResponse =
-        PlaceSearchResponse(places = mapClientPort.searchPlaces(query))
+    override fun searchPlaces(query: String): PlaceSearchReadModel =
+        PlaceSearchReadModel(places = mapClientPort.searchPlaces(query))
 
     private fun getMeByBBox(
         userId: Long,
@@ -227,13 +235,13 @@ class MapQueryService(
         bbox: BBox,
         albumId: Long?,
         lastDataVersion: Long?,
-    ): MapMeResponse {
+    ): MapMeReadModel {
         val mapZoom = MapZoom.from(zoom)
         val context = resolveViewerContext(userId = userId, albumId = albumId)
         val currentVersion =
             mapPhotosCacheService.getDataVersion(
-                _zoomLevel = mapZoom.level,
-                _bbox = bbox,
+                zoom = mapZoom.level,
+                bbox = bbox,
                 coupleId = context.coupleId,
                 albumId = context.albumId,
             )
@@ -250,7 +258,7 @@ class MapQueryService(
                     scope.fork {
                         dbSemaphore.withPermit {
                             getPhotos(
-                                zoomLevel = mapZoom.level,
+                                zoom = mapZoom.level,
                                 bbox = bbox,
                                 context = context,
                                 lastDataVersion = lastDataVersion,
@@ -265,13 +273,13 @@ class MapQueryService(
         val photosResponse = photosFuture.get()
         val albums = albumsFuture.get()
 
-        return MapMeResponse(
+        return MapMeReadModel(
             location = formattedLocation,
-            boundingBox = bbox.toResponse(),
-            albums = albums.toAlbumThumbnails(),
+            boundingBox = bbox.toBoundingBoxReadModel(),
+            albums = albums.toAlbumThumbnailsReadModels(),
             dataVersion = currentVersion,
-            clusters = photosResponse?.clusters,
-            photos = photosResponse?.photos,
+            clusters = photosResponse.clusters,
+            photos = photosResponse.photos,
             totalHistoryCount = albumRepository.photoCountSumByUserId(userId),
         )
     }
@@ -280,7 +288,7 @@ class MapQueryService(
         userId: Long?,
         albumId: Long?,
     ): Long? =
-        if (isValidId(albumId) && isValidId(userId)) {
+        if (albumId.isPositiveId() && userId.isPositiveId()) {
             val album = albumRepository.findById(albumId!!)
             if (album?.isDefault == true) null else albumId
         } else {
@@ -303,8 +311,8 @@ class MapQueryService(
             ?.let { albumRepository.findAllByCoupleId(it).sortedByDescending { album -> album.isDefault } }
             .orEmpty()
 
-    private fun formatLocation(location: LocationInfoResponse): LocationInfoResponse =
-        LocationInfoResponse(
+    private fun formatLocation(location: LocationInfoReadModel): LocationInfoReadModel =
+        LocationInfoReadModel(
             address =
                 AddressFormatter.removeProvinceAndCity(
                     AddressFormatter.toRoadHeader(location.address.orEmpty(), location.roadName.orEmpty()),
@@ -340,9 +348,24 @@ class MapQueryService(
 
     private fun latToMeters(lat: Double): Double = MercatorProjection.latitudeToMeters(lat)
 
-    private fun emptyPhotosResponse(zoomLevel: Double): MapPhotosResponse =
-        MapPhotosResponse(
-            clusters = if (zoomLevel < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) emptyList() else null,
-            photos = if (zoomLevel >= GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) emptyList() else null,
+    private fun emptyPhotosResponse(zoom: Double): MapPhotosReadModel =
+        MapPhotosReadModel(
+            clusters = if (zoom < GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) Clusters.empty() else null,
+            photos = if (zoom >= GridValues.CLUSTER_ZOOM_THRESHOLD.toDouble()) MapPhotos.empty() else null,
         )
+
+    private fun List<Album>.toAlbumThumbnailsReadModels(): AlbumThumbnails =
+        AlbumThumbnails.of(
+            map { album ->
+                val actualPhotoCount = if (album.isDefault) album.photos.size else album.photoCount
+                AlbumThumbnailsReadModel(
+                    id = album.id,
+                    title = album.title,
+                    photoCount = actualPhotoCount,
+                    thumbnailUrls = ThumbnailUrls.of(album.thumbnails.map { it.url }),
+                )
+            },
+        )
+
+    private fun Long?.isPositiveId(): Boolean = this != null && this > 0L
 }

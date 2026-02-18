@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.domain.couple.domain.InviteVerificationPolicy
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -31,14 +32,14 @@ class CoupleInviteRateLimiter {
         verificationFailures.compute(key) { _, current ->
             val state = current ?: FailureCounter(windowStart = now, count = 0, blockedUntil = null)
             val refreshed =
-                if (state.windowStart.plus(FAILURE_WINDOW_SECONDS, ChronoUnit.SECONDS).isBefore(now)) {
+                if (state.windowStart.plus(InviteVerificationPolicy.FAILURE_WINDOW_SECONDS, ChronoUnit.SECONDS).isBefore(now)) {
                     FailureCounter(windowStart = now, count = 1, blockedUntil = null)
                 } else {
                     state.copy(count = state.count + 1)
                 }
 
-            if (refreshed.count >= MAX_FAILURES) {
-                refreshed.copy(blockedUntil = now.plus(COOLDOWN_SECONDS, ChronoUnit.SECONDS))
+            if (refreshed.count >= InviteVerificationPolicy.MAX_FAILURES) {
+                refreshed.copy(blockedUntil = now.plus(InviteVerificationPolicy.COOLDOWN_SECONDS, ChronoUnit.SECONDS))
             } else {
                 refreshed
             }
@@ -63,9 +64,4 @@ class CoupleInviteRateLimiter {
         val blockedUntil: Instant?,
     )
 
-    companion object {
-        private const val FAILURE_WINDOW_SECONDS = 60L
-        private const val MAX_FAILURES = 5
-        private const val COOLDOWN_SECONDS = 60L
-    }
 }

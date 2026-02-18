@@ -19,8 +19,6 @@ class AuthenticationFilter(
 ) : OncePerRequestFilter() {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean = false
-
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -31,11 +29,11 @@ class AuthenticationFilter(
             val refreshToken = getTokenFromCookie(request, "refreshToken")
 
             log.debug(
-                "Auth filter: uri={}, accessToken={}, refreshToken={}, cookies={}",
+                "Auth filter: uri={}, hasAccessToken={}, hasRefreshToken={}, cookieNames={}",
                 request.requestURI,
-                if (accessToken != null) "present(${accessToken.take(20)}...)" else "null",
-                if (refreshToken != null) "present(${refreshToken.take(20)}...)" else "null",
-                request.cookies?.map { "${it.name}=${it.value.take(10)}..." }?.joinToString(", ") ?: "none",
+                accessToken != null,
+                refreshToken != null,
+                request.cookies?.map { it.name }?.joinToString(", ") ?: "none",
             )
 
             if (SecurityContextHolder.getContext().authentication != null) {

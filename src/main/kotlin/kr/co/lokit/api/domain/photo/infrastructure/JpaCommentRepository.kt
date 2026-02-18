@@ -6,8 +6,8 @@ import kr.co.lokit.api.domain.photo.domain.Comment
 import kr.co.lokit.api.domain.photo.domain.CommentWithEmoticons
 import kr.co.lokit.api.domain.photo.domain.EmoticonSummary
 import kr.co.lokit.api.domain.photo.domain.Photo
-import kr.co.lokit.api.domain.photo.mapping.toDomain
-import kr.co.lokit.api.domain.photo.mapping.toEntity
+import kr.co.lokit.api.domain.photo.infrastructure.mapping.toDomain
+import kr.co.lokit.api.domain.photo.infrastructure.mapping.toEntity
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import org.springframework.data.repository.findByIdOrNull

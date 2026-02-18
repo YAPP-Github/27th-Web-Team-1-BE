@@ -1,20 +1,15 @@
 package kr.co.lokit.api.domain.couple.application.port.`in`
 
-import kr.co.lokit.api.domain.couple.dto.CoupleLinkResponse
-import kr.co.lokit.api.domain.couple.dto.CoupleStatusResponse
-import kr.co.lokit.api.domain.couple.dto.InviteCodePreviewResponse
-import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
+import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodeIssueReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodePreviewReadModel
 
 interface CoupleInviteUseCase {
-    fun getMyStatus(userId: Long): CoupleStatusResponse
+    fun getMyStatus(userId: Long): CoupleStatusReadModel
 
-    fun generateInviteCode(
-        userId: Long,
-    ): InviteCodeResponse
+    fun generateInviteCode(userId: Long): InviteCodeIssueReadModel
 
-    fun refreshInviteCode(
-        userId: Long,
-    ): InviteCodeResponse
+    fun refreshInviteCode(userId: Long): InviteCodeIssueReadModel
 
     fun revokeInviteCode(
         userId: Long,
@@ -25,11 +20,11 @@ interface CoupleInviteUseCase {
         userId: Long,
         inviteCode: String,
         clientIp: String,
-    ): InviteCodePreviewResponse
+    ): InviteCodePreviewReadModel
 
     fun confirmInviteCode(
         userId: Long,
         inviteCode: String,
         clientIp: String,
-    ): CoupleLinkResponse
+    ): CoupleStatusReadModel
 }

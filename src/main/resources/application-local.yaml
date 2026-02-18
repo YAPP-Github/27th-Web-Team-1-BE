@@ -88,9 +88,3 @@ cors:
 redirect:
     local-host: ${LOCAL_HOST:}
     allowed-domain: ${ALLOWED_DOMAIN:}
-
-map:
-    cluster:
-        server-side-raw: true
-        boundary-merge:
-            strategy: pixel

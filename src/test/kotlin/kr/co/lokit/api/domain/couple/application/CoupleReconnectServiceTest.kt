@@ -3,7 +3,9 @@ package kr.co.lokit.api.domain.couple.application
 import kr.co.lokit.api.common.constant.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.fixture.createCouple
+import kr.co.lokit.api.fixture.createUser
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -21,6 +23,9 @@ import kotlin.test.assertEquals
 class CoupleReconnectServiceTest {
     @Mock
     lateinit var coupleRepository: CoupleRepositoryPort
+
+    @Mock
+    lateinit var userRepository: UserRepositoryPort
 
     @Mock
     lateinit var cacheManager: CacheManager
@@ -50,13 +55,13 @@ class CoupleReconnectServiceTest {
         `when`(coupleRepository.findByDisconnectedByUserId(1L)).thenReturn(disconnectedCouple)
         `when`(coupleRepository.findByUserId(1L)).thenReturn(null)
         `when`(coupleRepository.reconnect(1L, 1L)).thenReturn(reconnectedCouple)
+        `when`(userRepository.findById(2L)).thenReturn(createUser(id = 2L, name = "파트너"))
         `when`(cacheManager.getCache("userCouple")).thenReturn(cache)
 
         val result = coupleReconnectService.reconnect(1L)
 
-        assertEquals(1L, result.id)
-        assertEquals(CoupleStatus.CONNECTED, result.status)
-        assertEquals(listOf(1L, 2L), result.userIds)
+        assertEquals(true, result.isCoupled)
+        assertEquals(2L, result.partnerSummary?.userId)
         verify(coupleRepository).reconnect(1L, 1L)
         verify(cache).evict(1L)
         verify(cache).evict(2L)
@@ -87,11 +92,12 @@ class CoupleReconnectServiceTest {
         `when`(coupleRepository.findByUserId(1L)).thenReturn(existingSoloCouple)
         `when`(coupleRepository.findById(3L)).thenReturn(existingSoloCouple)
         `when`(coupleRepository.reconnect(1L, 1L)).thenReturn(reconnectedCouple)
+        `when`(userRepository.findById(2L)).thenReturn(createUser(id = 2L, name = "파트너"))
         `when`(cacheManager.getCache("userCouple")).thenReturn(cache)
 
         val result = coupleReconnectService.reconnect(1L)
 
-        assertEquals(1L, result.id)
+        assertEquals(true, result.isCoupled)
         verify(coupleRepository).deleteById(3L)
         verify(coupleRepository).reconnect(1L, 1L)
     }

@@ -62,9 +62,3 @@ data class InviteCodePreviewResponse(
     val nickname: String,
     val profileImageUrl: String?,
 )
-
-@Schema(description = "커플 연결 확정 응답")
-data class CoupleLinkResponse(
-    val coupleId: Long,
-    val partnerSummary: PartnerSummaryResponse,
-)

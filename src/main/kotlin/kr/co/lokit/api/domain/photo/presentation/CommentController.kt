@@ -12,7 +12,7 @@ import kr.co.lokit.api.domain.photo.dto.AddEmoticonRequest
 import kr.co.lokit.api.domain.photo.dto.CommentListResponse
 import kr.co.lokit.api.domain.photo.dto.CreateCommentRequest
 import kr.co.lokit.api.domain.photo.dto.RemoveEmoticonRequest
-import kr.co.lokit.api.domain.photo.mapping.toResponse
+import kr.co.lokit.api.domain.photo.presentation.mapping.toResponse
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping

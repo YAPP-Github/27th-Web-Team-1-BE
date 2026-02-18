@@ -28,12 +28,44 @@ data class Couple(
 
     fun hasRemainingMemberForReconnect(): Boolean = userIds.isNotEmpty()
 
+    fun partnerIdFor(userId: Long): Long? = userIds.firstOrNull { it != userId }
+
     fun deIdentifiedUserId(): Long? = disconnectedByUserId.takeIf { status.isDisconnectedOrExpired }
+
+    fun isConnectedAndFull(): Boolean = status == CoupleStatus.CONNECTED && isFull()
+
+    fun disconnectActionFor(userId: Long): CoupleDisconnectAction =
+        when {
+            !status.isDisconnectedOrExpired -> CoupleDisconnectAction.DISCONNECT_AND_REMOVE
+            disconnectedByUserId == userId -> CoupleDisconnectAction.ALREADY_DISCONNECTED_BY_REQUESTER
+            else -> CoupleDisconnectAction.REMOVE_MEMBER_ONLY
+        }
+
+    fun reconnectRejectionReason(now: LocalDateTime = LocalDateTime.now()): CoupleReconnectRejection? =
+        when {
+            status != CoupleStatus.DISCONNECTED -> CoupleReconnectRejection.NOT_DISCONNECTED
+            disconnectedAt == null -> CoupleReconnectRejection.NOT_DISCONNECTED
+            isReconnectWindowExpired(now) -> CoupleReconnectRejection.RECONNECT_WINDOW_EXPIRED
+            !hasRemainingMemberForReconnect() -> CoupleReconnectRejection.NO_REMAINING_MEMBER
+            else -> null
+        }
 
     companion object {
         const val DEFAULT_COUPLE_NAME = "default"
         const val MAX_MEMBERS = 2
     }
+}
+
+enum class CoupleDisconnectAction {
+    DISCONNECT_AND_REMOVE,
+    REMOVE_MEMBER_ONLY,
+    ALREADY_DISCONNECTED_BY_REQUESTER,
+}
+
+enum class CoupleReconnectRejection {
+    NOT_DISCONNECTED,
+    RECONNECT_WINDOW_EXPIRED,
+    NO_REMAINING_MEMBER,
 }
 
 enum class CoupleReconnectRejectReason(

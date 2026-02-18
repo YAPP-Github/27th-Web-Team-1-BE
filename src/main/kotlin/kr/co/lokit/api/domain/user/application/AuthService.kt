@@ -6,8 +6,8 @@ import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
+import kr.co.lokit.api.domain.user.domain.AuthTokens
 import kr.co.lokit.api.domain.user.domain.User
-import kr.co.lokit.api.domain.user.dto.JwtTokenResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -19,7 +19,7 @@ class AuthService(
     private val jwtTokenProvider: JwtTokenProvider,
 ) {
     @Transactional
-    fun refreshIfValid(refreshToken: String): JwtTokenResponse? {
+    fun refreshIfValid(refreshToken: String): AuthTokens? {
         val refreshTokenRecord = refreshTokenRepository.findByToken(refreshToken) ?: return null
 
         if (refreshTokenRecord.expiresAt.isBefore(LocalDateTime.now())) {
@@ -36,7 +36,7 @@ class AuthService(
         return generateTokensAndSave(user)
     }
 
-    private fun generateTokensAndSave(user: User): JwtTokenResponse {
+    private fun generateTokensAndSave(user: User): AuthTokens {
         val accessToken = jwtTokenProvider.generateAccessToken(user)
         val refreshToken = jwtTokenProvider.generateRefreshToken()
 
@@ -51,7 +51,7 @@ class AuthService(
             expiresAt = expiresAt,
         )
 
-        return JwtTokenResponse(
+        return AuthTokens(
             accessToken = accessToken,
             refreshToken = refreshToken,
         )

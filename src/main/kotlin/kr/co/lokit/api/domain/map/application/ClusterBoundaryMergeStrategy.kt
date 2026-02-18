@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.map.application
 
-import kr.co.lokit.api.domain.map.dto.ClusterResponse
+import kr.co.lokit.api.domain.map.domain.ClusterReadModel
 
 data class CellCoord(
     val x: Long,
@@ -15,14 +15,14 @@ data class GeoPoint(
 
 interface ClusterBoundaryMergeStrategy {
     fun mergeClusters(
-        clusters: List<ClusterResponse>,
+        clusters: List<ClusterReadModel>,
         zoom: Int,
-    ): List<ClusterResponse> = mergeClusters(clusters, zoom.toDouble())
+    ): List<ClusterReadModel> = mergeClusters(clusters, zoom.toDouble())
 
     fun mergeClusters(
-        clusters: List<ClusterResponse>,
-        zoomLevel: Double,
-    ): List<ClusterResponse>
+        clusters: List<ClusterReadModel>,
+        zoom: Double,
+    ): List<ClusterReadModel>
 
     fun resolveClusterCells(
         zoom: Int,

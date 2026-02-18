@@ -10,6 +10,8 @@ import org.springframework.core.DefaultParameterNameDiscoverer
 import org.springframework.core.ParameterNameDiscoverer
 import org.springframework.stereotype.Component
 import org.springframework.expression.spel.standard.SpelExpressionParser
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 
 @Aspect
 @Component
@@ -24,6 +26,10 @@ class RateLimitAspect(
         joinPoint: ProceedingJoinPoint,
         rateLimit: RateLimit,
     ): Any? {
+        if (shouldBypassRateLimit()) {
+            return joinPoint.proceed()
+        }
+
         val signature = joinPoint.signature as MethodSignature
         val evaluationContext =
             MethodBasedEvaluationContext(
@@ -45,5 +51,15 @@ class RateLimitAspect(
             maxRequests = rateLimit.maxRequests,
         )
         return joinPoint.proceed()
+    }
+
+    private fun shouldBypassRateLimit(): Boolean {
+        val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes ?: return false
+        val request = attributes.request
+        return RateLimitBypassPolicy.shouldBypass(
+            serverName = request.serverName,
+            requestUri = request.requestURI,
+            referer = request.getHeader("Referer"),
+        )
     }
 }

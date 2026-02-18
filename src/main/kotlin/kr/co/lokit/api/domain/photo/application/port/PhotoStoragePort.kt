@@ -1,12 +1,12 @@
 package kr.co.lokit.api.domain.photo.application.port
 
-import kr.co.lokit.api.domain.photo.dto.PresignedUrl
+import kr.co.lokit.api.domain.photo.domain.PresignedUpload
 
 interface PhotoStoragePort {
     fun generatePresignedUrl(
         key: String,
         contentType: String,
-    ): PresignedUrl
+    ): PresignedUpload
 
     fun verifyFileExists(objectUrl: String)
 

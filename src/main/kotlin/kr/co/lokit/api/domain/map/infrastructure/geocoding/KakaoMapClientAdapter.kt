@@ -1,8 +1,8 @@
 package kr.co.lokit.api.domain.map.infrastructure.geocoding
 
 import kr.co.lokit.api.domain.map.application.port.MapClientPort
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.PlaceResponse
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
+import kr.co.lokit.api.domain.map.domain.Places
 import org.springframework.stereotype.Component
 
 @Component
@@ -12,7 +12,7 @@ class KakaoMapClientAdapter(
     override fun reverseGeocode(
         longitude: Double,
         latitude: Double,
-    ): LocationInfoResponse = kakaoMapClient.reverseGeocode(longitude, latitude)
+    ): LocationInfoReadModel = kakaoMapClient.reverseGeocode(longitude, latitude)
 
-    override fun searchPlaces(query: String): List<PlaceResponse> = kakaoMapClient.searchPlaces(query)
+    override fun searchPlaces(query: String): Places = kakaoMapClient.searchPlaces(query)
 }

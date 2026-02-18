@@ -1,13 +1,14 @@
 package kr.co.lokit.api.domain.map.application.port
 
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.PlaceResponse
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
+import kr.co.lokit.api.domain.map.domain.PlaceReadModel
+import kr.co.lokit.api.domain.map.domain.Places
 
 interface MapClientPort {
     fun reverseGeocode(
         longitude: Double,
         latitude: Double,
-    ): LocationInfoResponse
+    ): LocationInfoReadModel
 
-    fun searchPlaces(query: String): List<PlaceResponse>
+    fun searchPlaces(query: String): Places
 }

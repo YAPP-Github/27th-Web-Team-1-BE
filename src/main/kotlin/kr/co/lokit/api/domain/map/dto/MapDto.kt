@@ -7,7 +7,6 @@ import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.NotNull
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.map.domain.BBox
-import kr.co.lokit.api.domain.map.mapping.toResponse
 import java.time.LocalDateTime
 
 @Schema(description = "클러스터 응답")
@@ -209,9 +208,9 @@ data class HomeResponse(
         data class AlbumThumbnails(
             @Schema(description = "앨범 ID", example = "1")
             val id: Long,
-            @Schema(description = "앨범 ID", example = "1")
+            @Schema(description = "앨범 제목", example = "여행 앨범")
             val title: String,
-            @Schema(description = "앨범 ID", example = "1")
+            @Schema(description = "앨범 사진 수", example = "42")
             val photoCount: Int,
             @Schema(description = "앨범 썸네일 사진들 (최대 4장)")
             val thumbnailUrls: List<String>,
@@ -225,7 +224,13 @@ data class HomeResponse(
             HomeResponse(
                 location = location,
                 albums = albums.toAlbumThumbnails(),
-                boundingBox = bBox.toResponse(),
+                boundingBox =
+                    BoundingBoxResponse(
+                        west = bBox.west,
+                        south = bBox.south,
+                        east = bBox.east,
+                        north = bBox.north,
+                    ),
             )
 
         fun List<Album>.toAlbumThumbnails(): List<AlbumThumbnails> =

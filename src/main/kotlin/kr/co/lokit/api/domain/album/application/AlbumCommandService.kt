@@ -58,17 +58,17 @@ class AlbumCommandService(
         val album =
             albumRepository.findById(id)
                 ?: throw entityNotFound<Album>(id)
-        if (album.isDefault) {
+        if (!album.canBeRenamed()) {
             throw BusinessException.DefaultAlbumTitleChangeNotAllowedException(
                 errors = errorDetailsOf(ErrorField.ALBUM_ID to id),
             )
         }
-        if (album.title != title && albumRepository.existsByCoupleIdAndTitle(album.coupleId, title)) {
+        if (!album.hasSameTitle(title) && albumRepository.existsByCoupleIdAndTitle(album.coupleId, title)) {
             throw BusinessException.AlbumAlreadyExistsException(
                 errors = errorDetailsOf(ErrorField.TITLE to title),
             )
         }
-        val updated = albumRepository.update(album.copy(title = title))
+        val updated = albumRepository.update(album.renamed(title))
         cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
         return updated
     }
@@ -88,7 +88,7 @@ class AlbumCommandService(
         val album =
             albumRepository.findById(id)
                 ?: throw entityNotFound<Album>(id)
-        if (album.isDefault) {
+        if (!album.canBeDeleted()) {
             throw BusinessException.DefaultAlbumDeletionNotAllowedException(
                 errors = errorDetailsOf(ErrorField.ALBUM_ID to id),
             )

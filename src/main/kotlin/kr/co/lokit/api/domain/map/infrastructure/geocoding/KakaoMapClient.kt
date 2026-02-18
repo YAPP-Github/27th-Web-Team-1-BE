@@ -5,8 +5,9 @@ import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.common.util.orZero
 import kr.co.lokit.api.domain.map.application.AddressFormatter
-import kr.co.lokit.api.domain.map.dto.LocationInfoResponse
-import kr.co.lokit.api.domain.map.dto.PlaceResponse
+import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
+import kr.co.lokit.api.domain.map.domain.PlaceReadModel
+import kr.co.lokit.api.domain.map.domain.Places
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.cache.annotation.Cacheable
@@ -50,7 +51,7 @@ class KakaoMapClient(
     override fun reverseGeocode(
         longitude: Double,
         latitude: Double,
-    ): LocationInfoResponse {
+    ): LocationInfoReadModel {
         val response =
             try {
                 restClient
@@ -106,7 +107,7 @@ class KakaoMapClient(
 
         val regionName = address?.region2depthName ?: roadAddress?.region2depthName
 
-        return LocationInfoResponse(
+        return LocationInfoReadModel(
             address = formattedAddress,
             roadName = roadAddress?.roadName,
             placeName = roadAddress?.buildingName?.takeIf { it.isNotBlank() },
@@ -120,7 +121,7 @@ class KakaoMapClient(
         backoff = Backoff(delay = 200, multiplier = 2.0, random = true),
     )
     @Cacheable(cacheNames = [CacheNames.SEARCH_PLACES], key = "#query", unless = "#result.isEmpty()")
-    override fun searchPlaces(query: String): List<PlaceResponse> {
+    override fun searchPlaces(query: String): Places {
         val response =
             try {
                 restClient
@@ -152,19 +153,21 @@ class KakaoMapClient(
                 )
             }
 
-        return response?.documents?.map { doc ->
-            PlaceResponse(
-                placeName = doc.placeName,
-                address = AddressFormatter.removeProvinceAndCity(doc.addressName),
-                roadAddress =
-                    doc.roadAddressName
-                        .takeIf { it.isNotBlank() }
-                        ?.let { AddressFormatter.removeProvinceAndCity(it) },
-                longitude = doc.x.toDoubleOrNull().orZero(),
-                latitude = doc.y.toDoubleOrNull().orZero(),
-                category = extractCategory(doc.categoryName),
-            )
-        }.orEmpty()
+        return Places.of(
+            response?.documents?.map { doc ->
+                PlaceReadModel(
+                    placeName = doc.placeName,
+                    address = AddressFormatter.removeProvinceAndCity(doc.addressName),
+                    roadAddress =
+                        doc.roadAddressName
+                            .takeIf { it.isNotBlank() }
+                            ?.let { AddressFormatter.removeProvinceAndCity(it) },
+                    longitude = doc.x.toDoubleOrNull().orZero(),
+                    latitude = doc.y.toDoubleOrNull().orZero(),
+                    category = extractCategory(doc.categoryName),
+                )
+            }.orEmpty(),
+        )
     }
 
     private fun extractCategory(categoryName: String): String? {
