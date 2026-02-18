@@ -130,7 +130,7 @@ class MapPhotosCacheService(
             coords = prefetchCoords,
         )
 
-        return MapPhotosReadModel(clusters = Clusters.of(clusterBoundaryMergeStrategy.mergeClusters(clusters, zoom)))
+        return MapPhotosReadModel(clusters = Clusters.of(clusterBoundaryMergeStrategy.mergeClusters(clusters, discreteZoom)))
     }
 
     private fun scheduleRawPrefetch(
