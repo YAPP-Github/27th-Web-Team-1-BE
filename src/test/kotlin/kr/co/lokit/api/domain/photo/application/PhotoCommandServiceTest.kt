@@ -142,6 +142,35 @@ class PhotoCommandServiceTest {
     }
 
     @Test
+    fun `사진 수정 시 albumId가 null이면 기본 앨범으로 이동한다`() {
+        val defaultAlbum = createAlbum(id = 9L, title = "전체보기", isDefault = true)
+        val originalPhoto =
+            createPhoto(id = 1L, albumId = 3L, coupleId = 1L, uploadedById = 1L, location = createLocation(127.0, 37.5))
+        val updatedPhoto =
+            createPhoto(id = 1L, albumId = 9L, coupleId = 1L, uploadedById = 1L, location = createLocation(127.0, 37.5))
+        `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(defaultAlbum)
+        `when`(photoRepository.update(anyObject())).thenReturn(updatedPhoto)
+
+        val result = photoCommandService.update(1L, null, "설명", null, null, 1L)
+
+        verify(albumRepository).findDefaultByUserId(1L)
+        assertEquals(9L, result.albumId)
+    }
+
+    @Test
+    fun `사진 수정에서 기본 앨범이 없으면 예외가 발생한다`() {
+        val originalPhoto =
+            createPhoto(id = 1L, albumId = 3L, coupleId = 1L, uploadedById = 1L, location = createLocation(127.0, 37.5))
+        `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(null)
+
+        assertThrows<BusinessException.DefaultAlbumNotFoundForUserException> {
+            photoCommandService.update(1L, null, "설명", null, null, 1L)
+        }
+    }
+
+    @Test
     fun `presigned URL을 생성할 수 있다`() {
         val expected =
             PresignedUpload(

@@ -27,12 +27,18 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
 
     @Query(
         """
-        select c from Couple c
-        join fetch c.coupleUsers cu
-        where cu.user.id = :userId
+        select distinct c from Couple c
+        left join fetch c.coupleUsers cu
+        left join fetch cu.user
+        where exists (
+            select 1
+            from CoupleUser cu2
+            where cu2.couple = c
+            and cu2.user.id = :userId
+        )
         """,
     )
-    fun findByUserId(userId: Long): CoupleEntity?
+    fun findByUserIdCandidates(userId: Long): List<CoupleEntity>
 
     @Query(
         """

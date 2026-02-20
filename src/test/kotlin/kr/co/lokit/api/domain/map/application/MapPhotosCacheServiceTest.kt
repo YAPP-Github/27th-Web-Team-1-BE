@@ -211,6 +211,47 @@ class MapPhotosCacheServiceTest {
     }
 
     @Test
+    fun `getClusteredPhotos preserves raw clusters when merge drops some counts`() {
+        val bbox = BBox(126.99, 37.49, 127.01, 37.51)
+        val now = LocalDateTime.now()
+        `when`(
+            mapQueryPort.findPhotosWithinBBox(
+                west = eq(bbox.west),
+                south = eq(bbox.south),
+                east = eq(bbox.east),
+                north = eq(bbox.north),
+                coupleId = eq(1L),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                PhotoProjection(id = 1L, url = "a.jpg", longitude = 127.0, latitude = 37.5, takenAt = now),
+                PhotoProjection(id = 2L, url = "b.jpg", longitude = 127.1, latitude = 37.6, takenAt = now.minusMinutes(1)),
+            ),
+        )
+
+        val droppingStrategy =
+            object : ClusterBoundaryMergeStrategy {
+                override fun mergeClusters(
+                    clusters: List<kr.co.lokit.api.domain.map.domain.ClusterReadModel>,
+                    zoom: Double,
+                ): List<kr.co.lokit.api.domain.map.domain.ClusterReadModel> = clusters.take(1)
+
+                override fun resolveClusterCells(
+                    zoom: Int,
+                    photosByCell: Map<CellCoord, List<GeoPoint>>,
+                    targetCell: CellCoord,
+                ): Set<CellCoord> = setOf(targetCell)
+            }
+        val customService = MapPhotosCacheService(mapQueryPort, cacheManager, droppingStrategy)
+
+        val result = customService.getClusteredPhotos(14.0, bbox, 1L, null)
+
+        assertNotNull(result.clusters)
+        assertEquals(2, result.clusters!!.asList().sumOf { it.count })
+    }
+
+    @Test
     fun `getClusteredPhotos triggers prefetch when viewport moves with same couple`() {
         val first = BBox(126.95, 37.45, 127.00, 37.50)
         val second = BBox(126.99, 37.45, 127.04, 37.50)

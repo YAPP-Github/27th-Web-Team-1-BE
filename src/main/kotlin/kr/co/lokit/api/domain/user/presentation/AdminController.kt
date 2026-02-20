@@ -72,7 +72,7 @@ class AdminController(
 
         refreshTokenRepository.deleteByUserId(userId)
 
-        val couple = coupleJpaRepository.findByUserId(userId)
+        val couple = coupleJpaRepository.findByUserIdCandidates(userId).maxByOrNull { it.updatedAt }
         if (couple != null) {
             val albumIds = albumJpaRepository.findAlbumIdsByCoupleId(couple.nonNullId())
             if (albumIds.isNotEmpty()) {

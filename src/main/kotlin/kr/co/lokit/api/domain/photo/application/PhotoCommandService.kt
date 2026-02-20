@@ -99,7 +99,16 @@ class PhotoCommandService(
         userId: Long,
     ): Photo {
         val photo = photoRepository.findById(id)
-        val updated = photo.update(albumId, description, longitude, latitude)
+        val effectiveAlbumId =
+            if (!albumId.isPositiveId()) {
+                albumRepository.findDefaultByUserId(userId)?.id
+                    ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
+                        errors = errorDetailsOf(ErrorField.UPLOADED_BY_ID to userId),
+                    )
+            } else {
+                albumId
+            }
+        val updated = photo.update(effectiveAlbumId, description, longitude, latitude)
         val result = photoRepository.update(updated)
 
         publishPhotoLocationUpdatedEventIfNeeded(updated, result.coupleId)

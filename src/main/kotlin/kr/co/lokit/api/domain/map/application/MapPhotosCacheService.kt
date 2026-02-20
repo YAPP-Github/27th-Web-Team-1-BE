@@ -132,7 +132,13 @@ class MapPhotosCacheService(
         )
 
         val merged = clusterBoundaryMergeStrategy.mergeClusters(clusters, zoom)
-        val responseClusters = merged.map { cluster -> cluster.copy(clusterId = ClusterId.withMergeZoom(cluster.clusterId, zoom)) }
+        val responseSource =
+            if (merged.sumOf { it.count } < clusters.size) {
+                clusters
+            } else {
+                merged
+            }
+        val responseClusters = responseSource.map { cluster -> cluster.copy(clusterId = ClusterId.withMergeZoom(cluster.clusterId, zoom)) }
         return MapPhotosReadModel(clusters = Clusters.of(responseClusters))
     }
 

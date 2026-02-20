@@ -2,8 +2,8 @@ package kr.co.lokit.api.domain.couple.infrastructure
 
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
-import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumJpaRepository
@@ -96,7 +96,16 @@ class JpaCoupleRepository(
 
     @Cacheable(cacheNames = [CacheNames.USER_COUPLE], key = "#userId", sync = true)
     @Transactional(readOnly = true)
-    override fun findByUserId(userId: Long): Couple? = coupleJpaRepository.findByUserId(userId)?.toDomain()
+    override fun findByUserId(userId: Long): Couple? =
+        coupleJpaRepository
+            .findByUserIdCandidates(userId)
+            .sortedWith(
+                compareBy<CoupleEntity> { it.status.selectionPriority }
+                    .thenByDescending { it.coupleUsers.size }
+                    .thenByDescending { it.updatedAt }
+                    .thenByDescending { it.createdAt },
+            ).firstOrNull()
+            ?.toDomain()
 
     @Transactional
     override fun deleteById(id: Long) {
