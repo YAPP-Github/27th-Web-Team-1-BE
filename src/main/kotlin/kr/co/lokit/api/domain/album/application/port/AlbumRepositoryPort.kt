@@ -29,7 +29,12 @@ interface AlbumRepositoryPort {
         userId: Long?,
     ): List<Album>
 
-    fun findDefaultByUserId(userId: Long): Album?
+    fun findDefaultByCoupleId(coupleId: Long): Album?
+
+    fun findNonDefaultByCreatedByIdAndCoupleIdNot(
+        userId: Long,
+        currentCoupleId: Long,
+    ): List<Album>
 
     fun existsByCoupleIdAndTitle(
         coupleId: Long,

@@ -138,6 +138,55 @@ class PixelBasedClusterBoundaryMergeStrategy : ClusterBoundaryMergeStrategy {
         return matched.map { cells[it] }.toSet()
     }
 
+    override fun resolveClusterPhotoIds(
+        zoom: Double,
+        photos: List<ClusterPhotoMember>,
+        targetClusterId: String,
+    ): Set<Long> {
+        if (photos.isEmpty()) {
+            return emptySet()
+        }
+
+        val parsedTarget = ClusterId.parseDetailed(targetClusterId)
+        val targetBaseId = ClusterId.format(parsedTarget.zoom, parsedTarget.cellX, parsedTarget.cellY)
+        val normalizedTargetId = if (parsedTarget.groupSequence == 1) targetBaseId else "${targetBaseId}_g${parsedTarget.groupSequence}"
+
+        val sortedPhotos =
+            photos.sortedWith(
+                compareBy<ClusterPhotoMember> { it.cell.y }
+                    .thenBy { it.cell.x }
+                    .thenBy { it.point.latitude }
+                    .thenBy { it.point.longitude }
+                    .thenBy { it.id },
+            )
+        val groups =
+            buildGroupsByCompleteLinkage(
+                zoom = zoom,
+                nodes = sortedPhotos,
+                lonLatExtractor = { photo -> photo.point.longitude to photo.point.latitude },
+            )
+
+        val seen = mutableMapOf<String, Int>()
+        groups.forEach { group ->
+            val members = group.map { sortedPhotos[it] }
+            val representative =
+                members.minWith(
+                    compareBy<ClusterPhotoMember> { it.cell.y }
+                        .thenBy { it.cell.x },
+                )
+            val baseId = ClusterId.format(floor(zoom).toInt(), representative.cell.x, representative.cell.y)
+            val seq = (seen[baseId] ?: 0) + 1
+            seen[baseId] = seq
+            val resolvedId = if (seq == 1) baseId else "${baseId}_g$seq"
+            if (resolvedId == normalizedTargetId) {
+                return members.map { it.id }.toSet()
+            }
+        }
+
+        val targetCell = CellCoord(parsedTarget.cellX, parsedTarget.cellY)
+        return photos.filter { it.cell == targetCell }.map { it.id }.toSet()
+    }
+
     private fun lonLatToWorldPx(
         lon: Double,
         lat: Double,

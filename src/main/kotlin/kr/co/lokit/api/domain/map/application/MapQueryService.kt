@@ -96,7 +96,8 @@ class MapQueryService(
         if (isMissingCoupleForAuthenticatedUser(context.userId, context.coupleId)) {
             return ClusterPhotos.empty()
         }
-        val gridCell = ClusterId.parse(clusterId)
+        val parsedClusterId = ClusterId.parseDetailed(clusterId)
+        val gridCell = kr.co.lokit.api.domain.map.domain.GridCell(parsedClusterId.zoom, parsedClusterId.cellX, parsedClusterId.cellY)
         val expandedBBox = expandedClusterSearchBBox(gridCell) ?: return ClusterPhotos.empty()
         val photos =
             mapQueryPort.findPhotosInGridCell(
@@ -111,32 +112,32 @@ class MapQueryService(
         }
 
         val gridSize = GridValues.getGridSize(gridCell.zoom)
-        val photosByCell =
-            photos.groupBy {
-                CellCoord(
-                    x = floor(lonToMeters(it.longitude) / gridSize).toLong(),
-                    y = floor(latToMeters(it.latitude) / gridSize).toLong(),
-                )
-            }
-
-        val mergedCells =
-            clusterBoundaryMergeStrategy.resolveClusterCells(
-                zoom = gridCell.zoom,
-                photosByCell = photosByCell.mapValues { (_, v) -> v.map { GeoPoint(it.longitude, it.latitude) } },
-                targetCell = CellCoord(gridCell.cellX, gridCell.cellY),
-            )
-        val target = CellCoord(gridCell.cellX, gridCell.cellY)
-        val memberCells = if (mergedCells.isEmpty()) setOf(target) else mergedCells
-        return ClusterPhotos.of(
-            photos
-            .filter {
+        val members =
+            photos.map { photo ->
                 val cell =
                     CellCoord(
-                        floor(lonToMeters(it.longitude) / gridSize).toLong(),
-                        floor(latToMeters(it.latitude) / gridSize).toLong(),
+                        x = floor(lonToMeters(photo.longitude) / gridSize).toLong(),
+                        y = floor(latToMeters(photo.latitude) / gridSize).toLong(),
                     )
-                cell in memberCells
-            }.toClusterPhotoReadModels(),
+                ClusterPhotoMember(
+                    id = photo.id,
+                    cell = cell,
+                    point = GeoPoint(photo.longitude, photo.latitude),
+                )
+            }
+        val memberPhotoIds =
+            clusterBoundaryMergeStrategy.resolveClusterPhotoIds(
+                zoom = parsedClusterId.mergeZoom ?: parsedClusterId.zoom.toDouble(),
+                photos = members,
+                targetClusterId = clusterId,
+            )
+        if (memberPhotoIds.isEmpty()) {
+            return ClusterPhotos.empty()
+        }
+        return ClusterPhotos.of(
+            photos
+                .filter { it.id in memberPhotoIds }
+                .toClusterPhotoReadModels(),
         )
     }
 

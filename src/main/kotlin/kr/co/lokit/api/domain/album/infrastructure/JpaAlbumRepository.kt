@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.album.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.common.util.orZero
 import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
@@ -10,7 +11,6 @@ import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
-import kr.co.lokit.api.common.util.orZero
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
@@ -76,7 +76,13 @@ class JpaAlbumRepository(
         userId: Long,
     ): Album {
         val couple =
-            coupleJpaRepository.findByUserId(userId)
+            coupleJpaRepository
+                .findByUserIdCandidates(userId)
+                .sortedWith(
+                    compareBy<kr.co.lokit.api.domain.couple.infrastructure.CoupleEntity> { it.status.selectionPriority }
+                        .thenByDescending { it.updatedAt }
+                        .thenByDescending { it.createdAt },
+                ).firstOrNull()
                 ?: throw entityNotFound<Couple>(userId)
         val userEntity =
             userJpaRepository.findByIdOrNull(userId)
@@ -175,8 +181,17 @@ class JpaAlbumRepository(
     }
 
     @Transactional(readOnly = true)
-    override fun findDefaultByUserId(userId: Long): Album? =
-        albumJpaRepository.findByUserIdAndIsDefaultTrue(userId)?.toDomain()
+    override fun findDefaultByCoupleId(coupleId: Long): Album? =
+        albumJpaRepository.findByCoupleIdAndIsDefaultTrue(coupleId)?.toDomain()
+
+    @Transactional(readOnly = true)
+    override fun findNonDefaultByCreatedByIdAndCoupleIdNot(
+        userId: Long,
+        currentCoupleId: Long,
+    ): List<Album> =
+        albumJpaRepository
+            .findNonDefaultByCreatedByIdAndCoupleIdNot(userId, currentCoupleId)
+            .map { it.toDomain() }
 
     @Transactional(readOnly = true)
     override fun existsByCoupleIdAndTitle(

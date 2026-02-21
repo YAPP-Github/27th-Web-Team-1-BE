@@ -1,7 +1,8 @@
 package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.exception.BusinessException
-import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.common.exception.ErrorField
+import kr.co.lokit.api.domain.album.application.CurrentCoupleAlbumResolver
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.map.domain.LocationInfoReadModel
@@ -11,7 +12,6 @@ import kr.co.lokit.api.domain.photo.domain.PhotoCreatedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoDeletedEvent
 import kr.co.lokit.api.domain.photo.domain.PhotoLocationUpdatedEvent
 import kr.co.lokit.api.domain.photo.domain.PresignedUpload
-import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createLocation
 import kr.co.lokit.api.fixture.createPhoto
 import kr.co.lokit.api.fixture.createUpdatePhotoRequest
@@ -41,7 +41,7 @@ class PhotoCommandServiceTest {
     lateinit var photoRepository: PhotoRepositoryPort
 
     @Mock
-    lateinit var albumRepository: AlbumRepositoryPort
+    lateinit var currentCoupleAlbumResolver: CurrentCoupleAlbumResolver
 
     @Mock
     lateinit var photoStoragePort: PhotoStoragePort
@@ -76,6 +76,7 @@ class PhotoCommandServiceTest {
                 location = createLocation(127.0, 37.5),
             )
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
+        doNothing().`when`(currentCoupleAlbumResolver).validateAlbumBelongsToCurrentCouple(1L, 1L, ErrorField.UPLOADED_BY_ID)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
             LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
@@ -113,6 +114,7 @@ class PhotoCommandServiceTest {
                 uploadedById = 1L,
             )
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        doNothing().`when`(currentCoupleAlbumResolver).validateAlbumBelongsToCurrentCouple(1L, 1L, ErrorField.UPLOADED_BY_ID)
         `when`(photoRepository.update(anyObject())).thenReturn(updatedPhoto)
 
         val result = photoCommandService.update(1L, 1L, request.description, request.longitude, request.latitude, 1L)
@@ -134,11 +136,42 @@ class PhotoCommandServiceTest {
                 uploadedById = 1L,
             )
         `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        doNothing().`when`(currentCoupleAlbumResolver).validateAlbumBelongsToCurrentCouple(1L, 1L, ErrorField.UPLOADED_BY_ID)
         `when`(photoRepository.update(anyObject())).thenReturn(updatedPhoto)
 
         photoCommandService.update(1L, 1L, request.description, request.longitude, request.latitude, 1L)
 
         verify(eventPublisher).publishEvent(anyObject<PhotoLocationUpdatedEvent>())
+    }
+
+    @Test
+    fun `사진 수정 시 albumId가 null이면 기본 앨범으로 이동한다`() {
+        val defaultAlbum = kr.co.lokit.api.fixture.createAlbum(id = 9L, title = "전체보기", isDefault = true)
+        val originalPhoto =
+            createPhoto(id = 1L, albumId = 3L, coupleId = 1L, uploadedById = 1L, location = createLocation(127.0, 37.5))
+        val updatedPhoto =
+            createPhoto(id = 1L, albumId = 9L, coupleId = 1L, uploadedById = 1L, location = createLocation(127.0, 37.5))
+        `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L, ErrorField.UPLOADED_BY_ID)).thenReturn(defaultAlbum)
+        `when`(photoRepository.update(anyObject())).thenReturn(updatedPhoto)
+
+        val result = photoCommandService.update(1L, null, "설명", null, null, 1L)
+
+        verify(currentCoupleAlbumResolver).requireDefaultAlbum(1L, ErrorField.UPLOADED_BY_ID)
+        assertEquals(9L, result.albumId)
+    }
+
+    @Test
+    fun `사진 수정에서 기본 앨범이 없으면 예외가 발생한다`() {
+        val originalPhoto =
+            createPhoto(id = 1L, albumId = 3L, coupleId = 1L, uploadedById = 1L, location = createLocation(127.0, 37.5))
+        `when`(photoRepository.findById(1L)).thenReturn(originalPhoto)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L, ErrorField.UPLOADED_BY_ID))
+            .thenThrow(BusinessException.DefaultAlbumNotFoundForUserException())
+
+        assertThrows<BusinessException.DefaultAlbumNotFoundForUserException> {
+            photoCommandService.update(1L, null, "설명", null, null, 1L)
+        }
     }
 
     @Test
@@ -174,10 +207,10 @@ class PhotoCommandServiceTest {
     @Test
     fun `albumId가 없으면 기본 앨범으로 사진이 생성된다`() {
         val photo = createPhoto(albumId = 0L, location = createLocation(127.0, 37.5))
-        val defaultAlbum = createAlbum(id = 5L, title = "default", isDefault = true)
+        val defaultAlbum = kr.co.lokit.api.fixture.createAlbum(id = 5L, title = "default", isDefault = true)
         val savedPhoto = createPhoto(id = 1L, albumId = 5L, coupleId = 1L, location = createLocation(127.0, 37.5))
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
-        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(defaultAlbum)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L, ErrorField.UPLOADED_BY_ID)).thenReturn(defaultAlbum)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
             LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )
@@ -192,7 +225,8 @@ class PhotoCommandServiceTest {
     fun `기본 앨범이 없으면 DefaultAlbumNotFoundForUserException이 발생한다`() {
         val photo = createPhoto(albumId = 0L, location = createLocation(127.0, 37.5))
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
-        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(null)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L, ErrorField.UPLOADED_BY_ID))
+            .thenThrow(BusinessException.DefaultAlbumNotFoundForUserException())
 
         val exception =
             assertThrows<ExecutionException> {
@@ -207,6 +241,7 @@ class PhotoCommandServiceTest {
         val savedPhoto = createPhoto(id = 1L, albumId = 1L, coupleId = 1L, location = createLocation(127.0, 37.5))
         val mockCache = mock(Cache::class.java)
         doNothing().`when`(photoStoragePort).verifyFileExists(photo.url)
+        doNothing().`when`(currentCoupleAlbumResolver).validateAlbumBelongsToCurrentCouple(1L, 1L, ErrorField.UPLOADED_BY_ID)
         `when`(mapQueryService.getLocationInfo(anyDouble(), anyDouble())).thenReturn(
             LocationInfoReadModel(address = "서울 강남구", placeName = null, regionName = "강남구"),
         )

@@ -59,6 +59,8 @@ class SecurityConfig(
                     .requestMatchers(
                         "/auth/kakao",
                         "/auth/kakao/callback",
+                        "/emails",
+                        "/emails/**",
                     ).permitAll()
                     .requestMatchers(
                         "/swagger/**",

@@ -160,6 +160,7 @@ class CoupleInviteService(
         inviteCode: String,
         clientIp: String,
     ): CoupleStatusReadModel {
+        findCurrentCoupledStatus(userId)?.let { return it }
         rateLimiter.checkVerificationAllowed(userId, clientIp)
         if (!InviteCodePolicy.isValidFormat(inviteCode)) {
             rateLimiter.recordVerificationFailure(userId, clientIp)
@@ -215,6 +216,14 @@ class CoupleInviteService(
         if (isCoupled(userId)) {
             throw BusinessException.InviteAlreadyCoupledException()
         }
+    }
+
+    private fun findCurrentCoupledStatus(userId: Long): CoupleStatusReadModel? {
+        val couple = coupleRepository.findByUserId(userId) ?: return null
+        if (!couple.isConnectedAndFull()) return null
+        val partnerId = couple.partnerIdFor(userId) ?: return null
+        val partner = userRepository.findById(partnerId) ?: throw BusinessException.UserNotFoundException()
+        return couple.toCoupledStatusReadModel(partner)
     }
 
     private fun validateIssuerReady(userId: Long) {

@@ -5,6 +5,9 @@ import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.map.application.port.MapQueryPort
 import kr.co.lokit.api.domain.map.application.port.PhotoProjection
 import kr.co.lokit.api.domain.map.domain.BBox
+import kr.co.lokit.api.domain.map.domain.ClusterId
+import kr.co.lokit.api.domain.map.domain.GridValues
+import kr.co.lokit.api.domain.map.domain.MercatorProjection
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -21,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.cache.CacheManager
 import org.springframework.cache.caffeine.CaffeineCache
 import java.time.LocalDateTime
+import kotlin.math.floor
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -162,6 +166,89 @@ class MapPhotosCacheServiceTest {
             coupleId = eq(1L),
             albumId = eq(2L),
         )
+    }
+
+    @Test
+    fun `getClusteredPhotos uses floored zoom grid for cluster id`() {
+        val bbox = BBox(126.99, 37.49, 127.01, 37.51)
+        val zoom = 14.7
+        val longitude = 127.0
+        val latitude = 37.5
+        val now = LocalDateTime.now()
+        `when`(
+            mapQueryPort.findPhotosWithinBBox(
+                west = eq(bbox.west),
+                south = eq(bbox.south),
+                east = eq(bbox.east),
+                north = eq(bbox.north),
+                coupleId = eq(1L),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                PhotoProjection(
+                    id = 1L,
+                    url = "a.jpg",
+                    longitude = longitude,
+                    latitude = latitude,
+                    takenAt = now,
+                ),
+            ),
+        )
+
+        val result = service.getClusteredPhotos(zoom, bbox, 1L, null)
+        val clusterId = result.clusters!!.asList().single().clusterId
+        val parsedClusterId = ClusterId.parseDetailed(clusterId)
+
+        val discreteZoom = floor(zoom).toInt()
+        val gridSize = GridValues.getGridSize(discreteZoom)
+        val expectedX = floor(MercatorProjection.longitudeToMeters(longitude) / gridSize).toLong()
+        val expectedY = floor(MercatorProjection.latitudeToMeters(latitude) / gridSize).toLong()
+        assertEquals(discreteZoom, parsedClusterId.zoom)
+        assertEquals(expectedX, parsedClusterId.cellX)
+        assertEquals(expectedY, parsedClusterId.cellY)
+        assertEquals(zoom, parsedClusterId.mergeZoom)
+    }
+
+    @Test
+    fun `getClusteredPhotos preserves raw clusters when merge drops some counts`() {
+        val bbox = BBox(126.99, 37.49, 127.01, 37.51)
+        val now = LocalDateTime.now()
+        `when`(
+            mapQueryPort.findPhotosWithinBBox(
+                west = eq(bbox.west),
+                south = eq(bbox.south),
+                east = eq(bbox.east),
+                north = eq(bbox.north),
+                coupleId = eq(1L),
+                albumId = isNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                PhotoProjection(id = 1L, url = "a.jpg", longitude = 127.0, latitude = 37.5, takenAt = now),
+                PhotoProjection(id = 2L, url = "b.jpg", longitude = 127.1, latitude = 37.6, takenAt = now.minusMinutes(1)),
+            ),
+        )
+
+        val droppingStrategy =
+            object : ClusterBoundaryMergeStrategy {
+                override fun mergeClusters(
+                    clusters: List<kr.co.lokit.api.domain.map.domain.ClusterReadModel>,
+                    zoom: Double,
+                ): List<kr.co.lokit.api.domain.map.domain.ClusterReadModel> = clusters.take(1)
+
+                override fun resolveClusterCells(
+                    zoom: Int,
+                    photosByCell: Map<CellCoord, List<GeoPoint>>,
+                    targetCell: CellCoord,
+                ): Set<CellCoord> = setOf(targetCell)
+            }
+        val customService = MapPhotosCacheService(mapQueryPort, cacheManager, droppingStrategy)
+
+        val result = customService.getClusteredPhotos(14.0, bbox, 1L, null)
+
+        assertNotNull(result.clusters)
+        assertEquals(2, result.clusters!!.asList().sumOf { it.count })
     }
 
     @Test

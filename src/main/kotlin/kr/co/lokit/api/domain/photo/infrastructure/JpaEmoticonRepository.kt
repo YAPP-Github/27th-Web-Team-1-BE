@@ -49,4 +49,20 @@ class JpaEmoticonRepository(
         userId: Long,
         emoji: String,
     ): Boolean = emoticonJpaRepository.existsByCommentIdAndUserIdAndEmoji(commentId, userId, emoji)
+
+    override fun findIdsByUserIdAndCoupleIds(
+        userId: Long,
+        coupleIds: Set<Long>,
+    ): Set<Long> {
+        if (coupleIds.isEmpty()) return emptySet()
+        return emoticonJpaRepository.findIdsByUserIdAndCoupleIds(userId, coupleIds).toSet()
+    }
+
+    override fun findIdsByUserIdAndPhotoIds(
+        userId: Long,
+        photoIds: Set<Long>,
+    ): Set<Long> {
+        if (photoIds.isEmpty()) return emptySet()
+        return emoticonJpaRepository.findIdsByUserIdAndPhotoIds(userId, photoIds).toSet()
+    }
 }

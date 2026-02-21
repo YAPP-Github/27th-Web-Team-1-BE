@@ -26,6 +26,9 @@ class AlbumServiceTest {
     lateinit var coupleRepository: CoupleRepositoryPort
 
     @Mock
+    lateinit var currentCoupleAlbumResolver: CurrentCoupleAlbumResolver
+
+    @Mock
     lateinit var mapPhotosCacheService: MapPhotosCacheService
 
     @Mock
@@ -41,7 +44,8 @@ class AlbumServiceTest {
     fun `앨범을 생성할 수 있다`() {
         val album = createAlbum(title = "여행")
         val savedAlbum = createAlbum(id = 1L, title = "여행")
-        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(createAlbum(coupleId = 1L, isDefault = true))
+        `when`(currentCoupleAlbumResolver.requireCurrentCoupleId(1L)).thenReturn(1L)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L)).thenReturn(createAlbum(coupleId = 1L, isDefault = true))
         `when`(albumRepository.existsByCoupleIdAndTitle(1L, "여행")).thenReturn(false)
         `when`(albumRepository.save(album, 1L)).thenReturn(savedAlbum)
 
@@ -54,7 +58,8 @@ class AlbumServiceTest {
     @Test
     fun `동일한 이름의 앨범이 있으면 생성할 수 없다`() {
         val album = createAlbum(title = "여행")
-        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(createAlbum(coupleId = 1L, isDefault = true))
+        `when`(currentCoupleAlbumResolver.requireCurrentCoupleId(1L)).thenReturn(1L)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L)).thenReturn(createAlbum(coupleId = 1L, isDefault = true))
         `when`(albumRepository.existsByCoupleIdAndTitle(1L, "여행")).thenReturn(true)
 
         assertThrows<BusinessException.AlbumAlreadyExistsException> {
@@ -136,7 +141,8 @@ class AlbumServiceTest {
     @Test
     fun `기본 앨범이 없으면 앨범을 생성할 수 없다`() {
         val album = createAlbum(title = "여행")
-        `when`(albumRepository.findDefaultByUserId(1L)).thenReturn(null)
+        `when`(currentCoupleAlbumResolver.requireCurrentCoupleId(1L)).thenReturn(1L)
+        `when`(currentCoupleAlbumResolver.requireDefaultAlbum(1L)).thenThrow(BusinessException.DefaultAlbumNotFoundForUserException())
 
         assertThrows<BusinessException.DefaultAlbumNotFoundForUserException> {
             albumCommandService.create(album, 1L)

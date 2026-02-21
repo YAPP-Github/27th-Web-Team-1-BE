@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import kr.co.lokit.api.domain.user.dto.AdminActionResponse
+import kr.co.lokit.api.domain.user.dto.AdminCoupleMigrationResponse
 import kr.co.lokit.api.domain.user.dto.AdminPartnerResponse
 import kr.co.lokit.api.domain.user.dto.AdminUserSummaryResponse
 
@@ -61,4 +62,19 @@ interface AdminApi {
     fun createCouplePartner(
         @Parameter(hidden = true) userId: Long,
     ): AdminPartnerResponse
+
+    @Operation(
+        summary = "현재 사용자 기준 이전 커플 데이터 이관",
+        description = "관리자 키와 사용자 JWT를 이용해 사용자의 과거 커플 데이터(본인 소유 리소스)를 현재 커플로 이관합니다.",
+        responses = [
+            ApiResponse(responseCode = "200", description = "이관 성공"),
+            ApiResponse(responseCode = "403", description = "관리자 키 불일치"),
+            ApiResponse(responseCode = "404", description = "사용자/커플/기본앨범 미존재"),
+        ],
+    )
+    @SecurityRequirement(name = "Authorization")
+    fun migratePreviousCoupleData(
+        @Parameter(hidden = true) userId: Long,
+        key: String,
+    ): AdminCoupleMigrationResponse
 }

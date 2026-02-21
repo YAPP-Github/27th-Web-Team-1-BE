@@ -2,13 +2,11 @@ package kr.co.lokit.api.domain.photo.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
-import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
-import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.config.cache.CacheRegion
 import kr.co.lokit.api.config.cache.evictKey
-import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.domain.album.application.CurrentCoupleAlbumResolver
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
@@ -32,7 +30,7 @@ import java.util.*
 @Service
 class PhotoCommandService(
     private val photoRepository: PhotoRepositoryPort,
-    private val albumRepository: AlbumRepositoryPort,
+    private val currentCoupleAlbumResolver: CurrentCoupleAlbumResolver,
     private val photoStoragePort: PhotoStoragePort?,
     private val mapQueryService: SearchLocationUseCase,
     private val eventPublisher: ApplicationEventPublisher,
@@ -66,11 +64,16 @@ class PhotoCommandService(
                     scope.fork { mapQueryService.getLocationInfo(photo.location.longitude, photo.location.latitude) },
                     scope.fork {
                         if (!photo.albumId.isPositiveId()) {
-                            albumRepository.findDefaultByUserId(photo.uploadedById)
-                                ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
-                                    errors = errorDetailsOf(ErrorField.UPLOADED_BY_ID to photo.uploadedById),
-                                )
+                            currentCoupleAlbumResolver.requireDefaultAlbum(
+                                userId = photo.uploadedById,
+                                errorField = ErrorField.UPLOADED_BY_ID,
+                            )
                         } else {
+                            currentCoupleAlbumResolver.validateAlbumBelongsToCurrentCouple(
+                                userId = photo.uploadedById,
+                                albumId = photo.albumId!!,
+                                errorField = ErrorField.UPLOADED_BY_ID,
+                            )
                             null
                         }
                     },
@@ -99,7 +102,21 @@ class PhotoCommandService(
         userId: Long,
     ): Photo {
         val photo = photoRepository.findById(id)
-        val updated = photo.update(albumId, description, longitude, latitude)
+        val effectiveAlbumId =
+            if (!albumId.isPositiveId()) {
+                currentCoupleAlbumResolver.requireDefaultAlbum(
+                    userId = userId,
+                    errorField = ErrorField.UPLOADED_BY_ID,
+                ).id
+            } else {
+                currentCoupleAlbumResolver.validateAlbumBelongsToCurrentCouple(
+                    userId = userId,
+                    albumId = albumId!!,
+                    errorField = ErrorField.UPLOADED_BY_ID,
+                )
+                albumId
+            }
+        val updated = photo.update(effectiveAlbumId, description, longitude, latitude)
         val result = photoRepository.update(updated)
 
         publishPhotoLocationUpdatedEventIfNeeded(updated, result.coupleId)

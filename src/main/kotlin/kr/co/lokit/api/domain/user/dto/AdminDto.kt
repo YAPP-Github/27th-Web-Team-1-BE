@@ -23,3 +23,21 @@ data class AdminPartnerResponse(
     val partnerEmail: String,
     val tokens: AuthTokens,
 )
+
+@Schema(description = "이전 커플 데이터 이관 응답")
+data class AdminCoupleMigrationResponse(
+    @Schema(description = "이전 커플 수", example = "2")
+    val previousCoupleCount: Int,
+    @Schema(description = "생성된 일반 앨범 수", example = "3")
+    val createdAlbumCount: Int,
+    @Schema(description = "이동된 사진 수", example = "20")
+    val movedPhotoCount: Int,
+    @Schema(description = "이동된 댓글 수", example = "8")
+    val movedCommentCount: Int,
+    @Schema(description = "건너뛴 댓글 수", example = "2")
+    val skippedCommentCount: Int,
+    @Schema(description = "이동된 이모티콘 수", example = "12")
+    val movedEmoticonCount: Int,
+    @Schema(description = "건너뛴 이모티콘 수", example = "1")
+    val skippedEmoticonCount: Int,
+)

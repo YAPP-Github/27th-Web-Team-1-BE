@@ -68,4 +68,20 @@ class JpaCommentRepository(
             )
         }
     }
+
+    override fun findIdsByUserIdAndCoupleIds(
+        userId: Long,
+        coupleIds: Set<Long>,
+    ): Set<Long> {
+        if (coupleIds.isEmpty()) return emptySet()
+        return commentJpaRepository.findIdsByUserIdAndCoupleIds(userId, coupleIds).toSet()
+    }
+
+    override fun findIdsByUserIdAndPhotoIds(
+        userId: Long,
+        photoIds: Set<Long>,
+    ): Set<Long> {
+        if (photoIds.isEmpty()) return emptySet()
+        return commentJpaRepository.findIdsByUserIdAndPhotoIds(userId, photoIds).toSet()
+    }
 }

@@ -21,4 +21,14 @@ interface EmoticonRepositoryPort {
         userId: Long,
         emoji: String,
     ): Boolean
+
+    fun findIdsByUserIdAndCoupleIds(
+        userId: Long,
+        coupleIds: Set<Long>,
+    ): Set<Long>
+
+    fun findIdsByUserIdAndPhotoIds(
+        userId: Long,
+        photoIds: Set<Long>,
+    ): Set<Long>
 }

@@ -90,7 +90,7 @@ interface MapApi {
             클러스터 ID를 기반으로 해당 그리드 셀 영역 내의 모든 사진을 조회합니다.
 
             - clusterId는 GET /map/photos 응답에서 반환된 값을 사용
-            - clusterId 형식: z{zoom}_{cellX}_{cellY} (예: z14_130234_38456)
+            - clusterId 형식: z{zoom}_{cellX}_{cellY}[_g{n}][_mz{zoom*1000}] (예: z14_130234_38456_mz14700)
             - 사진은 생성일시 기준 내림차순 정렬
             - 페이지네이션 지원 (page, size 파라미터)
         """,
@@ -122,8 +122,8 @@ interface MapApi {
     fun getClusterPhotos(
         @Parameter(hidden = true) userId: Long,
         @Parameter(
-            description = "클러스터 ID (z{zoom}_{cellX}_{cellY} 형식)",
-            example = "z14_130234_38456",
+            description = "클러스터 ID (z{zoom}_{cellX}_{cellY}[_g{n}][_mz{zoom*1000}] 형식)",
+            example = "z14_130234_38456_mz14700",
             required = true,
         )
         @PathVariable clusterId: String,

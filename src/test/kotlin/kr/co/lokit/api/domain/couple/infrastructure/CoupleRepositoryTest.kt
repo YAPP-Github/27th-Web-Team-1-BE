@@ -5,6 +5,7 @@ import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.fixture.createUserEntity
 import kr.co.lokit.api.fixture.createCouple
+import kr.co.lokit.api.common.constant.CoupleStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -65,5 +66,23 @@ class CoupleRepositoryTest {
         assertThrows<BusinessException.CoupleMaxMembersExceededException> {
             coupleRepository.addUser(saved.id, user3.nonNullId())
         }
+    }
+
+    @Test
+    fun `동일 유저가 여러 커플에 존재해도 CONNECTED 커플을 우선 반환한다`() {
+        val connected = coupleRepository.saveWithUser(createCouple(name = "active"), user.nonNullId())
+        val partner = userJpaRepository.save(createUserEntity(email = "partner@test.com", name = "파트너"))
+        coupleRepository.addUser(connected.id, partner.nonNullId())
+
+        coupleRepository.saveWithUser(
+            createCouple(name = "old", status = CoupleStatus.DISCONNECTED),
+            user.nonNullId(),
+        )
+
+        val found = coupleRepository.findByUserId(user.nonNullId())
+
+        assertNotNull(found)
+        assertEquals(connected.id, found.id)
+        assertEquals(CoupleStatus.CONNECTED, found.status)
     }
 }

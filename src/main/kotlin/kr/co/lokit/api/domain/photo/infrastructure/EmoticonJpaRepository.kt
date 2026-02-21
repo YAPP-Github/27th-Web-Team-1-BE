@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.photo.infrastructure
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 
 interface EmoticonJpaRepository : JpaRepository<EmoticonEntity, Long> {
     fun findAllByCommentIn(comments: List<CommentEntity>): List<EmoticonEntity>
@@ -21,4 +22,43 @@ interface EmoticonJpaRepository : JpaRepository<EmoticonEntity, Long> {
         userId: Long,
         emoji: String,
     ): Boolean
+
+    @Query(
+        """
+        select e.id
+        from Emoticon e
+        where e.user.id = :userId
+            and e.comment.photo.album.couple.id in :coupleIds
+        """,
+    )
+    fun findIdsByUserIdAndCoupleIds(
+        userId: Long,
+        coupleIds: Set<Long>,
+    ): List<Long>
+
+    @Query(
+        """
+        select e.id
+        from Emoticon e
+        where e.user.id = :userId
+            and e.comment.id in :commentIds
+        """,
+    )
+    fun findIdsByUserIdAndCommentIds(
+        userId: Long,
+        commentIds: Set<Long>,
+    ): List<Long>
+
+    @Query(
+        """
+        select e.id
+        from Emoticon e
+        where e.user.id = :userId
+            and e.comment.photo.id in :photoIds
+        """,
+    )
+    fun findIdsByUserIdAndPhotoIds(
+        userId: Long,
+        photoIds: Set<Long>,
+    ): List<Long>
 }

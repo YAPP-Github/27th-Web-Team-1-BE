@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AlbumCommandService(
     private val albumRepository: AlbumRepositoryPort,
+    private val currentCoupleAlbumResolver: CurrentCoupleAlbumResolver,
     private val mapPhotosCacheService: MapPhotosCacheService,
     private val cacheManager: CacheManager,
 ) : CreateAlbumUseCase,
@@ -32,19 +33,16 @@ class AlbumCommandService(
         album: Album,
         userId: Long,
     ): Album {
-        val coupleId =
-            albumRepository.findDefaultByUserId(userId)?.coupleId
-                ?: throw BusinessException.DefaultAlbumNotFoundForUserException(
-                    errors = errorDetailsOf(ErrorField.USER_ID to userId),
-                )
+        val currentCoupleId = currentCoupleAlbumResolver.requireCurrentCoupleId(userId)
+        currentCoupleAlbumResolver.requireDefaultAlbum(userId)
 
-        if (albumRepository.existsByCoupleIdAndTitle(coupleId, album.title)) {
+        if (albumRepository.existsByCoupleIdAndTitle(currentCoupleId, album.title)) {
             throw BusinessException.AlbumAlreadyExistsException(
                 errors = errorDetailsOf(ErrorField.TITLE to album.title),
             )
         }
         val saved = albumRepository.save(album, userId)
-        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, coupleId)
+        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, currentCoupleId)
         return saved
     }
 

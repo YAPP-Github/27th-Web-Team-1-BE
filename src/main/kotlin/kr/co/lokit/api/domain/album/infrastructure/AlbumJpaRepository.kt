@@ -52,17 +52,21 @@ interface AlbumJpaRepository : JpaRepository<AlbumEntity, Long> {
     )
     fun findByIdWithPhotos(id: Long): List<AlbumEntity>
 
+    fun findByCoupleIdAndIsDefaultTrue(coupleId: Long): AlbumEntity?
+
     @Query(
         """
-            select a
-            from Album a
-            join a.couple c
-            join c.coupleUsers cu
-            where cu.user.id = :userId
-                and a.isDefault = true
+        select a
+        from Album a
+        where a.createdBy.id = :userId
+            and a.couple.id <> :currentCoupleId
+            and a.isDefault = false
         """,
     )
-    fun findByUserIdAndIsDefaultTrue(userId: Long): AlbumEntity?
+    fun findNonDefaultByCreatedByIdAndCoupleIdNot(
+        userId: Long,
+        currentCoupleId: Long,
+    ): List<AlbumEntity>
 
     fun existsByCoupleIdAndTitle(
         coupleId: Long,

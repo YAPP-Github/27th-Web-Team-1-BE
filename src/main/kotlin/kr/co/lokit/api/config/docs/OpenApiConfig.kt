@@ -39,6 +39,7 @@ class OpenApiConfig(
                     Tag().name("Photo").description("사진 API"),
                     Tag().name("Comment").description("댓글/이모지 API"),
                     Tag().name("Map").description("지도 API"),
+                    Tag().name("NotificationEmail").description("알림 이메일 수집 API"),
                     Tag().name("Admin").description("개발/운영 지원 API"),
                 ),
             ).components(

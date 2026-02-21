@@ -159,15 +159,12 @@ class MapServiceTest {
             ),
         ).thenReturn(photos)
         `when`(
-            clusterBoundaryMergeStrategy.resolveClusterCells(
+            clusterBoundaryMergeStrategy.resolveClusterPhotoIds(
                 any(),
                 any(),
                 any(),
             ),
-        ).thenAnswer { invocation ->
-            val photosByCell: Map<CellCoord, List<GeoPoint>> = invocation.getArgument(1)
-            photosByCell.keys
-        }
+        ).thenReturn(setOf(1L))
 
         val result = mapService.getClusterPhotos("z14_24661_7867", 1L)
 
