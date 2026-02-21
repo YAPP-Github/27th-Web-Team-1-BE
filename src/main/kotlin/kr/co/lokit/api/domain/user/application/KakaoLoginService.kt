@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.concurrency.LockManager
-import kr.co.lokit.api.common.constant.AccountStatus
+import kr.co.lokit.api.common.constants.AccountStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
@@ -16,6 +16,7 @@ import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.domain.user.domain.AccountRecoveryPolicy
 import kr.co.lokit.api.domain.user.domain.AuthTokens
+import kr.co.lokit.api.domain.user.domain.LoginResult
 import kr.co.lokit.api.domain.user.domain.User
 import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Service
@@ -33,7 +34,7 @@ class KakaoLoginService(
     private val cacheManager: CacheManager,
 ) : LoginService {
     @Transactional
-    override fun login(code: String): AuthTokens {
+    override fun login(code: String): LoginResult {
         val provider = OAuthProvider.KAKAO
         val client = oAuthClientRegistry.getClient(provider)
         val accessToken = client.getAccessToken(code)
@@ -51,7 +52,7 @@ class KakaoLoginService(
                 val loadedUser = userRepository.findByEmail(email)
                 val recovered = reactivateIfNeeded(loadedUser)
                 createCoupleUseCase.createIfNone(Couple(name = Couple.DEFAULT_COUPLE_NAME), loadedUser.id)
-                LoginResult(user = loadedUser.recoveredIf(recovered), recovered = recovered)
+                LoginLoadResult(user = loadedUser.recoveredIf(recovered), recovered = recovered)
             })
 
         if (loginResult.recovered) {
@@ -59,7 +60,10 @@ class KakaoLoginService(
             cacheManager.evictKey(CacheRegion.USER_COUPLE, loginResult.user.id)
         }
 
-        return generateTokens(loginResult.user)
+        return LoginResult(
+            userId = loginResult.user.id,
+            tokens = generateTokens(loginResult.user),
+        )
     }
 
     private fun reactivateIfNeeded(user: User): Boolean {
@@ -98,7 +102,7 @@ class KakaoLoginService(
         )
     }
 
-    private data class LoginResult(
+    private data class LoginLoadResult(
         val user: User,
         val recovered: Boolean,
     )

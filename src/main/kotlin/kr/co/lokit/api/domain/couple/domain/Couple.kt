@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.couple.domain
 
-import kr.co.lokit.api.common.constant.CoupleStatus
-import kr.co.lokit.api.common.constant.GracePeriodPolicy
+import kr.co.lokit.api.common.constants.CoupleStatus
+import kr.co.lokit.api.common.constants.GracePeriodPolicy
 import java.time.LocalDateTime
 
 data class Couple(

@@ -1,6 +1,6 @@
 package kr.co.lokit.api.common.permission
 
-import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.constants.UserRole
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.CommentRepositoryPort

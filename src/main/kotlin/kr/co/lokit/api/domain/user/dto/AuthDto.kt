@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "로그인 요청")
 data class LoginRequest(
-    @Schema(description = "사용자 이메일", example = "user@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "사용자 이메일", example = "user@exa***.com", requiredMode = Schema.RequiredMode.REQUIRED)
     val email: String,
 )
 

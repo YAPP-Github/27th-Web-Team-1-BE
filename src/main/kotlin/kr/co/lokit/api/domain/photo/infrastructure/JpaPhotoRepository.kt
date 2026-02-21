@@ -91,4 +91,7 @@ class JpaPhotoRepository(
         photoEntity.apply(photo = photo, album = albumEntity, uploadedBy = userEntity)
         return photoEntity.toDomain()
     }
+
+    @Transactional(readOnly = true)
+    override fun countByCoupleId(coupleId: Long): Long = photoJpaRepository.countByCoupleId(coupleId)
 }

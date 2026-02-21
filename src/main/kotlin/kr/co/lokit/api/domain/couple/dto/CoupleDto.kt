@@ -38,8 +38,9 @@ data class InviteCodeResponse(
 
 @Schema(description = "커플 상태 조회 응답")
 data class CoupleStatusResponse(
-    @field:JsonProperty("isCoupled")
-    val isCoupled: Boolean,
+    @get:JsonProperty("isCoupled")
+    @field:Schema(name = "isCoupled", description = "커플 연결 여부", example = "true")
+    val coupled: Boolean,
     val partnerSummary: PartnerSummaryResponse? = null,
 )
 

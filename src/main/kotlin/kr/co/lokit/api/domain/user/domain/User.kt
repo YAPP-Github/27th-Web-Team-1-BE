@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.user.domain
 
-import kr.co.lokit.api.common.constant.AccountStatus
-import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.constants.AccountStatus
+import kr.co.lokit.api.common.constants.UserRole
 import java.time.LocalDateTime
 
 data class User(

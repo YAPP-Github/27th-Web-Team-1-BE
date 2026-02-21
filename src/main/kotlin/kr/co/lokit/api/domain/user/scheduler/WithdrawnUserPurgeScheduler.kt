@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.user.scheduler
 
-import kr.co.lokit.api.common.constant.AccountStatus
-import kr.co.lokit.api.common.constant.GracePeriodPolicy
+import kr.co.lokit.api.common.constants.AccountStatus
+import kr.co.lokit.api.common.constants.GracePeriodPolicy
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

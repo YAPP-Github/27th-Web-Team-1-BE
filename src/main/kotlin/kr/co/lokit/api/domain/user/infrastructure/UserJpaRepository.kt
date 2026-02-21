@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.user.infrastructure
 
-import kr.co.lokit.api.common.constant.AccountStatus
+import kr.co.lokit.api.common.constants.AccountStatus
 import jakarta.persistence.LockModeType
 import jakarta.persistence.QueryHint
 import kr.co.lokit.api.common.concurrency.LockPolicy

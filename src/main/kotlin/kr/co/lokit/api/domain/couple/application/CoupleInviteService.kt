@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.annotation.RateLimit
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf

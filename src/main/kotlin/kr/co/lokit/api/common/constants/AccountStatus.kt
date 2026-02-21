@@ -1,4 +1,4 @@
-package kr.co.lokit.api.common.constant
+package kr.co.lokit.api.common.constants
 
 enum class AccountStatus {
     ACTIVE,

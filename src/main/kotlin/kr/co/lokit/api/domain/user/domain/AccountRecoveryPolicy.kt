@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.user.domain
 
-import kr.co.lokit.api.common.constant.AccountStatus
-import kr.co.lokit.api.common.constant.GracePeriodPolicy
+import kr.co.lokit.api.common.constants.AccountStatus
+import kr.co.lokit.api.common.constants.GracePeriodPolicy
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf

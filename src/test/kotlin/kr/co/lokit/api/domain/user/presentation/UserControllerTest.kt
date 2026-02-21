@@ -12,6 +12,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
@@ -59,7 +60,7 @@ class UserControllerTest {
                     .with(authentication(userAuth()))
                     .with(csrf()),
             ).andExpect(status().isNoContent)
-            .andExpect(header().exists("Set-Cookie"))
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
     }
 
     @Test

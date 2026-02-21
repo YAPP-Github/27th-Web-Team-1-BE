@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.user.domain
 
-import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.constants.UserRole
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

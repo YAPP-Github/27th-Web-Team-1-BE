@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.user.application
 
-import kr.co.lokit.api.common.constant.AccountStatus
+import kr.co.lokit.api.common.constants.AccountStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -107,8 +107,9 @@ class KakaoLoginServiceTest {
         val result = kakaoLoginService.login("auth-code")
 
         assertNotNull(result)
-        assertEquals("access-token", result.accessToken)
-        assertEquals("refresh-token", result.refreshToken)
+        assertEquals(1L, result.userId)
+        assertEquals("access-token", result.tokens.accessToken)
+        assertEquals("refresh-token", result.tokens.refreshToken)
     }
 
     @Test

@@ -5,7 +5,7 @@ import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.fixture.createUserEntity
 import kr.co.lokit.api.fixture.createCouple
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

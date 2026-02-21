@@ -22,3 +22,19 @@ data class UpdateProfileImageRequest(
     )
     val profileImageUrl: String,
 )
+
+@Schema(description = "마이페이지 조회 응답")
+data class MyPageResponse(
+    @Schema(description = "내 닉네임", example = "홍로킷")
+    val myName: String,
+    @Schema(description = "내 프로필 이미지 URL", example = "https://example.com/me.jpg")
+    val myProfileImageUrl: String?,
+    @Schema(description = "상대방 닉네임", example = "수로킷")
+    val partnerName: String?,
+    @Schema(description = "상대방 프로필 이미지 URL", example = "https://example.com/partner.jpg")
+    val partnerProfileImageUrl: String?,
+    @Schema(description = "로킷을 커플 연결한 이후 지금까지의 사용한 날짜 (미연결 시 null)", example = "100")
+    val coupledDay: Long?,
+    @Schema(description = "커플 내 전체 사진 수", example = "128")
+    val couplePhotoCount: Long,
+)

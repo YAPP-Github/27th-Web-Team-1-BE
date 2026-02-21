@@ -4,8 +4,8 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import kr.co.lokit.api.common.constant.AccountStatus
-import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.constants.AccountStatus
+import kr.co.lokit.api.common.constants.UserRole
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.user.domain.User
 import org.hibernate.annotations.NaturalId
