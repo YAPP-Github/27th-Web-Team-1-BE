@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.photo.presentation.mapping
 
+import kr.co.lokit.api.common.permission.EditabilityPolicy
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.photo.domain.Location
 import kr.co.lokit.api.domain.photo.domain.Photo
@@ -17,9 +18,9 @@ fun CreatePhotoRequest.toDomain(userId: Long): Photo =
         uploadedById = userId,
         url = url,
         takenAt = takenAt,
-    )
+)
 
-fun Photo.toResponse(): PhotoResponse =
+fun Photo.toResponse(viewerUserId: Long): PhotoResponse =
     PhotoResponse(
         id = id,
         url = url,
@@ -30,9 +31,10 @@ fun Photo.toResponse(): PhotoResponse =
             ),
         description = description,
         takenAt = takenAt,
+        isEditable = EditabilityPolicy.canEditOwnedResource(viewerUserId = viewerUserId, createdByUserId = uploadedById),
     )
 
-fun Album.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse {
+fun Album.toAlbumWithPhotosResponse(viewerUserId: Long): AlbumWithPhotosResponse {
     val actualPhotoCount =
         if (isDefault) {
             photos.size
@@ -45,11 +47,17 @@ fun Album.toAlbumWithPhotosResponse(): AlbumWithPhotosResponse {
         title = title,
         photoCount = actualPhotoCount,
         thumbnailUrl = thumbnail?.url,
-        photos = photos.sortedByDescending { it.takenAt }.map { it.toResponse() },
+        isEditable =
+            EditabilityPolicy.canEditAlbum(
+                viewerUserId = viewerUserId,
+                createdByUserId = createdById,
+                isDefault = isDefault,
+            ),
+        photos = photos.sortedByDescending { it.takenAt }.map { it.toResponse(viewerUserId) },
     )
 }
 
-fun List<Album>.toPhotoListResponse(): PhotoListResponse =
+fun List<Album>.toPhotoListResponse(viewerUserId: Long): PhotoListResponse =
     PhotoListResponse(
-        albums = map { it.toAlbumWithPhotosResponse() },
+        albums = map { it.toAlbumWithPhotosResponse(viewerUserId) },
     )

@@ -1,5 +1,6 @@
 package kr.co.lokit.api.common.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import kotlin.math.ceil
 
 data class PageResult<T>(
@@ -9,6 +10,7 @@ data class PageResult<T>(
     val totalElements: Long,
 ) {
     val totalPages: Int = if (totalElements == 0L) 0 else ceil(totalElements.toDouble() / size).toInt()
+    @get:JsonProperty("isLast")
     val isLast: Boolean = page >= totalPages - 1
 
     fun <R> map(transform: (T) -> R): PageResult<R> =

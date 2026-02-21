@@ -39,6 +39,6 @@ data class KakaoUserInfoResponse(
 
 data class KakaoAccount(
     val email: String?,
-    @JsonProperty("is_email_verified")
+    @field:JsonProperty("is_email_verified")
     val isEmailVerified: Boolean?,
 )

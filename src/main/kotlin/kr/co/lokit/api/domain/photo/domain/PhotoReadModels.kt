@@ -12,6 +12,7 @@ data class PhotoDetailReadModel(
     val url: String,
     val takenAt: LocalDateTime?,
     val albumName: String,
+    val uploadedById: Long,
     val uploaderName: String,
     val uploaderProfileImageUrl: String?,
     val address: String?,

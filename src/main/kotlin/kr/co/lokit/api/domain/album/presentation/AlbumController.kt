@@ -42,7 +42,7 @@ class AlbumController(
     @GetMapping("selectable")
     override fun getSelectableAlbums(
         @CurrentUserId userId: Long,
-    ): SelectableAlbumResponse = getAlbumUseCase.getSelectableAlbums(userId).toSelectableResponse()
+    ): SelectableAlbumResponse = getAlbumUseCase.getSelectableAlbums(userId).toSelectableResponse(userId)
 
     @PatchMapping("{id}")
     @PreAuthorize("@permissionService.canModifyAlbum(#userId, #id)")

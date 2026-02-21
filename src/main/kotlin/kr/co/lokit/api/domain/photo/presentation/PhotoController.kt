@@ -42,7 +42,7 @@ class PhotoController(
     override fun getPhotos(
         @CurrentUserId userId: Long,
         @PathVariable albumId: Long,
-    ): PhotoListResponse = getPhotoDetailUseCase.getPhotosByAlbum(albumId, userId).toPhotoListResponse()
+    ): PhotoListResponse = getPhotoDetailUseCase.getPhotosByAlbum(albumId, userId).toPhotoListResponse(userId)
 
     @PostMapping("presigned-url")
     override fun getPresignedUrl(
@@ -65,7 +65,7 @@ class PhotoController(
     override fun getPhotoDetail(
         @CurrentUserId userId: Long,
         @PathVariable id: Long,
-    ): PhotoDetailResponse = getPhotoDetailUseCase.getPhotoDetail(id, userId).toResponse()
+    ): PhotoDetailResponse = getPhotoDetailUseCase.getPhotoDetail(id, userId).toResponse(userId)
 
     @PutMapping("{id}")
     @PreAuthorize("@permissionService.canModifyPhoto(#userId, #id)")
