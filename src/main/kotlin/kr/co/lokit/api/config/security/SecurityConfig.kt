@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -27,6 +28,7 @@ class SecurityConfig(
     private val corsProperties: CorsProperties,
     private val loginAuthenticationEntryPoint: LoginAuthenticationEntryPoint,
     private val loginAccessDeniedHandler: LoginAccessDeniedHandler,
+    private val environment: Environment,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(SecurityConfig::class.java)
 
@@ -51,6 +53,14 @@ class SecurityConfig(
                     }.frameOptions { it.deny() }
                     .xssProtection { it.disable() }
             }.authorizeHttpRequests { auth ->
+                val swaggerPaths =
+                    arrayOf(
+                        "/swagger/**",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/docs/**",
+                    )
+
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
@@ -62,12 +72,14 @@ class SecurityConfig(
                         "/emails",
                         "/emails/**",
                     ).permitAll()
-                    .requestMatchers(
-                        "/swagger/**",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/docs/**",
-                    ).permitAll()
+
+                if (environment.matchesProfiles("prod")) {
+                    auth.requestMatchers(*swaggerPaths).denyAll()
+                } else {
+                    auth.requestMatchers(*swaggerPaths).permitAll()
+                }
+
+                auth
                     .anyRequest()
                     .authenticated()
             }.exceptionHandling { exceptions ->

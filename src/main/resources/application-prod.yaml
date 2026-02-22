@@ -1,0 +1,114 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+        username: ${POSTGRES_USER}
+        password: ${POSTGRES_PASSWORD}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            leak-detection-threshold: 5000
+            maximum-pool-size: 12
+            minimum-idle: 3
+            initialization-fail-timeout: 60000
+            connection-timeout: 5000
+            validation-timeout: 3000
+    jpa:
+        hibernate:
+            ddl-auto: none
+        properties:
+            hibernate:
+                format_sql: false
+                show_sql: false
+                use_sql_comments: false
+                jdbc:
+                    batch_size: 50
+                default_batch_fetch_size: 100
+                order_inserts: true
+                order_updates: true
+            jdbc:
+                time_zone: Asia/Seoul
+        open-in-view: false
+        defer-datasource-initialization: false
+    sql:
+        init:
+            mode: never
+    task:
+        execution:
+            pool:
+                core-size: 8
+                max-size: 50
+
+server:
+    tomcat:
+        threads:
+            max: 100
+            min-spare: 10
+        max-connections: 1000
+        accept-count: 200
+        connection-timeout: 10s
+        keep-alive-timeout: 10s
+
+logging:
+    request:
+        verbose: false
+    level:
+        root: INFO
+        kr.co.lokit.api: INFO
+        kr.co.lokit.api.config.security: INFO
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "health,info"
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: never
+    health:
+        db:
+            enabled: true
+
+jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+
+springdoc:
+    api-docs:
+        enabled: false
+    swagger-ui:
+        enabled: false
+
+aws:
+    s3:
+        enabled: true
+        region: ${AWS_REGION}
+        bucket: ${AWS_S3_BUCKET}
+        public-base-url: ${AWS_S3_PUBLIC_BASE_URL:}
+
+kakao:
+    api:
+        key: ${KAKAO_API_KEY}
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: ${KAKAO_REDIRECT_URI}
+    front-redirect-uri: ${KAKAO_FRONT_REDIRECT_URI}
+
+cookie:
+    secure: true
+    domain: ${COOKIE_DOMAIN:}
+
+discord:
+    webhook:
+        url: ${DISCORD_WEBHOOK_URL:}
+    lifecycle:
+        enabled: true
+
+admin.key: ${ADMIN_KEY:}
+
+cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+redirect:
+    local-host: ${LOCAL_HOST:}
+    allowed-domain: ${ALLOWED_DOMAIN:}

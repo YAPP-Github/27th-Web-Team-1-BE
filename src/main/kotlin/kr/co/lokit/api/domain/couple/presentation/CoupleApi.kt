@@ -63,17 +63,6 @@ interface CoupleApi {
     ): InviteCodePreviewResponse
 
     @Operation(
-        summary = "초대코드 확정(초대자)",
-        description = "초대코드를 공유한 사용자가 코드 상태를 확정/확인합니다.",
-    )
-    fun confirmInviteCode(
-        request: JoinCoupleRequest,
-        @Parameter(hidden = true) userId: Long,
-        @Parameter(hidden = true) httpRequest: HttpServletRequest,
-        @Parameter(hidden = true) res: HttpServletResponse,
-    ): CoupleStatusResponse
-
-    @Operation(
         summary = "초대 코드로 커플 합류(입력자)",
         description = "초대 코드를 입력한 사용자가 커플에 합류합니다.",
         responses = [

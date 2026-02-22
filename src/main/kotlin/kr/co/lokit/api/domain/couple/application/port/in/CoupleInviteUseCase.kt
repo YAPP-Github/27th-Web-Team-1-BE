@@ -22,12 +22,6 @@ interface CoupleInviteUseCase {
         clientIp: String,
     ): InviteCodePreviewReadModel
 
-    fun confirmInviteCode(
-        userId: Long,
-        inviteCode: String,
-        clientIp: String,
-    ): CoupleStatusReadModel
-
     fun joinByInviteCode(
         userId: Long,
         inviteCode: String,

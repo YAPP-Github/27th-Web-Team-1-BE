@@ -159,35 +159,6 @@ class CoupleInviteService(
     }
 
     @Transactional
-    override fun confirmInviteCode(
-        userId: Long,
-        inviteCode: String,
-        clientIp: String,
-    ): CoupleStatusReadModel {
-        findCurrentCoupledStatus(userId)?.let { return it }
-        if (!InviteCodePolicy.isValidFormat(inviteCode)) {
-            rateLimiter.recordVerificationFailure(userId, clientIp)
-            throw BusinessException.InviteInvalidFormatException()
-        }
-
-        val invite =
-            inviteCodeRepository.findByCodeForUpdate(inviteCode)
-                ?: run {
-                    rateLimiter.recordVerificationFailure(userId, clientIp)
-                    throw BusinessException.InviteCodeNotFoundException()
-                }
-
-        if (!invite.isOwnedBy(userId)) {
-            rateLimiter.recordVerificationFailure(userId, clientIp)
-            throw BusinessException.InviteNotOwnerException()
-        }
-
-        validateInviteState(invite, userId, clientIp)
-        rateLimiter.clearVerificationFailures(userId, clientIp)
-        return uncoupledStatusReadModel()
-    }
-
-    @Transactional
     override fun joinByInviteCode(
         userId: Long,
         inviteCode: String,

@@ -78,23 +78,6 @@ class CoupleController(
                 clientIp = httpRequest.remoteAddr,
             ).toResponse()
 
-    @PostMapping("invites/confirm")
-    override fun confirmInviteCode(
-        @RequestBody @Valid request: JoinCoupleRequest,
-        @CurrentUserId userId: Long,
-        httpRequest: HttpServletRequest,
-        res: HttpServletResponse,
-    ): CoupleStatusResponse =
-        coupleInviteUseCase
-            .confirmInviteCode(
-                userId = userId,
-                inviteCode = request.inviteCode,
-                clientIp = httpRequest.remoteAddr,
-            ).toResponse()
-            .also {
-                setCoupleStatusCookie(userId, httpRequest, res)
-            }
-
     @PostMapping("join")
     override fun joinByInviteCode(
         @RequestBody @Valid request: JoinCoupleRequest,
