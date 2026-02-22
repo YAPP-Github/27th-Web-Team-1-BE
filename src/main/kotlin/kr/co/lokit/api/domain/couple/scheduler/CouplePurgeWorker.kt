@@ -26,13 +26,13 @@ class CouplePurgeWorker(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun purgeCoupleSafely(coupleId: Long) {
         runCatching { purgeCouple(coupleId) }
             .onFailure { e -> log.error("커플 파기 실패: coupleId={}", coupleId, e) }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun purgeCouple(coupleId: Long) {
+    private fun purgeCouple(coupleId: Long) {
         val albumIds = albumJpaRepository.findAlbumIdsByCoupleId(coupleId)
         val photoUrls = photoJpaRepository.findUrlsByCoupleId(coupleId)
 
