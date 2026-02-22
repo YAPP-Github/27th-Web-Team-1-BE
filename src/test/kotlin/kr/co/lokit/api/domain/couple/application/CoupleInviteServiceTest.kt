@@ -58,14 +58,14 @@ class CoupleInviteServiceTest {
     }
 
     @Test
-    fun `이미 커플인 사용자의 confirm은 현재 상태를 그대로 반환한다`() {
+    fun `이미 커플인 사용자의 join은 현재 상태를 그대로 반환한다`() {
         val userId = 10L
         val partnerId = 20L
         val coupled = createCouple(id = 1L, userIds = listOf(userId, partnerId))
         `when`(coupleRepository.findByUserId(userId)).thenReturn(coupled)
         `when`(userRepository.findById(partnerId)).thenReturn(createUser(id = partnerId, name = "partner"))
 
-        val result = coupleInviteService.confirmInviteCode(userId, "ABC123", "127.0.0.1")
+        val result = coupleInviteService.joinByInviteCode(userId, "ABC123", "127.0.0.1")
 
         assertTrue(result.isCoupled)
         assertEquals(partnerId, result.partnerSummary?.userId)
