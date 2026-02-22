@@ -49,6 +49,7 @@ class PhotoQueryService(
             url = photoDetail.url,
             takenAt = photoDetail.takenAt,
             albumName = photoDetail.albumName,
+            uploadedById = photoDetail.uploadedById,
             uploaderName = uploaderName,
             uploaderProfileImageUrl = uploaderProfileImageUrl,
             address = AddressFormatter.removeProvinceAndCity(locationInfo.address),

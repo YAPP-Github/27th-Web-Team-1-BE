@@ -10,7 +10,7 @@ import kr.co.lokit.api.domain.couple.dto.PartnerSummaryResponse
 
 fun CoupleStatusReadModel.toResponse(): CoupleStatusResponse =
     CoupleStatusResponse(
-        isCoupled = isCoupled,
+        coupled = isCoupled,
         partnerSummary = partnerSummary?.toResponse(),
     )
 

@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.album.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -34,5 +35,8 @@ data class SelectableAlbumResponse(
         val photoCount: Int,
         @Schema(description = "앨범 썸네일 URL", example = "https://example.com/thumbnail.jpg")
         val thumbnailUrl: String?,
+        @Schema(description = "조회자가 해당 앨범을 수정/삭제할 수 있는지 여부", example = "true")
+        @field:JsonProperty("isEditable")
+        val isEditable: Boolean,
     )
 }

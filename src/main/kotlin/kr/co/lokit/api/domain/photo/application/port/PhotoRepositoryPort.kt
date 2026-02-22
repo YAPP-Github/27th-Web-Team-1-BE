@@ -17,4 +17,6 @@ interface PhotoRepositoryPort {
     fun update(photo: Photo): Photo
 
     fun saveAll(photos: List<Photo>): List<Photo>
+
+    fun countByCoupleId(coupleId: Long): Long
 }

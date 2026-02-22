@@ -15,11 +15,16 @@ interface InviteCodeRepositoryPort {
         now: LocalDateTime,
     ): List<InviteCode>
 
+    fun findExpiredUnusedByUserIdForUpdate(
+        userId: Long,
+        now: LocalDateTime,
+    ): List<InviteCode>
+
     fun createUnused(
         code: String,
         createdByUserId: Long,
         expiresAt: LocalDateTime,
     ): InviteCode
 
-    fun hardDeleteById(id: Long)
+    fun deleteById(id: Long)
 }

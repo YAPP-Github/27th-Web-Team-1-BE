@@ -89,6 +89,7 @@ aws:
         enabled: true
         region: ${AWS_REGION}
         bucket: ${AWS_S3_BUCKET}
+        public-base-url: ${AWS_S3_PUBLIC_BASE_URL:}
 
 kakao:
     api:

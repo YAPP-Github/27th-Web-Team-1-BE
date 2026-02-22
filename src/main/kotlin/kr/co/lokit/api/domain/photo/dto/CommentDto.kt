@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.photo.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -35,6 +36,9 @@ data class EmoticonSummaryResponse(
     val count: Int,
     @Schema(description = "현재 사용자가 반응했는지 여부", example = "true")
     val reacted: Boolean,
+    @Schema(description = "조회자가 해당 이모티콘 반응을 제거할 수 있는지 여부", example = "true")
+    @field:JsonProperty("isEditable")
+    val isEditable: Boolean,
 )
 
 @Schema(description = "댓글 정보")
@@ -53,6 +57,9 @@ data class CommentResponse(
     val commentedAt: LocalDate,
     @Schema(description = "이모지 목록")
     val emoticons: List<EmoticonSummaryResponse>,
+    @Schema(description = "조회자가 해당 댓글을 수정/삭제할 수 있는지 여부", example = "true")
+    @field:JsonProperty("isEditable")
+    val isEditable: Boolean,
 )
 
 @Schema(description = "댓글 목록 응답")

@@ -6,6 +6,7 @@ import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
 import kr.co.lokit.api.domain.user.application.AuthService
+import kr.co.lokit.api.domain.user.application.port.`in`.GetMyPageUseCase
 import kr.co.lokit.api.domain.user.application.port.`in`.UpdateMyPageUseCase
 import kr.co.lokit.api.domain.user.dto.UpdateNicknameRequest
 import kr.co.lokit.api.domain.user.dto.UpdateProfileImageRequest
@@ -52,6 +53,9 @@ class MyPageControllerTest {
 
     @MockitoBean
     lateinit var updateMyPageUseCase: UpdateMyPageUseCase
+
+    @MockitoBean
+    lateinit var getMyPageUseCase: GetMyPageUseCase
 
     @Test
     fun `닉네임 수정 성공`() {

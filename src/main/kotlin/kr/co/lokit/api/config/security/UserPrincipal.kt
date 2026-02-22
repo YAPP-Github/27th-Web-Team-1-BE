@@ -1,7 +1,7 @@
 package kr.co.lokit.api.config.security
 
-import kr.co.lokit.api.common.constant.AccountStatus
-import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.constants.AccountStatus
+import kr.co.lokit.api.common.constants.UserRole
 import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority

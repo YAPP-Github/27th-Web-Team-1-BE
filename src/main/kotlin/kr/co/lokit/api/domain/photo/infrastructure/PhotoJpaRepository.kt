@@ -19,4 +19,7 @@ interface PhotoJpaRepository : JpaRepository<PhotoEntity, Long> {
 
     @Query("SELECT p.url FROM Photo p WHERE p.album.couple.id = :coupleId")
     fun findUrlsByCoupleId(coupleId: Long): List<String>
+
+    @Query("SELECT COUNT(p) FROM Photo p WHERE p.album.couple.id = :coupleId")
+    fun countByCoupleId(coupleId: Long): Long
 }

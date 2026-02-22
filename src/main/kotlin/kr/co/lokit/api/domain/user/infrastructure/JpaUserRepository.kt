@@ -24,15 +24,26 @@ class JpaUserRepository(
 
     @Transactional
     override fun findByEmail(email: String): User {
-        val userEntity =
-            userJpaRepository.findByEmail(email)
-                ?: userJpaRepository.save(
-                    User(
-                        email = email,
-                        name = User.defaultNicknameFor(email),
-                    ).toEntity(),
-                )
-        return userEntity.toDomain()
+        val existing = userJpaRepository.findByEmail(email)
+        if (existing != null) {
+            return existing.toDomain()
+        }
+
+        val restoredCount = userJpaRepository.restoreDeletedByEmail(email)
+        if (restoredCount > 0) {
+            val restored =
+                userJpaRepository.findByEmail(email)
+                    ?: throw IllegalStateException("Restored user not found for email: $email")
+            return restored.toDomain()
+        }
+
+        return userJpaRepository
+            .save(
+                User(
+                    email = email,
+                    name = User.defaultNicknameFor(email),
+                ).toEntity(),
+            ).toDomain()
     }
 
     @Transactional

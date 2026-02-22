@@ -6,6 +6,8 @@ import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
+import kr.co.lokit.api.common.constants.CoupleCookieStatus
+import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.DisconnectCoupleUseCase
@@ -24,6 +26,7 @@ import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseCookie
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -55,6 +58,9 @@ class CoupleControllerTest {
 
     @MockitoBean
     lateinit var cookieGenerator: CookieGenerator
+
+    @MockitoBean
+    lateinit var coupleCookieStatusResolver: CoupleCookieStatusResolver
 
     @MockitoBean
     lateinit var createCoupleUseCase: CreateCoupleUseCase
@@ -99,7 +105,11 @@ class CoupleControllerTest {
                 isCoupled = true,
                 partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
-        doReturn(linked).`when`(coupleInviteUseCase).confirmInviteCode(anyLong(), anyString(), anyString())
+        doReturn(CoupleCookieStatus.COUPLED).`when`(coupleCookieStatusResolver).resolve(anyLong())
+        doReturn(ResponseCookie.from("coupleStatus", "COUPLED").build())
+            .`when`(cookieGenerator)
+            .createCoupleStatusCookie(anyObject(), anyObject())
+        doReturn(linked).`when`(coupleInviteUseCase).joinByInviteCode(anyLong(), anyString(), anyString())
 
         mockMvc
             .perform(
@@ -115,7 +125,7 @@ class CoupleControllerTest {
     fun `초대 코드로 커플 합류 실패 - 잘못된 초대 코드`() {
         doThrow(BusinessException.InviteCodeNotFoundException())
             .`when`(coupleInviteUseCase)
-            .confirmInviteCode(anyLong(), anyString(), anyString())
+            .joinByInviteCode(anyLong(), anyString(), anyString())
 
         mockMvc
             .perform(
@@ -146,6 +156,10 @@ class CoupleControllerTest {
                 isCoupled = true,
                 partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
+        doReturn(CoupleCookieStatus.COUPLED).`when`(coupleCookieStatusResolver).resolve(anyLong())
+        doReturn(ResponseCookie.from("coupleStatus", "COUPLED").build())
+            .`when`(cookieGenerator)
+            .createCoupleStatusCookie(anyObject(), anyObject())
         doReturn(coupled).`when`(reconnectCoupleUseCase).reconnect(anyLong())
 
         mockMvc

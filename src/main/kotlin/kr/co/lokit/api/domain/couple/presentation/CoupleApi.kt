@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import kr.co.lokit.api.domain.couple.dto.CoupleStatusResponse
 import kr.co.lokit.api.domain.couple.dto.InviteCodePreviewResponse
 import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
@@ -21,7 +22,19 @@ interface CoupleApi {
     )
     fun getMyStatus(
         @Parameter(hidden = true) userId: Long,
+        @Parameter(hidden = true) req: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
     ): CoupleStatusResponse
+
+    @Operation(
+        summary = "커플 상태 쿠키 저장",
+        description = "현재 사용자의 커플 상태를 coupleStatus 쿠키에 저장합니다.",
+    )
+    fun saveCoupleStatusCookie(
+        @Parameter(hidden = true) userId: Long,
+        @Parameter(hidden = true) req: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
+    )
 
     @Operation(
         summary = "초대코드 생성",
@@ -50,18 +63,19 @@ interface CoupleApi {
     ): InviteCodePreviewResponse
 
     @Operation(
-        summary = "커플 연결 확정",
-        description = "초대코드를 사용해 커플 연결을 확정합니다.",
+        summary = "초대코드 확정(초대자)",
+        description = "초대코드를 공유한 사용자가 코드 상태를 확정/확인합니다.",
     )
     fun confirmInviteCode(
         request: JoinCoupleRequest,
         @Parameter(hidden = true) userId: Long,
         @Parameter(hidden = true) httpRequest: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
     ): CoupleStatusResponse
 
     @Operation(
-        summary = "초대 코드로 커플 합류",
-        description = "초대 코드를 통해 커플에 합류합니다.",
+        summary = "초대 코드로 커플 합류(입력자)",
+        description = "초대 코드를 입력한 사용자가 커플에 합류합니다.",
         responses = [
             ApiResponse(responseCode = "200", description = "커플 합류 성공"),
             ApiResponse(responseCode = "404", description = "유효하지 않은 초대 코드"),
@@ -71,6 +85,7 @@ interface CoupleApi {
         request: JoinCoupleRequest,
         @Parameter(hidden = true) userId: Long,
         @Parameter(hidden = true) httpRequest: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
     ): CoupleStatusResponse
 
     @Operation(
@@ -85,6 +100,8 @@ interface CoupleApi {
     )
     fun reconnect(
         @Parameter(hidden = true) userId: Long,
+        @Parameter(hidden = true) req: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
     ): CoupleStatusResponse
 
     @Operation(
@@ -98,5 +115,7 @@ interface CoupleApi {
     )
     fun disconnect(
         @Parameter(hidden = true) userId: Long,
+        @Parameter(hidden = true) req: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
     )
 }

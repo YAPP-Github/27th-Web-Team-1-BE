@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.photo.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import java.time.LocalDateTime
@@ -24,6 +25,9 @@ data class PhotoResponse(
     val description: String?,
     @Schema(description = "사진의 촬영 일시")
     val takenAt: LocalDateTime?,
+    @Schema(description = "조회자가 해당 사진을 수정/삭제할 수 있는지 여부", example = "true")
+    @field:JsonProperty("isEditable")
+    val isEditable: Boolean,
 )
 
 @Schema(description = "앨범별 사진 목록")
@@ -36,6 +40,9 @@ data class AlbumWithPhotosResponse(
     val photoCount: Int,
     @Schema(description = "썸네일 URL", example = "https://example.com/thumbnail.jpg")
     val thumbnailUrl: String?,
+    @Schema(description = "조회자가 해당 앨범을 수정/삭제할 수 있는지 여부", example = "true")
+    @field:JsonProperty("isEditable")
+    val isEditable: Boolean,
     @Schema(description = "앨범 내 사진 목록")
     val photos: List<PhotoResponse>,
 )
@@ -125,4 +132,7 @@ data class PhotoDetailResponse(
     val longitude: Double,
     @Schema(description = "위도", example = "37.4979")
     val latitude: Double,
+    @Schema(description = "조회자가 해당 사진을 수정/삭제할 수 있는지 여부", example = "true")
+    @field:JsonProperty("isEditable")
+    val isEditable: Boolean,
 )

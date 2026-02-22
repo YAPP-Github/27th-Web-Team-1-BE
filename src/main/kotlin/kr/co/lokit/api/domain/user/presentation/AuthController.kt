@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorCode
 import kr.co.lokit.api.config.web.CookieGenerator
+import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.user.application.LoginService
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
 import org.slf4j.LoggerFactory
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets
 class AuthController(
     private val loginService: LoginService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
+    private val coupleCookieStatusResolver: CoupleCookieStatusResolver,
     private val cookieGenerator: CookieGenerator,
     @Value("\${redirect.local-host}") private val localHostRedirect: String,
     @Value("\${redirect.allowed-domain}") private val allowedDomain: String,
@@ -73,14 +75,17 @@ class AuthController(
                 ?: kakaoOAuthProperties.frontRedirectUri
 
         return try {
-            val tokens = loginService.login(code)
-            val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, tokens.accessToken)
-            val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, tokens.refreshToken)
+            val loginResult = loginService.login(code)
+            val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, loginResult.tokens.accessToken)
+            val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, loginResult.tokens.refreshToken)
+            val coupleStatusCookie =
+                cookieGenerator.createCoupleStatusCookie(req, coupleCookieStatusResolver.resolve(loginResult.userId))
 
             ResponseEntity
                 .status(HttpStatus.FOUND)
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, coupleStatusCookie.toString())
                 .location(URI.create(redirectUri))
                 .build()
         } catch (ex: BusinessException) {

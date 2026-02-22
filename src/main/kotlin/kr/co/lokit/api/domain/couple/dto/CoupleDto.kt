@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.couple.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
@@ -37,7 +38,9 @@ data class InviteCodeResponse(
 
 @Schema(description = "커플 상태 조회 응답")
 data class CoupleStatusResponse(
-    val isCoupled: Boolean,
+    @get:JsonProperty("isCoupled")
+    @field:Schema(name = "isCoupled", description = "커플 연결 여부", example = "true")
+    val coupled: Boolean,
     val partnerSummary: PartnerSummaryResponse? = null,
 )
 

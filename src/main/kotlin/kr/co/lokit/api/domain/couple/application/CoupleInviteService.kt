@@ -1,27 +1,28 @@
 package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.annotation.RateLimit
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.clearPermissionCaches
 import kr.co.lokit.api.config.cache.evictUserCoupleCache
-import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
-import kr.co.lokit.api.domain.couple.application.port.InviteCodeRepositoryPort
-import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
-import kr.co.lokit.api.domain.couple.domain.InviteCode
-import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
-import kr.co.lokit.api.domain.couple.domain.InviteCodeIssueReadModel
-import kr.co.lokit.api.domain.couple.domain.InviteCodePreviewReadModel
-import kr.co.lokit.api.domain.couple.domain.InviteCodePolicy
-import kr.co.lokit.api.domain.couple.domain.InviteCodeRejectionReason
-import kr.co.lokit.api.domain.couple.domain.InviteCodeStatus
 import kr.co.lokit.api.domain.couple.application.mapping.toCoupledStatusReadModel
 import kr.co.lokit.api.domain.couple.application.mapping.toIssueReadModel
 import kr.co.lokit.api.domain.couple.application.mapping.toPreviewReadModel
 import kr.co.lokit.api.domain.couple.application.mapping.toUncoupledStatusReadModel
 import kr.co.lokit.api.domain.couple.application.mapping.uncoupledStatusReadModel
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.InviteCodeRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
+import kr.co.lokit.api.domain.couple.domain.CoupleProfileImage
+import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCode
+import kr.co.lokit.api.domain.couple.domain.InviteCodeIssueReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodePolicy
+import kr.co.lokit.api.domain.couple.domain.InviteCodePreviewReadModel
+import kr.co.lokit.api.domain.couple.domain.InviteCodeRejectionReason
+import kr.co.lokit.api.domain.couple.domain.InviteCodeStatus
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import org.slf4j.LoggerFactory
 import org.springframework.cache.CacheManager
@@ -38,6 +39,7 @@ class CoupleInviteService(
     private val inviteCodeRepository: InviteCodeRepositoryPort,
     private val cacheManager: CacheManager,
     private val rateLimiter: CoupleInviteRateLimiter,
+    private val coupleProfileImageUrlResolver: CoupleProfileImageUrlResolver,
 ) : CoupleInviteUseCase {
     private val log = LoggerFactory.getLogger(javaClass)
     private val secureRandom = SecureRandom()
@@ -64,6 +66,7 @@ class CoupleInviteService(
         validateIssuerReady(userId)
 
         val now = LocalDateTime.now()
+        purgeExpiredUnusedInvites(userId, now)
         inviteCodeRepository.findActiveUnusedByUserIdForUpdate(userId, now).firstOrNull()?.let {
             return it.toIssueReadModel()
         }
@@ -88,9 +91,10 @@ class CoupleInviteService(
         validateIssuerReady(userId)
 
         val now = LocalDateTime.now()
+        purgeExpiredUnusedInvites(userId, now)
         inviteCodeRepository
             .findActiveUnusedByUserIdForUpdate(userId, now)
-            .forEach { inviteCodeRepository.hardDeleteById(it.id) }
+            .forEach { inviteCodeRepository.deleteById(it.id) }
 
         val created = issueNewInviteCode(userId, now)
         log.info(
@@ -118,7 +122,7 @@ class CoupleInviteService(
             throw BusinessException.InviteAlreadyUsedException()
         }
         if (invite.status == InviteCodeStatus.UNUSED) {
-            inviteCodeRepository.hardDeleteById(invite.id)
+            inviteCodeRepository.deleteById(invite.id)
             log.info("invite_revoked_deleted inviterUserId={} inviteId={}", userId, invite.id)
         }
     }
@@ -151,11 +155,40 @@ class CoupleInviteService(
 
         rateLimiter.clearVerificationFailures(userId, clientIp)
         log.info("invite_verified verifierUserId={} inviteId={}", userId, invite.id)
-        return invite.toPreviewReadModel()
+        return invite.toPreviewReadModel(profileImageUrl = lockImageUrl())
     }
 
     @Transactional
     override fun confirmInviteCode(
+        userId: Long,
+        inviteCode: String,
+        clientIp: String,
+    ): CoupleStatusReadModel {
+        findCurrentCoupledStatus(userId)?.let { return it }
+        if (!InviteCodePolicy.isValidFormat(inviteCode)) {
+            rateLimiter.recordVerificationFailure(userId, clientIp)
+            throw BusinessException.InviteInvalidFormatException()
+        }
+
+        val invite =
+            inviteCodeRepository.findByCodeForUpdate(inviteCode)
+                ?: run {
+                    rateLimiter.recordVerificationFailure(userId, clientIp)
+                    throw BusinessException.InviteCodeNotFoundException()
+                }
+
+        if (!invite.isOwnedBy(userId)) {
+            rateLimiter.recordVerificationFailure(userId, clientIp)
+            throw BusinessException.InviteNotOwnerException()
+        }
+
+        validateInviteState(invite, userId, clientIp)
+        rateLimiter.clearVerificationFailures(userId, clientIp)
+        return uncoupledStatusReadModel()
+    }
+
+    @Transactional
+    override fun joinByInviteCode(
         userId: Long,
         inviteCode: String,
         clientIp: String,
@@ -188,6 +221,7 @@ class CoupleInviteService(
         }
 
         validateInviteState(invite, userId, clientIp)
+        pruneIncompleteCoupleIfExists(userId)
 
         val inviterCouple =
             coupleRepository.findByUserId(inviterId)
@@ -195,16 +229,18 @@ class CoupleInviteService(
 
         try {
             val joined = coupleRepository.addUser(inviterCouple.id, userId)
-            inviteCodeRepository.hardDeleteById(invite.id)
+            inviteCodeRepository.deleteById(invite.id)
 
             cacheManager.evictUserCoupleCache(userId, inviterId)
             cacheManager.clearPermissionCaches()
             rateLimiter.clearVerificationFailures(userId, clientIp)
+            updateProfileImageForRole(inviterId, CoupleProfileImage.LOCK)
+            updateProfileImageForRole(userId, CoupleProfileImage.KEY)
 
             val partnerId = joined.partnerIdFor(userId) ?: throw BusinessException.UserNotFoundException()
             val partner = userRepository.findById(partnerId) ?: throw BusinessException.UserNotFoundException()
             log.info("couple_linked inviterUserId={} joinerUserId={} coupleId={}", inviterId, userId, joined.id)
-            return joined.toCoupledStatusReadModel(partner)
+            return joined.toCoupledStatusReadModel(partner.withProfileImage(lockImageUrl()))
         } catch (_: DataIntegrityViolationException) {
             throw BusinessException.InviteRaceConflictException(
                 errors = errorDetailsOf(ErrorField.USER_ID to userId),
@@ -241,6 +277,18 @@ class CoupleInviteService(
         return couple.isConnectedAndFull()
     }
 
+    private fun pruneIncompleteCoupleIfExists(userId: Long) {
+        val existingCouple = coupleRepository.findByUserId(userId) ?: return
+        val fullCouple = coupleRepository.findById(existingCouple.id) ?: return
+
+        if (fullCouple.isConnectedAndFull()) {
+            throw BusinessException.InviteAlreadyCoupledException(
+                errors = errorDetailsOf(ErrorField.COUPLE_ID to existingCouple.id),
+            )
+        }
+        coupleRepository.deleteById(existingCouple.id)
+    }
+
     private fun validateInviteState(
         invite: InviteCode,
         userId: Long,
@@ -248,7 +296,7 @@ class CoupleInviteService(
     ) {
         when (invite.rejectionReason(LocalDateTime.now())) {
             InviteCodeRejectionReason.EXPIRED -> {
-                inviteCodeRepository.hardDeleteById(invite.id)
+                inviteCodeRepository.deleteById(invite.id)
                 rateLimiter.recordVerificationFailure(userId, clientIp)
                 throw BusinessException.InviteCodeExpiredException()
             }
@@ -263,7 +311,9 @@ class CoupleInviteService(
                 throw BusinessException.InviteCodeRevokedException()
             }
 
-            null -> Unit
+            null -> {
+                Unit
+            }
         }
     }
 
@@ -285,4 +335,26 @@ class CoupleInviteService(
         }
         throw BusinessException.InviteRaceConflictException()
     }
+
+    private fun purgeExpiredUnusedInvites(
+        userId: Long,
+        now: LocalDateTime,
+    ) {
+        inviteCodeRepository
+            .findExpiredUnusedByUserIdForUpdate(userId, now)
+            .forEach { inviteCodeRepository.deleteById(it.id) }
+    }
+
+    private fun updateProfileImageForRole(
+        userId: Long,
+        image: CoupleProfileImage,
+    ) {
+        val user = userRepository.findById(userId) ?: throw BusinessException.UserNotFoundException()
+        val targetUrl = coupleProfileImageUrlResolver.resolve(image)
+        if (user.profileImageUrl != targetUrl) {
+            userRepository.update(user.withProfileImage(targetUrl))
+        }
+    }
+
+    private fun lockImageUrl(): String = coupleProfileImageUrlResolver.resolve(CoupleProfileImage.LOCK)
 }

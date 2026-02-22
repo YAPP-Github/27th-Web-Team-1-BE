@@ -7,7 +7,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.OneToMany
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
 import java.time.LocalDateTime

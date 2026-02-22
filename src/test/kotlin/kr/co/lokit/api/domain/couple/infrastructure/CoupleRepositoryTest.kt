@@ -5,7 +5,7 @@ import kr.co.lokit.api.domain.user.infrastructure.UserEntity
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
 import kr.co.lokit.api.fixture.createUserEntity
 import kr.co.lokit.api.fixture.createCouple
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -84,5 +84,31 @@ class CoupleRepositoryTest {
         assertNotNull(found)
         assertEquals(connected.id, found.id)
         assertEquals(CoupleStatus.CONNECTED, found.status)
+    }
+
+    @Test
+    fun `동일 유저가 disconnect한 커플이 여러 개여도 최신 1건을 반환한다`() {
+        coupleRepository.save(
+            createCouple(
+                name = "old-disconnected",
+                status = CoupleStatus.DISCONNECTED,
+                disconnectedByUserId = user.nonNullId(),
+            ),
+        )
+        val latestDisconnected =
+            coupleRepository.save(
+                createCouple(
+                    name = "latest-disconnected",
+                    status = CoupleStatus.DISCONNECTED,
+                    disconnectedByUserId = user.nonNullId(),
+                ),
+            )
+
+        val found = coupleRepository.findByDisconnectedByUserId(user.nonNullId())
+
+        assertNotNull(found)
+        assertEquals(latestDisconnected.id, found.id)
+        assertEquals(CoupleStatus.DISCONNECTED, found.status)
+        assertEquals(user.nonNullId(), found.disconnectedByUserId)
     }
 }

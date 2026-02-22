@@ -1,6 +1,6 @@
 package kr.co.lokit.api.domain.couple.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort

@@ -1,8 +1,9 @@
 package kr.co.lokit.api.domain.couple.application
 
-import kr.co.lokit.api.common.constant.CoupleStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.fixture.createCouple
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -19,6 +20,9 @@ import org.springframework.cache.CacheManager
 class CoupleDisconnectServiceTest {
     @Mock
     lateinit var coupleRepository: CoupleRepositoryPort
+
+    @Mock
+    lateinit var createCoupleUseCase: CreateCoupleUseCase
 
     @Mock
     lateinit var cacheManager: CacheManager
@@ -44,6 +48,7 @@ class CoupleDisconnectServiceTest {
 
         verify(coupleRepository).disconnect(1L, 1L)
         verify(coupleRepository).removeCoupleUser(1L)
+        verify(createCoupleUseCase).createIfNone(createCouple(name = "default"), 1L)
         verify(cache).evict(1L)
         verify(cache).evict(2L)
     }
@@ -88,6 +93,7 @@ class CoupleDisconnectServiceTest {
         coupleDisconnectService.disconnect(2L)
 
         verify(coupleRepository).removeCoupleUser(2L)
+        verify(createCoupleUseCase).createIfNone(createCouple(name = "default"), 2L)
         verify(cache).evict(2L)
     }
 }

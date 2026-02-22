@@ -1,0 +1,14 @@
+package kr.co.lokit.api.domain.user.presentation.mapping
+
+import kr.co.lokit.api.domain.user.domain.MyPageReadModel
+import kr.co.lokit.api.domain.user.dto.MyPageResponse
+
+fun MyPageReadModel.toResponse(): MyPageResponse =
+    MyPageResponse(
+        myName = myName,
+        myProfileImageUrl = myProfileImageUrl,
+        partnerName = partnerName,
+        partnerProfileImageUrl = partnerProfileImageUrl,
+        coupledDay = coupledDay,
+        couplePhotoCount = couplePhotoCount,
+    )

@@ -101,6 +101,7 @@ class PhotoControllerTest {
             url = "https://example.com/photo.jpg",
             takenAt = LocalDateTime.of(2026, 1, 1, 12, 0),
             albumName = "여행",
+            uploadedById = 1L,
             uploaderName = "테스트",
             uploaderProfileImageUrl = null,
             address = "서울 강남구",

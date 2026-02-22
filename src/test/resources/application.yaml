@@ -57,6 +57,7 @@ aws:
         enabled: false
         region: ap-northeast-2
         bucket: test-bucket
+        public-base-url: https://test.test
 
 kakao:
     api:

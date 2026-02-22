@@ -26,31 +26,31 @@ class CouplePurgeWorker(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun purgeCoupleSafely(coupleId: Long) {
         runCatching { purgeCouple(coupleId) }
             .onFailure { e -> log.error("커플 파기 실패: coupleId={}", coupleId, e) }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun purgeCouple(coupleId: Long) {
+    private fun purgeCouple(coupleId: Long) {
         val albumIds = albumJpaRepository.findAlbumIdsByCoupleId(coupleId)
         val photoUrls = photoJpaRepository.findUrlsByCoupleId(coupleId)
 
         if (albumIds.isNotEmpty()) {
-            softDeleteEmoticons(albumIds)
-            softDeleteComments(albumIds)
-            softDeletePhotos(albumIds)
-            softDeleteAlbums(albumIds)
+            deleteEmoticons(albumIds)
+            deleteComments(albumIds)
+            deletePhotos(albumIds)
+            deleteAlbums(albumIds)
         }
 
-        softDeleteCoupleUsers(coupleId)
-        softDeleteCouple(coupleId)
+        deleteCoupleUsers(coupleId)
+        deleteCouple(coupleId)
         deleteS3Files(photoUrls)
 
         log.info("커플(id={}) 데이터 파기 완료: 앨범 {}개, 사진 {}개", coupleId, albumIds.size, photoUrls.size)
     }
 
-    private fun softDeleteEmoticons(albumIds: List<Long>) {
+    private fun deleteEmoticons(albumIds: List<Long>) {
         entityManager
             .createNativeQuery(
                 """
@@ -66,7 +66,7 @@ class CouplePurgeWorker(
             .executeUpdate()
     }
 
-    private fun softDeleteComments(albumIds: List<Long>) {
+    private fun deleteComments(albumIds: List<Long>) {
         entityManager
             .createNativeQuery(
                 """
@@ -79,7 +79,7 @@ class CouplePurgeWorker(
             .executeUpdate()
     }
 
-    private fun softDeletePhotos(albumIds: List<Long>) {
+    private fun deletePhotos(albumIds: List<Long>) {
         entityManager
             .createNativeQuery(
                 """
@@ -90,7 +90,7 @@ class CouplePurgeWorker(
             .executeUpdate()
     }
 
-    private fun softDeleteAlbums(albumIds: List<Long>) {
+    private fun deleteAlbums(albumIds: List<Long>) {
         entityManager
             .createNativeQuery(
                 """
@@ -101,7 +101,7 @@ class CouplePurgeWorker(
             .executeUpdate()
     }
 
-    private fun softDeleteCoupleUsers(coupleId: Long) {
+    private fun deleteCoupleUsers(coupleId: Long) {
         entityManager
             .createNativeQuery(
                 """
@@ -112,7 +112,7 @@ class CouplePurgeWorker(
             .executeUpdate()
     }
 
-    private fun softDeleteCouple(coupleId: Long) {
+    private fun deleteCouple(coupleId: Long) {
         entityManager
             .createNativeQuery(
                 """

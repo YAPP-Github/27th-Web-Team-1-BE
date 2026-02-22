@@ -1,6 +1,7 @@
 package kr.co.lokit.api.config.web
 
 import jakarta.servlet.http.HttpServletRequest
+import kr.co.lokit.api.common.constants.CoupleCookieStatus
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseCookie
 import org.springframework.stereotype.Component
@@ -27,11 +28,17 @@ class CookieGenerator(
     fun clearRefreshTokenCookie(request: HttpServletRequest): ResponseCookie =
         createCookie(request, "refreshToken", "", 0)
 
+    fun createCoupleStatusCookie(
+        request: HttpServletRequest,
+        value: CoupleCookieStatus,
+    ): ResponseCookie = createCookie(request, "coupleStatus", value.name, refreshTokenExpiration, httpOnly = false)
+
     fun createCookie(
         request: HttpServletRequest,
         name: String,
         value: String,
         maxAgeMillis: Long,
+        httpOnly: Boolean = true,
     ): ResponseCookie {
         val serverName = request.serverName
         val isLocal = isLocalhost(serverName)
@@ -39,7 +46,7 @@ class CookieGenerator(
         val builder =
             ResponseCookie
                 .from(name, value)
-                .httpOnly(true)
+                .httpOnly(httpOnly)
                 .path("/")
                 .maxAge(maxAgeMillis / 1000)
                 .secure(!isLocal && cookieProperties.secure)

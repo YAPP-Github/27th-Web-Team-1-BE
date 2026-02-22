@@ -49,7 +49,7 @@ interface CoupleJpaRepository : JpaRepository<CoupleEntity, Long> {
         and c.status = 'DISCONNECTED'
         """,
     )
-    fun findByDisconnectedByUserId(userId: Long): CoupleEntity?
+    fun findByDisconnectedByUserIdCandidates(userId: Long): List<CoupleEntity>
 
     @Query("SELECT c FROM Couple c WHERE c.status = 'DISCONNECTED' AND c.disconnectedAt < :cutoff")
     fun findDisconnectedBefore(cutoff: LocalDateTime): List<CoupleEntity>

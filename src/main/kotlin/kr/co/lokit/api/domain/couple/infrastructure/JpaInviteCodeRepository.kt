@@ -21,14 +21,20 @@ class JpaInviteCodeRepository(
     override fun findByCode(code: String): InviteCode? = inviteCodeJpaRepository.findByCode(code)?.toDomain()
 
     @Transactional(readOnly = true)
-    override fun findByCodeForUpdate(code: String): InviteCode? = inviteCodeJpaRepository.findByCodeForUpdate(code)?.toDomain()
+    override fun findByCodeForUpdate(code: String): InviteCode? =
+        inviteCodeJpaRepository.findByCodeForUpdate(code)?.toDomain()
 
     @Transactional(readOnly = true)
     override fun findActiveUnusedByUserIdForUpdate(
         userId: Long,
         now: LocalDateTime,
-    ): List<InviteCode> =
-        inviteCodeJpaRepository.findActiveUnusedByUserIdForUpdate(userId, now).map { it.toDomain() }
+    ): List<InviteCode> = inviteCodeJpaRepository.findActiveUnusedByUserIdForUpdate(userId, now).map { it.toDomain() }
+
+    @Transactional(readOnly = true)
+    override fun findExpiredUnusedByUserIdForUpdate(
+        userId: Long,
+        now: LocalDateTime,
+    ): List<InviteCode> = inviteCodeJpaRepository.findExpiredUnusedByUserIdForUpdate(userId, now).map { it.toDomain() }
 
     @Transactional
     override fun createUnused(
@@ -39,11 +45,13 @@ class JpaInviteCodeRepository(
         val creator =
             userJpaRepository.findByIdOrNull(createdByUserId)
                 ?: throw entityNotFound<kr.co.lokit.api.domain.user.infrastructure.UserEntity>(createdByUserId)
-        return inviteCodeJpaRepository.save(InviteCodeEntity(code = code, createdBy = creator, expiresAt = expiresAt)).toDomain()
+        return inviteCodeJpaRepository
+            .save(InviteCodeEntity(code = code, createdBy = creator, expiresAt = expiresAt))
+            .toDomain()
     }
 
     @Transactional
-    override fun hardDeleteById(id: Long) {
-        inviteCodeJpaRepository.hardDeleteById(id)
+    override fun deleteById(id: Long) {
+        inviteCodeJpaRepository.deleteById(id)
     }
 }

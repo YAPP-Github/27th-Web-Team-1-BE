@@ -27,4 +27,10 @@ interface CoupleInviteUseCase {
         inviteCode: String,
         clientIp: String,
     ): CoupleStatusReadModel
+
+    fun joinByInviteCode(
+        userId: Long,
+        inviteCode: String,
+        clientIp: String,
+    ): CoupleStatusReadModel
 }

@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 
 @Entity(name = "InviteCode")
 class InviteCodeEntity(
-    @Column(nullable = false, unique = true, length = 6)
+    @Column(nullable = false, length = 6)
     val code: String,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)

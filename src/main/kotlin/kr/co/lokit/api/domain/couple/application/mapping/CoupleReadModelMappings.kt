@@ -25,11 +25,11 @@ fun Couple.toUncoupledStatusReadModel(): CoupleStatusReadModel = CoupleStatusRea
 
 fun uncoupledStatusReadModel(): CoupleStatusReadModel = CoupleStatusReadModel(isCoupled = false)
 
-fun InviteCode.toPreviewReadModel(): InviteCodePreviewReadModel =
+fun InviteCode.toPreviewReadModel(profileImageUrl: String? = createdBy.profileImageUrl): InviteCodePreviewReadModel =
     InviteCodePreviewReadModel(
         inviterUserId = createdBy.userId,
         nickname = createdBy.name,
-        profileImageUrl = createdBy.profileImageUrl,
+        profileImageUrl = profileImageUrl,
     )
 
 fun InviteCode.toIssueReadModel(): InviteCodeIssueReadModel = InviteCodeIssueReadModel(inviteCode = code, expiresAt = expiresAt)

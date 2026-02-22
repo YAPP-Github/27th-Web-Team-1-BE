@@ -13,7 +13,7 @@ data class AdminActionResponse(
 data class AdminUserSummaryResponse(
     @Schema(description = "사용자 ID", example = "1")
     val id: Long,
-    @Schema(description = "사용자 이메일", example = "dev@example.com")
+    @Schema(description = "사용자 이메일", example = "dev@exa***.com")
     val email: String,
 )
 

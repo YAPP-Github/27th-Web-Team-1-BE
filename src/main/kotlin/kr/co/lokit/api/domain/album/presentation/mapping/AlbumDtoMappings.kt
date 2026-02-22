@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.album.presentation.mapping
 
+import kr.co.lokit.api.common.permission.EditabilityPolicy
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.dto.AlbumRequest
 import kr.co.lokit.api.domain.album.dto.SelectableAlbumResponse
@@ -9,7 +10,7 @@ fun AlbumRequest.toDomain(): Album =
         title = title,
     )
 
-fun List<Album>.toSelectableResponse(): SelectableAlbumResponse =
+fun List<Album>.toSelectableResponse(viewerUserId: Long): SelectableAlbumResponse =
     SelectableAlbumResponse(
         map {
             val actualPhotoCount =
@@ -24,6 +25,12 @@ fun List<Album>.toSelectableResponse(): SelectableAlbumResponse =
                 title = it.title,
                 photoCount = actualPhotoCount,
                 thumbnailUrl = it.thumbnail?.url,
+                isEditable =
+                    EditabilityPolicy.canEditAlbum(
+                        viewerUserId = viewerUserId,
+                        createdByUserId = it.createdById,
+                        isDefault = it.isDefault,
+                    ),
             )
         },
     )

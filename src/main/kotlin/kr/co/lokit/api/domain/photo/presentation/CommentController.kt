@@ -49,7 +49,7 @@ class CommentController(
         @PathVariable photoId: Long,
     ): CommentListResponse =
         CommentListResponse(
-            comments = commentUseCase.getComments(photoId, userId).map { it.toResponse() },
+            comments = commentUseCase.getComments(photoId, userId).map { it.toResponse(userId) },
         )
 
     @PostMapping("comments/{commentId}/emoticons")

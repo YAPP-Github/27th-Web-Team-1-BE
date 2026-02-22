@@ -17,6 +17,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Repository
 class JpaCoupleRepository(
@@ -60,7 +61,15 @@ class JpaCoupleRepository(
 
     @Transactional(readOnly = true)
     override fun findByDisconnectedByUserId(userId: Long): Couple? =
-        coupleJpaRepository.findByDisconnectedByUserId(userId)?.toDomain()
+        coupleJpaRepository
+            .findByDisconnectedByUserIdCandidates(userId)
+            .sortedWith(
+                compareBy<CoupleEntity> { it.status.selectionPriority }
+                    .thenByDescending { it.coupleUsers.size }
+                    .thenByDescending { it.updatedAt }
+                    .thenByDescending { it.createdAt },
+            ).firstOrNull()
+            ?.toDomain()
 
     @Transactional
     override fun addUser(
@@ -143,4 +152,8 @@ class JpaCoupleRepository(
         entity.addUser(CoupleUserEntity(couple = entity, user = userEntity))
         return entity.toDomain()
     }
+
+    @Transactional(readOnly = true)
+    override fun findLatestJoinedAt(coupleId: Long): LocalDateTime? =
+        coupleUserJpaRepository.findLatestJoinedAtByCoupleId(coupleId)
 }

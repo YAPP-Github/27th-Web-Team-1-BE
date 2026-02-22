@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.domain.user.application.AuthService
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
@@ -97,7 +98,13 @@ class AuthenticationFilter(
         accessToken: String,
         refreshToken: String,
     ) {
-        response.addHeader("Set-Cookie", cookieGenerator.createAccessTokenCookie(request, accessToken).toString())
-        response.addHeader("Set-Cookie", cookieGenerator.createRefreshTokenCookie(request, refreshToken).toString())
+        response.addHeader(
+            HttpHeaders.SET_COOKIE,
+            cookieGenerator.createAccessTokenCookie(request, accessToken).toString(),
+        )
+        response.addHeader(
+            HttpHeaders.SET_COOKIE,
+            cookieGenerator.createRefreshTokenCookie(request, refreshToken).toString(),
+        )
     }
 }

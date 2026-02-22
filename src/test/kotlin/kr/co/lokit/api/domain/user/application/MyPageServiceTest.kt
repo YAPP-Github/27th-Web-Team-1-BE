@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
+import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import kr.co.lokit.api.fixture.createUser
 import org.junit.jupiter.api.Test
@@ -17,6 +19,12 @@ import kotlin.test.assertEquals
 class MyPageServiceTest {
     @Mock
     lateinit var userRepository: UserRepositoryPort
+
+    @Mock
+    lateinit var coupleRepository: CoupleRepositoryPort
+
+    @Mock
+    lateinit var photoRepository: PhotoRepositoryPort
 
     @InjectMocks
     lateinit var myPageService: MyPageService

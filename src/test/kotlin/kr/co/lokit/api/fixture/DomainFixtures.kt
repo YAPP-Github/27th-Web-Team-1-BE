@@ -1,8 +1,8 @@
 package kr.co.lokit.api.fixture
 
-import kr.co.lokit.api.common.constant.AccountStatus
-import kr.co.lokit.api.common.constant.CoupleStatus
-import kr.co.lokit.api.common.constant.UserRole
+import kr.co.lokit.api.common.constants.AccountStatus
+import kr.co.lokit.api.common.constants.CoupleStatus
+import kr.co.lokit.api.common.constants.UserRole
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.map.domain.AlbumBounds
