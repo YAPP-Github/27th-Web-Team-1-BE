@@ -61,7 +61,15 @@ class JpaCoupleRepository(
 
     @Transactional(readOnly = true)
     override fun findByDisconnectedByUserId(userId: Long): Couple? =
-        coupleJpaRepository.findByDisconnectedByUserId(userId)?.toDomain()
+        coupleJpaRepository
+            .findByDisconnectedByUserIdCandidates(userId)
+            .sortedWith(
+                compareBy<CoupleEntity> { it.status.selectionPriority }
+                    .thenByDescending { it.coupleUsers.size }
+                    .thenByDescending { it.updatedAt }
+                    .thenByDescending { it.createdAt },
+            ).firstOrNull()
+            ?.toDomain()
 
     @Transactional
     override fun addUser(
