@@ -32,6 +32,9 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v4
 
+            -   name: Set up Gradle
+                uses: gradle/actions/setup-gradle@v4
+
             -   name: Set up JDK 24
                 uses: actions/setup-java@v4
                 with:
@@ -40,7 +43,7 @@ jobs:
                     cache: gradle
 
             -   name: Test & Coverage
-                run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon --parallel --build-cache -PtestMaxParallelForks=2 -PcoverageVerification=true
+                run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --configuration-cache --parallel --build-cache -Dorg.gradle.configuration-cache.read-only=true -PtestMaxParallelForks=2 -PcoverageVerification=true
 
             -   name: Upload JaCoCo report
                 if: always()
@@ -229,6 +232,9 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v4
 
+            -   name: Set up Gradle
+                uses: gradle/actions/setup-gradle@v4
+
             -   name: Set up JDK 24
                 uses: actions/setup-java@v4
                 with:
@@ -263,7 +269,7 @@ jobs:
                 run: sleep 15
 
             -   name: Build with Gradle
-                run: ./gradlew bootJar -x test --no-daemon --parallel --build-cache
+                run: ./gradlew bootJar -x test --configuration-cache --parallel --build-cache
 
             -   name: Login to Amazon ECR
                 id: login-ecr

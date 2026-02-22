@@ -20,7 +20,8 @@ EXPOSE 8080
 
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=65 \
-    -XX:+UseStringDeduplication \
+    -XX:+TieredCompilation \
+    -XX:TieredStopAtLevel=1 \
     -XX:+ExitOnOutOfMemoryError \
     --enable-preview \
     -Dfile.encoding=UTF-8"
