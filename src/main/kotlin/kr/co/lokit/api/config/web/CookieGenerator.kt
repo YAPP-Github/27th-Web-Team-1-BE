@@ -31,14 +31,14 @@ class CookieGenerator(
     fun createCoupleStatusCookie(
         request: HttpServletRequest,
         value: CoupleCookieStatus,
-    ): ResponseCookie = createCookie(request, "coupleStatus", value.name, refreshTokenExpiration, httpOnly = false)
+    ): ResponseCookie = createCookie(request, "coupleStatus", value.name, refreshTokenExpiration)
 
     fun createCookie(
         request: HttpServletRequest,
         name: String,
         value: String,
         maxAgeMillis: Long,
-        httpOnly: Boolean = true,
+        httpOnly: Boolean = false,
     ): ResponseCookie {
         val serverName = request.serverName
         val isLocal = isLocalhost(serverName)
