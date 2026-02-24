@@ -11,7 +11,6 @@ import kr.co.lokit.api.domain.user.domain.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @Service
@@ -40,9 +39,7 @@ class MyPageService(
             if (!isCoupled) {
                 null
             } else {
-                val coupledGroup = requireNotNull(couple)
-                val connectedAt = coupleRepository.findLatestJoinedAt(coupledGroup.id)
-                connectedAt.toDDay()
+                requireNotNull(couple).firstMetDate?.toDDay()
             }
 
         val couplePhotoCount = couple?.let { photoRepository.countByCoupleId(it.id) } ?: 0L
@@ -75,9 +72,9 @@ class MyPageService(
         return userRepository.update(user.withProfileImage(profileImageUrl))
     }
 
-    private fun LocalDateTime?.toDDay(): Long? {
+    private fun LocalDate?.toDDay(): Long? {
         if (this == null) return null
-        val days = ChronoUnit.DAYS.between(this.toLocalDate(), LocalDate.now()) + 1
+        val days = ChronoUnit.DAYS.between(this, LocalDate.now()) + 1
         return days.takeIf { it >= 0 }
     }
 }
