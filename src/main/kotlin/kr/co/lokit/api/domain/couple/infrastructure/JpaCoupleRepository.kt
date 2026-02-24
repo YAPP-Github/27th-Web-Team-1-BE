@@ -18,7 +18,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Repository
 class JpaCoupleRepository(
@@ -153,10 +152,6 @@ class JpaCoupleRepository(
         entity.addUser(CoupleUserEntity(couple = entity, user = userEntity))
         return entity.toDomain()
     }
-
-    @Transactional(readOnly = true)
-    override fun findLatestJoinedAt(coupleId: Long): LocalDateTime? =
-        coupleUserJpaRepository.findLatestJoinedAtByCoupleId(coupleId)
 
     @Transactional
     override fun updateFirstMetDate(coupleId: Long, firstMetDate: LocalDate) {
