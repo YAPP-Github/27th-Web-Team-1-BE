@@ -5,6 +5,7 @@ import kr.co.lokit.api.domain.user.dto.MyPageResponse
 
 fun MyPageReadModel.toResponse(): MyPageResponse =
     MyPageResponse(
+        myEmail = myEmail,
         myName = myName,
         myProfileImageUrl = myProfileImageUrl,
         partnerName = partnerName,

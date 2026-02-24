@@ -45,6 +45,7 @@ class MyPageService(
         val couplePhotoCount = couple?.let { photoRepository.countByCoupleId(it.id) } ?: 0L
 
         return MyPageReadModel(
+            myEmail = me.email,
             myName = me.name,
             myProfileImageUrl = me.profileImageUrl,
             partnerName = partner?.name,

@@ -95,6 +95,7 @@ class MyPageServiceTest {
 
         val result = myPageService.getMyPage(1L)
 
+        assertEquals("test@test.com", result.myEmail)
         assertEquals(10L, result.coupledDay)
     }
 
@@ -128,5 +129,16 @@ class MyPageServiceTest {
 
         assertNull(result.coupledDay)
         assertNull(result.partnerName)
+    }
+
+    @Test
+    fun `마이페이지 조회 시 내 이메일이 포함된다`() {
+        val me = createUser(id = 1L, name = "나", email = "myemail@test.com")
+        `when`(userRepository.findById(1L)).thenReturn(me)
+        `when`(coupleRepository.findByUserId(1L)).thenReturn(null)
+
+        val result = myPageService.getMyPage(1L)
+
+        assertEquals("myemail@test.com", result.myEmail)
     }
 }

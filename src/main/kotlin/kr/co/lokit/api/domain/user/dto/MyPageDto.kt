@@ -25,6 +25,8 @@ data class UpdateProfileImageRequest(
 
 @Schema(description = "마이페이지 조회 응답")
 data class MyPageResponse(
+    @Schema(description = "내 이메일", example = "user@example.com")
+    val myEmail: String,
     @Schema(description = "내 닉네임", example = "홍로킷")
     val myName: String,
     @Schema(description = "내 프로필 이미지 URL", example = "https://example.com/me.jpg")

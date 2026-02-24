@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.user.domain
 
 data class MyPageReadModel(
+    val myEmail: String,
     val myName: String,
     val myProfileImageUrl: String?,
     val partnerName: String?,
