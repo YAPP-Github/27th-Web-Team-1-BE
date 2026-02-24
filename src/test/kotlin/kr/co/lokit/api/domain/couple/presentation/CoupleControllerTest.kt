@@ -7,6 +7,7 @@ import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
 import kr.co.lokit.api.common.constants.CoupleCookieStatus
+import kr.co.lokit.api.domain.couple.application.CoupleCommandService
 import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -73,6 +74,9 @@ class CoupleControllerTest {
 
     @MockitoBean
     lateinit var coupleInviteUseCase: CoupleInviteUseCase
+
+    @MockitoBean
+    lateinit var coupleCommandService: CoupleCommandService
 
     @Test
     fun `커플 생성 엔드포인트 없음`() {
