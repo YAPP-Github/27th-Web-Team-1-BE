@@ -14,6 +14,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.springframework.cache.CacheManager
 import java.time.LocalDate
 import kotlin.test.assertEquals
 
@@ -27,6 +28,9 @@ class CoupleServiceTest {
 
     @Mock
     lateinit var coupleProfileImageUrlResolver: CoupleProfileImageUrlResolver
+
+    @Mock
+    lateinit var cacheManager: CacheManager
 
     @InjectMocks
     lateinit var coupleCommandService: CoupleCommandService
