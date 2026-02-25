@@ -95,12 +95,24 @@ class UserWithdrawServiceTest {
     @Test
     fun `연결 끊기가 완료되지 않은 상태에서는 탈퇴할 수 없다`() {
         val user = createUser(id = 1L, email = "test@test.com")
-        val couple = createCouple(id = 10L, userIds = listOf(1L), status = kr.co.lokit.api.common.constants.CoupleStatus.CONNECTED)
+        val couple = createCouple(id = 10L, userIds = listOf(1L, 2L), status = kr.co.lokit.api.common.constants.CoupleStatus.CONNECTED)
         whenever(userRepository.findById(1L)).thenReturn(user)
         whenever(coupleRepository.findByUserId(1L)).thenReturn(couple)
 
         assertThrows<BusinessException.UserDisconnectRequiredException> {
             userWithdrawService.withdraw(1L)
         }
+    }
+
+    @Test
+    fun `커플이 DISCONNECTED 상태이면 탈퇴할 수 있다`() {
+        val user = createUser(id = 1L, email = "test@test.com")
+        val couple = createCouple(id = 10L, userIds = listOf(1L), status = kr.co.lokit.api.common.constants.CoupleStatus.DISCONNECTED)
+        whenever(userRepository.findById(1L)).thenReturn(user)
+        whenever(coupleRepository.findByUserId(1L)).thenReturn(couple)
+
+        userWithdrawService.withdraw(1L)
+
+        verify(userRepository).withdraw(1L)
     }
 }
