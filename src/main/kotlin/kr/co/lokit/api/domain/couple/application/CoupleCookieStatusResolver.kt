@@ -25,6 +25,10 @@ class CoupleCookieStatusResolver(
             }
         }
 
+        if (currentCouple != null) {
+            return CoupleCookieStatus.NOT_COUPLED
+        }
+
         val disconnectedByMe = coupleRepository.findByDisconnectedByUserId(userId)
         if (disconnectedByMe?.status?.isDisconnectedOrExpired == true) {
             return CoupleCookieStatus.DISCONNECTED_BY_ME

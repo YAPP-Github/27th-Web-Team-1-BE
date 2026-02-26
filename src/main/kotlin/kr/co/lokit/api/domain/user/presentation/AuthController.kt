@@ -83,14 +83,11 @@ class AuthController(
             val loginResult = loginService.login(code)
             val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, loginResult.tokens.accessToken)
             val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, loginResult.tokens.refreshToken)
-            val coupleStatusCookie =
-                cookieGenerator.createCoupleStatusCookie(req, coupleCookieStatusResolver.resolve(loginResult.userId))
 
             ResponseEntity
                 .status(HttpStatus.FOUND)
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, coupleStatusCookie.toString())
                 .location(URI.create(redirectUri))
                 .build()
         } catch (ex: BusinessException) {
