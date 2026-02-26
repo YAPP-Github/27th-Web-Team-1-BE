@@ -340,7 +340,7 @@ jobs:
                             --restart unless-stopped \
                             --network lokit-net \
                             --memory="1024m" \
-                            --memory-swap="1536m" \
+                            --memory-swap="1024m" \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=prod \
                             -e DISCORD_LIFECYCLE_ENABLED=true \
