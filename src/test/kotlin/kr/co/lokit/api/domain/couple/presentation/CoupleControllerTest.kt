@@ -1,12 +1,14 @@
 package kr.co.lokit.api.domain.couple.presentation
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
 import kr.co.lokit.api.common.constants.CoupleCookieStatus
+import kr.co.lokit.api.domain.couple.application.CoupleCommandService
 import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -17,20 +19,24 @@ import kr.co.lokit.api.domain.couple.domain.PartnerSummaryReadModel
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.fixture.createCoupleRequest
 import kr.co.lokit.api.fixture.createJoinCoupleRequest
+import kr.co.lokit.api.fixture.createUpdateFirstMetDateRequest
 import kr.co.lokit.api.fixture.userAuth
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.cache.CacheManager
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseCookie
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -42,7 +48,7 @@ class CoupleControllerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
-    val objectMapper: ObjectMapper = ObjectMapper()
+    val objectMapper: ObjectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
     @MockitoBean
     lateinit var compositeAuthenticationResolver: CompositeAuthenticationResolver
@@ -73,6 +79,12 @@ class CoupleControllerTest {
 
     @MockitoBean
     lateinit var coupleInviteUseCase: CoupleInviteUseCase
+
+    @MockitoBean
+    lateinit var coupleCommandService: CoupleCommandService
+
+    @MockitoBean
+    lateinit var cacheManager: CacheManager
 
     @Test
     fun `커플 생성 엔드포인트 없음`() {
@@ -168,6 +180,36 @@ class CoupleControllerTest {
                     .with(authentication(userAuth()))
                     .with(csrf()),
             ).andExpect(status().isOk)
+    }
+
+    @Test
+    fun `처음 만난 날짜 수정 성공`() {
+        doNothing().`when`(coupleCommandService).updateFirstMetDate(anyLong(), anyObject())
+
+        mockMvc
+            .perform(
+                patch("/couples/me/first-met-date")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(createUpdateFirstMetDateRequest())),
+            ).andExpect(status().isNoContent)
+    }
+
+    @Test
+    fun `처음 만난 날짜 수정 실패 - 커플 없음`() {
+        doThrow(BusinessException.CoupleNotFoundException())
+            .`when`(coupleCommandService)
+            .updateFirstMetDate(anyLong(), anyObject())
+
+        mockMvc
+            .perform(
+                patch("/couples/me/first-met-date")
+                    .with(authentication(userAuth()))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(createUpdateFirstMetDateRequest())),
+            ).andExpect(status().isNotFound)
     }
 
     @Test

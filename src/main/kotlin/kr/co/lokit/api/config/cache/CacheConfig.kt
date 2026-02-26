@@ -22,7 +22,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
-                        .maximumSize(100)
+                        .maximumSize(80)
                         .build(),
                 ),
                 CaffeineCache(
@@ -30,7 +30,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
-                        .maximumSize(50)
+                        .maximumSize(30)
                         .build(),
                 ),
                 CaffeineCache(
@@ -38,7 +38,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .maximumSize(100)
+                        .maximumSize(80)
                         .build(),
                 ),
                 CaffeineCache(
@@ -46,7 +46,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .maximumSize(300)
+                        .maximumSize(180)
                         .build(),
                 ),
                 CaffeineCache(
@@ -54,7 +54,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .maximumSize(100)
+                        .maximumSize(80)
                         .build(),
                 ),
                 CaffeineCache(
@@ -62,7 +62,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
-                        .maximumSize(200)
+                        .maximumSize(120)
                         .build(),
                 ),
                 CaffeineCache(
@@ -70,7 +70,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
-                        .maximumSize(200)
+                        .maximumSize(120)
                         .build(),
                 ),
                 CaffeineCache(
@@ -78,7 +78,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
-                        .maximumSize(200)
+                        .maximumSize(120)
                         .build(),
                 ),
                 CaffeineCache(
@@ -86,7 +86,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
-                        .maximumSize(400)
+                        .maximumSize(250)
                         .build(),
                 ),
                 CaffeineCache(
@@ -94,7 +94,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(10, TimeUnit.MINUTES)
-                        .maximumSize(400)
+                        .maximumSize(100)
                         .build(),
                 ),
                 CaffeineCache(
@@ -102,7 +102,7 @@ class CacheConfig {
                     Caffeine
                         .newBuilder()
                         .expireAfterWrite(3, TimeUnit.MINUTES)
-                        .maximumSize(100)
+                        .maximumSize(80)
                         .build(),
                 ),
             ),

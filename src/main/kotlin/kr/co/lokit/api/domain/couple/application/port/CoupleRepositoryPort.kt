@@ -1,7 +1,7 @@
 package kr.co.lokit.api.domain.couple.application.port
 
 import kr.co.lokit.api.domain.couple.domain.Couple
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 interface CoupleRepositoryPort {
     fun save(couple: Couple): Couple
@@ -22,6 +22,8 @@ interface CoupleRepositoryPort {
 
     fun findByUserId(userId: Long): Couple?
 
+    fun findByUserIdFresh(userId: Long): Couple?
+
     fun deleteById(id: Long)
 
     fun removeCoupleUser(userId: Long)
@@ -36,5 +38,5 @@ interface CoupleRepositoryPort {
         userId: Long,
     ): Couple
 
-    fun findLatestJoinedAt(coupleId: Long): LocalDateTime?
+    fun updateFirstMetDate(coupleId: Long, firstMetDate: LocalDate)
 }

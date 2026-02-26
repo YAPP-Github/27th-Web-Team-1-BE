@@ -15,6 +15,8 @@ import kr.co.lokit.api.domain.couple.application.mapping.uncoupledStatusReadMode
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.InviteCodeRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
+import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
+import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.domain.CoupleProfileImage
 import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
 import kr.co.lokit.api.domain.couple.domain.InviteCode
@@ -40,6 +42,7 @@ class CoupleInviteService(
     private val cacheManager: CacheManager,
     private val rateLimiter: CoupleInviteRateLimiter,
     private val coupleProfileImageUrlResolver: CoupleProfileImageUrlResolver,
+    private val createCoupleUseCase: CreateCoupleUseCase,
 ) : CoupleInviteUseCase {
     private val log = LoggerFactory.getLogger(javaClass)
     private val secureRandom = SecureRandom()
@@ -235,11 +238,13 @@ class CoupleInviteService(
 
     private fun validateIssuerReady(userId: Long) {
         val couple = coupleRepository.findByUserId(userId) ?: throw BusinessException.CoupleNotFoundException()
-        if (couple.status != CoupleStatus.CONNECTED) {
-            throw BusinessException.CoupleNotFoundException()
-        }
         if (couple.isConnectedAndFull()) {
             throw BusinessException.InviteAlreadyCoupledException()
+        }
+        if (couple.status != CoupleStatus.CONNECTED) {
+            coupleRepository.removeCoupleUser(userId)
+            cacheManager.evictUserCoupleCache(userId)
+            createCoupleUseCase.createIfNone(Couple(name = Couple.DEFAULT_COUPLE_NAME), userId)
         }
     }
 

@@ -34,13 +34,13 @@ spring:
     task:
         execution:
             pool:
-                core-size: 8
-                max-size: 50
+                core-size: 4
+                max-size: 24
 server:
     tomcat:
         threads:
-            max: 50
-            min-spare: 10
+            max: 80
+            min-spare: 8
         max-connections: 500
         accept-count: 100
         connection-timeout: 10s

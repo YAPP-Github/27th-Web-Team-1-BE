@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.couple.domain
 
 import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.constants.GracePeriodPolicy
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class Couple(
@@ -11,6 +12,7 @@ data class Couple(
     val status: CoupleStatus = CoupleStatus.CONNECTED,
     val disconnectedAt: LocalDateTime? = null,
     val disconnectedByUserId: Long? = null,
+    val firstMetDate: LocalDate? = null,
 ) {
     init {
         require(userIds.size <= MAX_MEMBERS)

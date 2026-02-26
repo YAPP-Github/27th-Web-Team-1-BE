@@ -103,6 +103,13 @@ class AuthServiceTest {
     }
 
     @Test
+    fun `로그아웃 시 리프레시 토큰이 삭제된다`() {
+        authService.logout(1L)
+
+        verify(refreshTokenRepository).deleteByUserId(1L)
+    }
+
+    @Test
     fun `사용자를 찾을 수 없으면 UserNotFoundException이 발생한다`() {
         val refreshTokenRecord =
             RefreshTokenRecord(

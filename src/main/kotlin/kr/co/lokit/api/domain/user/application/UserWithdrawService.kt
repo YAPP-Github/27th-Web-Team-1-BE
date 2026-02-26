@@ -35,7 +35,7 @@ class UserWithdrawService(
 
         // 2. 회원 탈퇴는 반드시 연결 끊기 완료 후에만 허용
         val couple = coupleRepository.findByUserId(userId)
-        if (couple != null) {
+        if (couple != null && couple.isConnectedAndFull()) {
             throw BusinessException.UserDisconnectRequiredException(
                 errors =
                     errorDetailsOf(

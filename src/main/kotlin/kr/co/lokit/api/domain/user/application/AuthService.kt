@@ -19,6 +19,11 @@ class AuthService(
     private val jwtTokenProvider: JwtTokenProvider,
 ) {
     @Transactional
+    fun logout(userId: Long) {
+        refreshTokenRepository.deleteByUserId(userId)
+    }
+
+    @Transactional
     fun refreshIfValid(refreshToken: String): AuthTokens? {
         val refreshTokenRecord = refreshTokenRepository.findByToken(refreshToken) ?: return null
 

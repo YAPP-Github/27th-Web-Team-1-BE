@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.InviteCodeRepositoryPort
+import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.InviteCode
 import kr.co.lokit.api.domain.couple.domain.InviteCodeStatus
 import kr.co.lokit.api.domain.couple.domain.InviteIssuer
@@ -41,6 +42,9 @@ class CoupleInviteServiceTest {
     @Mock
     lateinit var coupleProfileImageUrlResolver: CoupleProfileImageUrlResolver
 
+    @Mock
+    lateinit var createCoupleUseCase: CreateCoupleUseCase
+
     lateinit var coupleInviteService: CoupleInviteService
 
     @BeforeEach
@@ -54,6 +58,7 @@ class CoupleInviteServiceTest {
                 cacheManager = cacheManager,
                 rateLimiter = CoupleInviteRateLimiter(),
                 coupleProfileImageUrlResolver = coupleProfileImageUrlResolver,
+                createCoupleUseCase = createCoupleUseCase,
             )
     }
 

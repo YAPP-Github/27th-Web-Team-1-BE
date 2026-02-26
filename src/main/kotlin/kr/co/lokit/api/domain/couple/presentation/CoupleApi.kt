@@ -11,6 +11,7 @@ import kr.co.lokit.api.domain.couple.dto.CoupleStatusResponse
 import kr.co.lokit.api.domain.couple.dto.InviteCodePreviewResponse
 import kr.co.lokit.api.domain.couple.dto.InviteCodeResponse
 import kr.co.lokit.api.domain.couple.dto.JoinCoupleRequest
+import kr.co.lokit.api.domain.couple.dto.UpdateFirstMetDateRequest
 import kr.co.lokit.api.domain.couple.dto.VerifyInviteCodeRequest
 
 @SecurityRequirement(name = "Authorization")
@@ -106,5 +107,18 @@ interface CoupleApi {
         @Parameter(hidden = true) userId: Long,
         @Parameter(hidden = true) req: HttpServletRequest,
         @Parameter(hidden = true) res: HttpServletResponse,
+    )
+
+    @Operation(
+        summary = "처음 만난 날짜 수정",
+        description = "커플의 처음 만난 날짜(기념일)를 수정합니다.",
+        responses = [
+            ApiResponse(responseCode = "204", description = "수정 성공"),
+            ApiResponse(responseCode = "404", description = "커플을 찾을 수 없음"),
+        ],
+    )
+    fun updateFirstMetDate(
+        request: UpdateFirstMetDateRequest,
+        @Parameter(hidden = true) userId: Long,
     )
 }

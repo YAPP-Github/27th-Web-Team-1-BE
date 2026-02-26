@@ -10,6 +10,7 @@ import jakarta.persistence.OneToMany
 import kr.co.lokit.api.common.constants.CoupleStatus
 import kr.co.lokit.api.common.entity.BaseEntity
 import kr.co.lokit.api.domain.album.infrastructure.AlbumEntity
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(name = "Couple")
@@ -21,6 +22,7 @@ class CoupleEntity(
     var status: CoupleStatus = CoupleStatus.CONNECTED,
     var disconnectedAt: LocalDateTime? = null,
     var disconnectedByUserId: Long? = null,
+    var firstMetDate: LocalDate? = null,
 ) : BaseEntity() {
     @OneToMany(
         fetch = FetchType.LAZY,

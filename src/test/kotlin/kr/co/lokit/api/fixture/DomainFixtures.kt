@@ -47,7 +47,8 @@ fun createCouple(
     status: CoupleStatus = CoupleStatus.CONNECTED,
     disconnectedAt: LocalDateTime? = null,
     disconnectedByUserId: Long? = null,
-) = Couple(id = id, name = name, userIds = userIds, status = status, disconnectedAt = disconnectedAt, disconnectedByUserId = disconnectedByUserId)
+    firstMetDate: LocalDate? = null,
+) = Couple(id = id, name = name, userIds = userIds, status = status, disconnectedAt = disconnectedAt, disconnectedByUserId = disconnectedByUserId, firstMetDate = firstMetDate)
 
 fun createAlbum(
     id: Long = 0L,

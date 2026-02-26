@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import jakarta.validation.constraints.NotNull
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Schema(description = "커플 생성 요청")
@@ -57,6 +59,13 @@ data class VerifyInviteCodeRequest(
     @field:Size(min = 6, max = 6, message = "초대 코드 형식이 잘못되었습니다.")
     @field:Pattern(regexp = "^\\d{6}$", message = "초대 코드 형식이 잘못되었습니다.")
     val inviteCode: String,
+)
+
+@Schema(description = "처음 만난 날짜 수정 요청")
+data class UpdateFirstMetDateRequest(
+    @field:NotNull(message = "처음 만난 날짜는 필수입니다")
+    @Schema(description = "처음 만난 날짜", example = "2024-01-01", requiredMode = Schema.RequiredMode.REQUIRED)
+    val firstMetDate: LocalDate,
 )
 
 @Schema(description = "초대코드 검증 응답")

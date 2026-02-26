@@ -5,4 +5,5 @@ enum class CoupleCookieStatus {
     COUPLED,
     DISCONNECTED_BY_ME,
     DISCONNECTED_BY_PARTNER,
+    DISCONNECTED_EXPIRED,
 }

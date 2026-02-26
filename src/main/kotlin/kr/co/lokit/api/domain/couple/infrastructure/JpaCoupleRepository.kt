@@ -17,7 +17,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 @Repository
 class JpaCoupleRepository(
@@ -63,12 +63,8 @@ class JpaCoupleRepository(
     override fun findByDisconnectedByUserId(userId: Long): Couple? =
         coupleJpaRepository
             .findByDisconnectedByUserIdCandidates(userId)
-            .sortedWith(
-                compareBy<CoupleEntity> { it.status.selectionPriority }
-                    .thenByDescending { it.coupleUsers.size }
-                    .thenByDescending { it.updatedAt }
-                    .thenByDescending { it.createdAt },
-            ).firstOrNull()
+            .sortedWith(coupleSelectionComparator())
+            .firstOrNull()
             ?.toDomain()
 
     @Transactional
@@ -108,12 +104,16 @@ class JpaCoupleRepository(
     override fun findByUserId(userId: Long): Couple? =
         coupleJpaRepository
             .findByUserIdCandidates(userId)
-            .sortedWith(
-                compareBy<CoupleEntity> { it.status.selectionPriority }
-                    .thenByDescending { it.coupleUsers.size }
-                    .thenByDescending { it.updatedAt }
-                    .thenByDescending { it.createdAt },
-            ).firstOrNull()
+            .sortedWith(coupleSelectionComparator())
+            .firstOrNull()
+            ?.toDomain()
+
+    @Transactional(readOnly = true)
+    override fun findByUserIdFresh(userId: Long): Couple? =
+        coupleJpaRepository
+            .findByUserIdCandidates(userId)
+            .sortedWith(coupleSelectionComparator())
+            .firstOrNull()
             ?.toDomain()
 
     @Transactional
@@ -153,7 +153,17 @@ class JpaCoupleRepository(
         return entity.toDomain()
     }
 
-    @Transactional(readOnly = true)
-    override fun findLatestJoinedAt(coupleId: Long): LocalDateTime? =
-        coupleUserJpaRepository.findLatestJoinedAtByCoupleId(coupleId)
+    @Transactional
+    override fun updateFirstMetDate(coupleId: Long, firstMetDate: LocalDate) {
+        val entity =
+            coupleJpaRepository.findByIdOrNull(coupleId)
+                ?: throw entityNotFound<Couple>(coupleId)
+        entity.firstMetDate = firstMetDate
+    }
+
+    private fun coupleSelectionComparator(): Comparator<CoupleEntity> =
+        compareBy<CoupleEntity> { it.status.selectionPriority }
+            .thenByDescending { it.coupleUsers.size }
+            .thenByDescending { it.updatedAt }
+            .thenByDescending { it.createdAt }
 }

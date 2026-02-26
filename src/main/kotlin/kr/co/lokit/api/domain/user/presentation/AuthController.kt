@@ -1,10 +1,13 @@
 package kr.co.lokit.api.domain.user.presentation
 
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorCode
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
+import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.user.application.LoginService
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
 import org.slf4j.LoggerFactory
@@ -13,6 +16,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -27,6 +31,7 @@ import java.nio.charset.StandardCharsets
 @RequestMapping("auth")
 class AuthController(
     private val loginService: LoginService,
+    private val authService: AuthService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
     private val coupleCookieStatusResolver: CoupleCookieStatusResolver,
     private val cookieGenerator: CookieGenerator,
@@ -78,14 +83,11 @@ class AuthController(
             val loginResult = loginService.login(code)
             val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, loginResult.tokens.accessToken)
             val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, loginResult.tokens.refreshToken)
-            val coupleStatusCookie =
-                cookieGenerator.createCoupleStatusCookie(req, coupleCookieStatusResolver.resolve(loginResult.userId))
 
             ResponseEntity
                 .status(HttpStatus.FOUND)
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, coupleStatusCookie.toString())
                 .location(URI.create(redirectUri))
                 .build()
         } catch (ex: BusinessException) {
@@ -101,6 +103,19 @@ class AuthController(
                 .location(URI.create(buildErrorRedirectUri(redirectUri, ErrorCode.INTERNAL_SERVER_ERROR.code)))
                 .build()
         }
+    }
+
+    @PostMapping("logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    override fun logout(
+        @CurrentUserId userId: Long,
+        req: HttpServletRequest,
+        res: HttpServletResponse,
+    ) {
+        authService.logout(userId)
+        res.addHeader(HttpHeaders.SET_COOKIE, cookieGenerator.clearAccessTokenCookie(req).toString())
+        res.addHeader(HttpHeaders.SET_COOKIE, cookieGenerator.clearRefreshTokenCookie(req).toString())
+        res.addHeader(HttpHeaders.SET_COOKIE, cookieGenerator.clearCoupleStatusCookie(req).toString())
     }
 
     private fun resolveRedirectFromReferer(req: HttpServletRequest): String? {

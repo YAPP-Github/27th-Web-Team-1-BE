@@ -4,9 +4,11 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RequestParam
 
@@ -37,4 +39,20 @@ interface AuthApi {
         @RequestParam(required = false) state: String?,
         @Parameter(hidden = true) req: HttpServletRequest,
     ): ResponseEntity<Unit>
+
+    @SecurityRequirement(name = "Authorization")
+    @Operation(
+        summary = "로그아웃",
+        description = "현재 로그인된 사용자의 세션을 종료합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "204", description = "로그아웃 성공"),
+        ],
+    )
+    fun logout(
+        @Parameter(hidden = true) userId: Long,
+        @Parameter(hidden = true) req: HttpServletRequest,
+        @Parameter(hidden = true) res: HttpServletResponse,
+    )
 }
