@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.user.presentation
 
 import jakarta.validation.Valid
 import kr.co.lokit.api.common.annotation.CurrentUserId
+import kr.co.lokit.api.common.annotation.SyncCoupleStatusCookie
 import kr.co.lokit.api.common.dto.IdResponse
 import kr.co.lokit.api.common.dto.toIdResponse
 import kr.co.lokit.api.domain.user.application.port.`in`.GetMyPageUseCase
@@ -23,6 +24,7 @@ class MyPageController(
     private val getMyPageUseCase: GetMyPageUseCase,
     private val updateMyPageUseCase: UpdateMyPageUseCase,
 ) : MyPageApi {
+    @SyncCoupleStatusCookie
     @GetMapping
     override fun getMyPage(
         @CurrentUserId userId: Long,
