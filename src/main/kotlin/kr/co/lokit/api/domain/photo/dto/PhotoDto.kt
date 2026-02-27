@@ -26,7 +26,7 @@ data class PhotoResponse(
     @Schema(description = "사진의 촬영 일시")
     val takenAt: LocalDateTime?,
     @Schema(description = "조회자가 해당 사진을 수정/삭제할 수 있는지 여부", example = "true")
-    @field:JsonProperty("isEditable")
+    @get:JsonProperty("isEditable")
     val isEditable: Boolean,
 )
 
@@ -41,7 +41,7 @@ data class AlbumWithPhotosResponse(
     @Schema(description = "썸네일 URL", example = "https://example.com/thumbnail.jpg")
     val thumbnailUrl: String?,
     @Schema(description = "조회자가 해당 앨범을 수정/삭제할 수 있는지 여부", example = "true")
-    @field:JsonProperty("isEditable")
+    @get:JsonProperty("isEditable")
     val isEditable: Boolean,
     @Schema(description = "앨범 내 사진 목록")
     val photos: List<PhotoResponse>,
@@ -133,6 +133,6 @@ data class PhotoDetailResponse(
     @Schema(description = "위도", example = "37.4979")
     val latitude: Double,
     @Schema(description = "조회자가 해당 사진을 수정/삭제할 수 있는지 여부", example = "true")
-    @field:JsonProperty("isEditable")
+    @get:JsonProperty("isEditable")
     val isEditable: Boolean,
 )
