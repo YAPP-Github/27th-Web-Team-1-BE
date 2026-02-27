@@ -2,12 +2,13 @@ package kr.co.lokit.api.domain.couple.presentation
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import kr.co.lokit.api.common.constants.CoupleCookieStatus
+import kr.co.lokit.api.common.constants.DomainCookie
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.config.web.CookieProperties
-import kr.co.lokit.api.common.constants.CoupleCookieStatus
 import kr.co.lokit.api.domain.couple.application.CoupleCommandService
 import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.couple.application.port.`in`.CoupleInviteUseCase
@@ -118,7 +119,7 @@ class CoupleControllerTest {
                 partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
         doReturn(CoupleCookieStatus.COUPLED).`when`(coupleCookieStatusResolver).resolve(anyLong())
-        doReturn(ResponseCookie.from("coupleStatus", "COUPLED").build())
+        doReturn(ResponseCookie.from(DomainCookie.COUPLE_STATUS.value, "COUPLED").build())
             .`when`(cookieGenerator)
             .createCoupleStatusCookie(anyObject(), anyObject())
         doReturn(linked).`when`(coupleInviteUseCase).joinByInviteCode(anyLong(), anyString(), anyString())
@@ -169,7 +170,7 @@ class CoupleControllerTest {
                 partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
         doReturn(CoupleCookieStatus.COUPLED).`when`(coupleCookieStatusResolver).resolve(anyLong())
-        doReturn(ResponseCookie.from("coupleStatus", "COUPLED").build())
+        doReturn(ResponseCookie.from(DomainCookie.COUPLE_STATUS.value, "COUPLED").build())
             .`when`(cookieGenerator)
             .createCoupleStatusCookie(anyObject(), anyObject())
         doReturn(coupled).`when`(reconnectCoupleUseCase).reconnect(anyLong())

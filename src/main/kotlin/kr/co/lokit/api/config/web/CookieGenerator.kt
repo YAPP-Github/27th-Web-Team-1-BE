@@ -2,6 +2,7 @@ package kr.co.lokit.api.config.web
 
 import jakarta.servlet.http.HttpServletRequest
 import kr.co.lokit.api.common.constants.CoupleCookieStatus
+import kr.co.lokit.api.common.constants.DomainCookie
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseCookie
 import org.springframework.stereotype.Component
@@ -15,30 +16,30 @@ class CookieGenerator(
     fun createAccessTokenCookie(
         request: HttpServletRequest,
         value: String,
-    ): ResponseCookie = createCookie(request, "accessToken", value, accessTokenExpiration)
+    ): ResponseCookie = createCookie(request, DomainCookie.ACCESS_TOKEN, value, accessTokenExpiration)
 
     fun createRefreshTokenCookie(
         request: HttpServletRequest,
         value: String,
-    ): ResponseCookie = createCookie(request, "refreshToken", value, refreshTokenExpiration)
+    ): ResponseCookie = createCookie(request, DomainCookie.REFRESH_TOKEN, value, refreshTokenExpiration)
 
     fun clearAccessTokenCookie(request: HttpServletRequest): ResponseCookie =
-        createCookie(request, "accessToken", "", 0)
+        createCookie(request, DomainCookie.ACCESS_TOKEN, "", 0)
 
     fun clearRefreshTokenCookie(request: HttpServletRequest): ResponseCookie =
-        createCookie(request, "refreshToken", "", 0)
+        createCookie(request, DomainCookie.REFRESH_TOKEN, "", 0)
 
     fun createCoupleStatusCookie(
         request: HttpServletRequest,
         value: CoupleCookieStatus,
-    ): ResponseCookie = createCookie(request, "coupleStatus", value.name, refreshTokenExpiration, httpOnly = false)
+    ): ResponseCookie = createCookie(request, DomainCookie.COUPLE_STATUS, value.name, refreshTokenExpiration)
 
     fun clearCoupleStatusCookie(request: HttpServletRequest): ResponseCookie =
-        createCookie(request, "coupleStatus", "", 0, httpOnly = false)
+        createCookie(request, DomainCookie.COUPLE_STATUS, "", 0)
 
     fun createCookie(
         request: HttpServletRequest,
-        name: String,
+        name: DomainCookie,
         value: String,
         maxAgeMillis: Long,
         httpOnly: Boolean = true,
@@ -48,26 +49,14 @@ class CookieGenerator(
 
         val builder =
             ResponseCookie
-                .from(name, value)
+                .from(name.value, value)
                 .httpOnly(httpOnly)
                 .path("/")
                 .maxAge(maxAgeMillis / 1000)
                 .secure(!isLocal && cookieProperties.secure)
                 .sameSite(if (isLocal) "Lax" else "None")
 
-        val domain = getCookieDomain(serverName)
-        if (!isLocal && !domain.isNullOrBlank()) {
-            builder.domain(domain)
-        }
-
         return builder.build()
-    }
-
-    private fun getCookieDomain(serverName: String?): String? {
-        if (serverName.isNullOrBlank() || isLocalhost(serverName)) {
-            return null
-        }
-        return cookieProperties.domain
     }
 
     private fun isLocalhost(host: String): Boolean {

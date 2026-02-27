@@ -96,7 +96,6 @@ kakao:
 
 cookie:
     secure: true
-    domain: ${COOKIE_DOMAIN:}
 
 discord:
     webhook:

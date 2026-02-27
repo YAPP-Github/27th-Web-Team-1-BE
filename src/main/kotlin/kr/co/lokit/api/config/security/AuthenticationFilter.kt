@@ -3,6 +3,7 @@ package kr.co.lokit.api.config.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import kr.co.lokit.api.common.constants.DomainCookie
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.domain.user.application.AuthService
 import org.slf4j.LoggerFactory
@@ -26,8 +27,8 @@ class AuthenticationFilter(
         filterChain: FilterChain,
     ) {
         try {
-            val accessToken = getTokenFromCookie(request, "accessToken")
-            val refreshToken = getTokenFromCookie(request, "refreshToken")
+            val accessToken = getTokenFromCookie(request, DomainCookie.ACCESS_TOKEN)
+            val refreshToken = getTokenFromCookie(request, DomainCookie.REFRESH_TOKEN)
 
             log.debug(
                 "Auth filter: uri={}, hasAccessToken={}, hasRefreshToken={}, cookieNames={}",
@@ -85,10 +86,10 @@ class AuthenticationFilter(
 
     private fun getTokenFromCookie(
         request: HttpServletRequest,
-        name: String,
+        name: DomainCookie,
     ): String? =
         request.cookies
-            ?.find { it.name == name }
+            ?.find { it.name == name.value }
             ?.value
             ?.takeIf { it.isNotBlank() && !it.contains(" ") }
 
