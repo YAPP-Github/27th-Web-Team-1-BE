@@ -97,7 +97,7 @@ class MyPageServiceTest {
             )
         `when`(userRepository.findById(1L)).thenReturn(me)
         `when`(userRepository.findById(2L)).thenReturn(partner)
-        `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserIdFresh(1L)).thenReturn(couple)
         `when`(photoRepository.countByCoupleId(1L)).thenReturn(5L)
         `when`(
             photoRepository.findPhotoUrlByCoupleIdWithOffset(eq(1L), anyInt()),
@@ -124,7 +124,7 @@ class MyPageServiceTest {
             )
         `when`(userRepository.findById(1L)).thenReturn(me)
         `when`(userRepository.findById(2L)).thenReturn(partner)
-        `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
+        `when`(coupleRepository.findByUserIdFresh(1L)).thenReturn(couple)
         `when`(photoRepository.countByCoupleId(1L)).thenReturn(0L)
         `when`(albumRepository.findDefaultByCoupleId(1L)).thenReturn(createAlbum(id = 10L, coupleId = 1L, isDefault = true))
 
@@ -139,7 +139,7 @@ class MyPageServiceTest {
     fun `커플이 아니면 coupledDay가 null이다`() {
         val me = createUser(id = 1L, name = "나")
         `when`(userRepository.findById(1L)).thenReturn(me)
-        `when`(coupleRepository.findByUserId(1L)).thenReturn(null)
+        `when`(coupleRepository.findByUserIdFresh(1L)).thenReturn(null)
 
         val result = myPageService.getMyPage(1L)
 
@@ -153,7 +153,7 @@ class MyPageServiceTest {
     fun `마이페이지 조회 시 내 이메일이 포함된다`() {
         val me = createUser(id = 1L, name = "나", email = "myemail@test.com")
         `when`(userRepository.findById(1L)).thenReturn(me)
-        `when`(coupleRepository.findByUserId(1L)).thenReturn(null)
+        `when`(coupleRepository.findByUserIdFresh(1L)).thenReturn(null)
 
         val result = myPageService.getMyPage(1L)
 

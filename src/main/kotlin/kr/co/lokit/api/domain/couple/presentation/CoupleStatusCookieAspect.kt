@@ -12,11 +12,13 @@ import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.AfterReturning
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.reflect.MethodSignature
+import org.springframework.aop.support.AopUtils
 import org.springframework.cache.CacheManager
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Component
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
+import java.lang.reflect.Method
 
 @Aspect
 @Component
@@ -53,10 +55,28 @@ class CoupleStatusCookieAspect(
     }
 
     private fun resolveCurrentUserId(joinPoint: JoinPoint): Long? {
-        val method = (joinPoint.signature as MethodSignature).method
+        val methodSignature = joinPoint.signature as? MethodSignature ?: return null
+        val interfaceMethod = methodSignature.method
+        val targetClass = joinPoint.target?.javaClass
+        val targetMethod =
+            if (targetClass != null) {
+                AopUtils.getMostSpecificMethod(interfaceMethod, targetClass)
+            } else {
+                interfaceMethod
+            }
+
+        return resolveCurrentUserIdByAnnotation(targetMethod, joinPoint.args)
+            ?: resolveCurrentUserIdByAnnotation(interfaceMethod, joinPoint.args)
+            ?: (joinPoint.args.firstOrNull { it is Long } as? Long)
+    }
+
+    private fun resolveCurrentUserIdByAnnotation(
+        method: Method,
+        args: Array<Any?>,
+    ): Long? {
         method.parameters.forEachIndexed { index, parameter ->
             if (parameter.getAnnotation(CurrentUserId::class.java) != null) {
-                return joinPoint.args.getOrNull(index) as? Long
+                return args.getOrNull(index) as? Long
             }
         }
         return null
