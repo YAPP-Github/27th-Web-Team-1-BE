@@ -12,6 +12,7 @@ data class UserPrincipal(
     private val email: String,
     val name: String,
     val role: UserRole,
+    val profileImageUrl: String?,
     val status: AccountStatus = AccountStatus.ACTIVE,
 ) : UserDetails {
     override fun getAuthorities(): Collection<GrantedAuthority> = listOf(SimpleGrantedAuthority(role.authority))
@@ -36,6 +37,7 @@ data class UserPrincipal(
                 name = entity.name,
                 role = entity.role,
                 status = entity.status,
+                profileImageUrl = entity.profileImageUrl,
             )
     }
 }
