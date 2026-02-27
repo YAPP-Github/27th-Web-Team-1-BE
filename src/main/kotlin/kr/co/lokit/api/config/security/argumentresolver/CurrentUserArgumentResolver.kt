@@ -36,6 +36,7 @@ class CurrentUserArgumentResolver : HandlerMethodArgumentResolver {
             email = principal.username,
             name = principal.name,
             role = principal.role,
+            profileImageUrl = principal.profileImageUrl,
         )
     }
 }
