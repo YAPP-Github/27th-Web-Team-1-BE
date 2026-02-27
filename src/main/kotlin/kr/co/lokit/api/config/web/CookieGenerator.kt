@@ -55,7 +55,19 @@ class CookieGenerator(
                 .secure(!isLocal && cookieProperties.secure)
                 .sameSite(if (isLocal) "Lax" else "None")
 
+        val domain = getCookieDomain(serverName)
+        if (!isLocal && !domain.isNullOrBlank()) {
+            builder.domain(domain)
+        }
+
         return builder.build()
+    }
+
+    private fun getCookieDomain(serverName: String?): String? {
+        if (serverName.isNullOrBlank() || isLocalhost(serverName)) {
+            return null
+        }
+        return cookieProperties.domain
     }
 
     private fun isLocalhost(host: String): Boolean {
