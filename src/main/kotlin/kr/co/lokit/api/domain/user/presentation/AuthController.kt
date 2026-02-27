@@ -81,6 +81,11 @@ class AuthController(
             val loginResult = loginService.login(code)
             val accessTokenCookie = cookieGenerator.createAccessTokenCookie(req, loginResult.tokens.accessToken)
             val refreshTokenCookie = cookieGenerator.createRefreshTokenCookie(req, loginResult.tokens.refreshToken)
+            log.info(
+                "Kakao callback success: redirectUri={}, issuedCookies={}",
+                redirectUri,
+                listOf("accessToken", "refreshToken").joinToString(","),
+            )
 
             ResponseEntity
                 .status(HttpStatus.FOUND)
@@ -89,13 +94,13 @@ class AuthController(
                 .location(URI.create(redirectUri))
                 .build()
         } catch (ex: BusinessException) {
-            log.info("Kakao callback failed: {}", ex.errorCode.code)
+            log.info("Kakao callback failed: code={}, redirectUri={}", ex.errorCode.code, redirectUri)
             ResponseEntity
                 .status(HttpStatus.FOUND)
                 .location(URI.create(buildErrorRedirectUri(redirectUri, ex.errorCode.code)))
                 .build()
         } catch (ex: Exception) {
-            log.error("Kakao callback unexpected error", ex)
+            log.error("Kakao callback unexpected error: redirectUri={}", redirectUri, ex)
             ResponseEntity
                 .status(HttpStatus.FOUND)
                 .location(URI.create(buildErrorRedirectUri(redirectUri, ErrorCode.INTERNAL_SERVER_ERROR.code)))

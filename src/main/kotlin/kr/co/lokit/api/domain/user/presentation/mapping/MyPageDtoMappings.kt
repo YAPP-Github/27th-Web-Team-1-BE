@@ -14,4 +14,5 @@ fun MyPageReadModel.toResponse(): MyPageResponse =
         coupledDay = coupledDay,
         couplePhotoCount = couplePhotoCount,
         defaultAlbumId = defaultAlbumId,
+        backgroundImageUrl = backgroundImageUrl,
     )

@@ -11,6 +11,8 @@ import kr.co.lokit.api.fixture.createUser
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.verify
@@ -97,6 +99,9 @@ class MyPageServiceTest {
         `when`(userRepository.findById(2L)).thenReturn(partner)
         `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
         `when`(photoRepository.countByCoupleId(1L)).thenReturn(5L)
+        `when`(
+            photoRepository.findPhotoUrlByCoupleIdWithOffset(eq(1L), anyInt()),
+        ).thenReturn("https://example.com/background.jpg")
         `when`(albumRepository.findDefaultByCoupleId(1L)).thenReturn(createAlbum(id = 10L, coupleId = 1L, isDefault = true))
 
         val result = myPageService.getMyPage(1L)
@@ -104,6 +109,7 @@ class MyPageServiceTest {
         assertEquals("test@test.com", result.myEmail)
         assertEquals(LocalDate.now().minusDays(9), result.firstMetDate)
         assertEquals(10L, result.coupledDay)
+        assertEquals("https://example.com/background.jpg", result.backgroundImageUrl)
     }
 
     @Test
@@ -126,6 +132,7 @@ class MyPageServiceTest {
 
         assertNull(result.firstMetDate)
         assertNull(result.coupledDay)
+        assertNull(result.backgroundImageUrl)
     }
 
     @Test
@@ -139,6 +146,7 @@ class MyPageServiceTest {
         assertNull(result.firstMetDate)
         assertNull(result.coupledDay)
         assertNull(result.partnerName)
+        assertNull(result.backgroundImageUrl)
     }
 
     @Test

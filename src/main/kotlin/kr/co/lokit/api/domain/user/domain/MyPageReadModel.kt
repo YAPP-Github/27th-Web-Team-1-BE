@@ -12,4 +12,5 @@ data class MyPageReadModel(
     val coupledDay: Long?,
     val couplePhotoCount: Long,
     val defaultAlbumId: Long,
+    val backgroundImageUrl: String?,
 )
