@@ -56,7 +56,22 @@ class CookieGenerator(
                 .secure(!isLocal && cookieProperties.secure)
                 .sameSite(if (isLocal) "Lax" else "None")
 
+        val domain = resolveCookieDomain(serverName, isLocal)
+        if (domain != null) {
+            builder.domain(domain)
+        }
+
         return builder.build()
+    }
+
+    private fun resolveCookieDomain(
+        serverName: String,
+        isLocal: Boolean,
+    ): String? {
+        if (isLocal) return null
+        val configuredDomain = cookieProperties.domain?.trim()?.trimStart('.')
+        require(!configuredDomain.isNullOrBlank())
+        return configuredDomain
     }
 
     private fun isLocalhost(host: String): Boolean {
