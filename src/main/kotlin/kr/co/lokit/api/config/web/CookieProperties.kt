@@ -8,4 +8,5 @@ import org.springframework.stereotype.Component
 class CookieProperties(
     var secure: Boolean = false,
     var domain: String? = null,
+    var namePrefix: String = "",
 )

@@ -47,17 +47,41 @@ class CookieGenerator(
     ): ResponseCookie {
         val serverName = request.serverName
         val isLocal = isLocalhost(serverName)
+        val resolvedCookieName = resolveCookieName(name)
 
         val builder =
             ResponseCookie
-                .from(name.value, value)
+                .from(resolvedCookieName, value)
                 .httpOnly(httpOnly)
                 .path("/")
                 .maxAge(maxAgeMillis / 1000)
                 .secure(!isLocal && cookieProperties.secure)
                 .sameSite(if (isLocal) "Lax" else "None")
 
+        val cookieDomain = resolveCookieDomain(serverName, isLocal)
+        if (cookieDomain != null) {
+            builder.domain(cookieDomain)
+        }
+
         return builder.build()
+    }
+
+    fun resolveCookieName(name: DomainCookie): String {
+        val prefix = cookieProperties.namePrefix.trim()
+        if (prefix.isBlank()) return name.value
+        val baseName = name.value.replaceFirstChar { it.uppercase() }
+        return "$prefix$baseName"
+    }
+
+    private fun resolveCookieDomain(
+        serverName: String,
+        isLocal: Boolean,
+    ): String? {
+        if (isLocal) return null
+        return cookieProperties.domain
+            ?.trim()
+            ?.trimStart('.')
+            ?.takeIf { it.isNotBlank() }
     }
 
     private fun isLocalhost(host: String): Boolean {

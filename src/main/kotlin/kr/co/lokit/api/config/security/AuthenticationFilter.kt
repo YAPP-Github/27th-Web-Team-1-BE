@@ -89,7 +89,7 @@ class AuthenticationFilter(
         name: DomainCookie,
     ): String? =
         request.cookies
-            ?.find { it.name == name.value }
+            ?.find { it.name == cookieGenerator.resolveCookieName(name) }
             ?.value
             ?.takeIf { it.isNotBlank() && !it.contains(" ") }
 
