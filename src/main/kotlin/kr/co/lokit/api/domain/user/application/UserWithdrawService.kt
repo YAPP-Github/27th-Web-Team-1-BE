@@ -46,7 +46,7 @@ class UserWithdrawService(
             )
         }
 
-        // 3. User status → WITHDRAWN, withdrawnAt 설정
+        // 3. 즉시 비가역 탈퇴 처리(익명화 + 소프트삭제)
         userRepository.withdraw(userId)
 
         // 4. 캐시 무효화

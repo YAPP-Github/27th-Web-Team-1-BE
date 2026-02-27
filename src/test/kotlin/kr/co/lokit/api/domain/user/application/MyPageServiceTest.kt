@@ -18,6 +18,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.cache.CacheManager
 import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -35,6 +36,9 @@ class MyPageServiceTest {
 
     @Mock
     lateinit var albumRepository: AlbumRepositoryPort
+
+    @Mock
+    lateinit var cacheManager: CacheManager
 
     @InjectMocks
     lateinit var myPageService: MyPageService

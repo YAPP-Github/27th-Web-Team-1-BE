@@ -1,6 +1,8 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.config.cache.CacheRegion
+import kr.co.lokit.api.config.cache.evictKey
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -10,6 +12,7 @@ import kr.co.lokit.api.domain.user.application.port.`in`.GetMyPageUseCase
 import kr.co.lokit.api.domain.user.application.port.`in`.UpdateMyPageUseCase
 import kr.co.lokit.api.domain.user.domain.MyPageReadModel
 import kr.co.lokit.api.domain.user.domain.User
+import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -22,6 +25,7 @@ class MyPageService(
     private val coupleRepository: CoupleRepositoryPort,
     private val photoRepository: PhotoRepositoryPort,
     private val albumRepository: AlbumRepositoryPort,
+    private val cacheManager: CacheManager,
 ) : UpdateMyPageUseCase,
     GetMyPageUseCase {
     @Transactional(readOnly = true)
@@ -82,7 +86,9 @@ class MyPageService(
         nickname: String,
     ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        return userRepository.update(user.withNickname(nickname))
+        val updated = userRepository.update(user.withNickname(nickname))
+        cacheManager.evictKey(CacheRegion.USER_DETAILS, updated.email)
+        return updated
     }
 
     @Transactional
@@ -91,7 +97,9 @@ class MyPageService(
         profileImageUrl: String,
     ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        return userRepository.update(user.withProfileImage(profileImageUrl))
+        val updated = userRepository.update(user.withProfileImage(profileImageUrl))
+        cacheManager.evictKey(CacheRegion.USER_DETAILS, updated.email)
+        return updated
     }
 
     private fun LocalDate?.toDDay(): Long? {
