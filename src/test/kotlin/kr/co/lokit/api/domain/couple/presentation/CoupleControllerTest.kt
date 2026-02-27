@@ -119,6 +119,9 @@ class CoupleControllerTest {
                 partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
         doReturn(CoupleCookieStatus.COUPLED).`when`(coupleCookieStatusResolver).resolve(anyLong())
+        doReturn(ResponseCookie.from(DomainCookie.COUPLE_STATUS.value, "").maxAge(0).build())
+            .`when`(cookieGenerator)
+            .clearCoupleStatusCookie(anyObject())
         doReturn(ResponseCookie.from(DomainCookie.COUPLE_STATUS.value, "COUPLED").build())
             .`when`(cookieGenerator)
             .createCoupleStatusCookie(anyObject(), anyObject())
@@ -170,6 +173,9 @@ class CoupleControllerTest {
                 partnerSummary = PartnerSummaryReadModel(userId = 2L, nickname = "테스트", profileImageUrl = null),
             )
         doReturn(CoupleCookieStatus.COUPLED).`when`(coupleCookieStatusResolver).resolve(anyLong())
+        doReturn(ResponseCookie.from(DomainCookie.COUPLE_STATUS.value, "").maxAge(0).build())
+            .`when`(cookieGenerator)
+            .clearCoupleStatusCookie(anyObject())
         doReturn(ResponseCookie.from(DomainCookie.COUPLE_STATUS.value, "COUPLED").build())
             .`when`(cookieGenerator)
             .createCoupleStatusCookie(anyObject(), anyObject())

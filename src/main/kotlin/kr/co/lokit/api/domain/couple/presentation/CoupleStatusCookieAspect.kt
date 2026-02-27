@@ -44,6 +44,10 @@ class CoupleStatusCookieAspect(
         response.setDateHeader("Expires", 0)
         response.addHeader(
             HttpHeaders.SET_COOKIE,
+            cookieGenerator.clearCoupleStatusCookie(request).toString(),
+        )
+        response.addHeader(
+            HttpHeaders.SET_COOKIE,
             cookieGenerator.createCoupleStatusCookie(request, coupleStatus).toString(),
         )
     }
