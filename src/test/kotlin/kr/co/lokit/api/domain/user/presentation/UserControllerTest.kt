@@ -1,5 +1,6 @@
 package kr.co.lokit.api.domain.user.presentation
 
+import kr.co.lokit.api.common.constants.DomainCookie
 import kr.co.lokit.api.config.security.CompositeAuthenticationResolver
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.config.web.CookieGenerator
@@ -48,10 +49,10 @@ class UserControllerTest {
     @Test
     fun `회원 탈퇴 성공`() {
         whenever(cookieGenerator.clearAccessTokenCookie(any())).thenReturn(
-            ResponseCookie.from("accessToken", "").maxAge(0).build(),
+            ResponseCookie.from(DomainCookie.ACCESS_TOKEN.value, "").maxAge(0).build(),
         )
         whenever(cookieGenerator.clearRefreshTokenCookie(any())).thenReturn(
-            ResponseCookie.from("refreshToken", "").maxAge(0).build(),
+            ResponseCookie.from(DomainCookie.REFRESH_TOKEN.value, "").maxAge(0).build(),
         )
 
         mockMvc

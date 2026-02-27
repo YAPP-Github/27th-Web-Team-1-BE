@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
+import kr.co.lokit.api.common.constants.DomainCookie
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -48,7 +49,7 @@ class OpenApiConfig(
                         SecurityScheme()
                             .type(SecurityScheme.Type.APIKEY)
                             .`in`(SecurityScheme.In.COOKIE)
-                            .name("accessToken")
+                            .name(DomainCookie.ACCESS_TOKEN.value)
                             .description(securityDescription()),
                     ),
             ).addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
