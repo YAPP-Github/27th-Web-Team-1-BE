@@ -1,9 +1,11 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.BusinessException
+import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
+import kr.co.lokit.api.fixture.createAlbum
 import kr.co.lokit.api.fixture.createCouple
 import kr.co.lokit.api.fixture.createUser
 import org.junit.jupiter.api.Test
@@ -28,6 +30,9 @@ class MyPageServiceTest {
 
     @Mock
     lateinit var photoRepository: PhotoRepositoryPort
+
+    @Mock
+    lateinit var albumRepository: AlbumRepositoryPort
 
     @InjectMocks
     lateinit var myPageService: MyPageService
@@ -92,6 +97,7 @@ class MyPageServiceTest {
         `when`(userRepository.findById(2L)).thenReturn(partner)
         `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
         `when`(photoRepository.countByCoupleId(1L)).thenReturn(5L)
+        `when`(albumRepository.findDefaultByCoupleId(1L)).thenReturn(createAlbum(id = 10L, coupleId = 1L, isDefault = true))
 
         val result = myPageService.getMyPage(1L)
 
@@ -114,6 +120,7 @@ class MyPageServiceTest {
         `when`(userRepository.findById(2L)).thenReturn(partner)
         `when`(coupleRepository.findByUserId(1L)).thenReturn(couple)
         `when`(photoRepository.countByCoupleId(1L)).thenReturn(0L)
+        `when`(albumRepository.findDefaultByCoupleId(1L)).thenReturn(createAlbum(id = 10L, coupleId = 1L, isDefault = true))
 
         val result = myPageService.getMyPage(1L)
 

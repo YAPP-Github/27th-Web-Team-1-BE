@@ -55,7 +55,7 @@ class CookieGenerator(
                 .path("/")
                 .maxAge(maxAgeMillis / 1000)
                 .secure(!isLocal && cookieProperties.secure)
-                .sameSite("Lax")
+                .sameSite(if (isLocal) "Lax" else "None")
 
         return builder.build()
     }
