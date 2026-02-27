@@ -2,6 +2,7 @@ package kr.co.lokit.api.domain.photo.infrastructure
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.domain.Pageable
 import java.time.LocalDateTime
 
 interface PhotoJpaRepository : JpaRepository<PhotoEntity, Long> {
@@ -19,6 +20,12 @@ interface PhotoJpaRepository : JpaRepository<PhotoEntity, Long> {
 
     @Query("SELECT p.url FROM Photo p WHERE p.album.couple.id = :coupleId")
     fun findUrlsByCoupleId(coupleId: Long): List<String>
+
+    @Query("SELECT p.url FROM Photo p WHERE p.album.couple.id = :coupleId ORDER BY p.id")
+    fun findUrlsByCoupleId(
+        coupleId: Long,
+        pageable: Pageable,
+    ): List<String>
 
     @Query("SELECT COUNT(p) FROM Photo p WHERE p.album.couple.id = :coupleId")
     fun countByCoupleId(coupleId: Long): Long

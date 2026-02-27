@@ -44,4 +44,6 @@ data class MyPageResponse(
     val couplePhotoCount: Long,
     @Schema(description = "기본앨범 ID", example = "1")
     val defaultAlbumId: Long,
+    @Schema(description = "랜덤 배경 사진", example = "https://example.com/background.jpg")
+    val backgroundImageUrl: String?,
 )

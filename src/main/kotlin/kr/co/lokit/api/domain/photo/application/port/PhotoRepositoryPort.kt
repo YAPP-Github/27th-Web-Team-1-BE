@@ -19,4 +19,9 @@ interface PhotoRepositoryPort {
     fun saveAll(photos: List<Photo>): List<Photo>
 
     fun countByCoupleId(coupleId: Long): Long
+
+    fun findPhotoUrlByCoupleIdWithOffset(
+        coupleId: Long,
+        offset: Int,
+    ): String?
 }

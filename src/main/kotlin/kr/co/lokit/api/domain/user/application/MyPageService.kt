@@ -1,8 +1,8 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.entityNotFound
-import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
+import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.ThreadLocalRandom
 
 @Service
 class MyPageService(
@@ -46,6 +47,13 @@ class MyPageService(
             }
 
         val couplePhotoCount = couple?.let { photoRepository.countByCoupleId(it.id) } ?: 0L
+        val backgroundImageUrl =
+            couple?.let {
+                resolveRandomBackgroundImageUrl(
+                    coupleId = it.id,
+                    photoCount = couplePhotoCount,
+                )
+            }
 
         val firstMetDate = if (isCoupled) couple.firstMetDate else null
         val defaultAlbumId =
@@ -64,6 +72,7 @@ class MyPageService(
             coupledDay = coupledDay,
             couplePhotoCount = couplePhotoCount,
             defaultAlbumId = defaultAlbumId,
+            backgroundImageUrl = backgroundImageUrl,
         )
     }
 
@@ -89,5 +98,14 @@ class MyPageService(
         if (this == null) return null
         val days = ChronoUnit.DAYS.between(this, LocalDate.now()) + 1
         return days.takeIf { it >= 0 }
+    }
+
+    private fun resolveRandomBackgroundImageUrl(
+        coupleId: Long,
+        photoCount: Long,
+    ): String? {
+        if (photoCount <= 0L) return null
+        val randomOffset = ThreadLocalRandom.current().nextLong(photoCount).toInt()
+        return photoRepository.findPhotoUrlByCoupleIdWithOffset(coupleId, randomOffset)
     }
 }

@@ -11,6 +11,7 @@ import kr.co.lokit.api.domain.photo.infrastructure.mapping.toEntity
 import kr.co.lokit.api.domain.photo.infrastructure.mapping.toPhotoDetail
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -94,4 +95,10 @@ class JpaPhotoRepository(
 
     @Transactional(readOnly = true)
     override fun countByCoupleId(coupleId: Long): Long = photoJpaRepository.countByCoupleId(coupleId)
+
+    @Transactional(readOnly = true)
+    override fun findPhotoUrlByCoupleIdWithOffset(
+        coupleId: Long,
+        offset: Int,
+    ): String? = photoJpaRepository.findUrlsByCoupleId(coupleId, PageRequest.of(offset, 1)).firstOrNull()
 }
