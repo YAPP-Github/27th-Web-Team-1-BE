@@ -69,8 +69,7 @@ class CookieGenerator(
     fun resolveCookieName(name: DomainCookie): String {
         val prefix = cookieProperties.namePrefix.trim()
         if (prefix.isBlank()) return name.value
-        val baseName = name.value.replaceFirstChar { it.uppercase() }
-        return "$prefix$baseName"
+        return "$prefix${name.value}"
     }
 
     private fun resolveCookieDomain(
