@@ -28,7 +28,7 @@ interface AuthApi {
     )
     @SecurityRequirements
     fun kakaoAuthorize(
-        @Parameter(description = "로그인 후 리다이렉트할 프론트엔드 URL", example = "https://develop.lokit.co.kr")
+        @Parameter(description = "로그인 후 리다이렉트할 프론트엔드 URL", example = "https://developer.co.kr")
         redirect: String?,
         @Parameter(hidden = true) req: HttpServletRequest,
     ): ResponseEntity<Unit>
