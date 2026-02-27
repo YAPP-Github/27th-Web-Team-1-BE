@@ -40,12 +40,14 @@ class CoupleDisconnectService(
 
             CoupleDisconnectAction.REMOVE_MEMBER_ONLY -> {
                 coupleRepository.removeCoupleUser(userId)
+                if (couple.userIds.size == 1) {
+                    coupleRepository.deleteById(couple.id)
+                }
             }
 
             CoupleDisconnectAction.DISCONNECT_AND_REMOVE -> {
                 coupleRepository.disconnect(couple.id, userId)
                 coupleRepository.removeCoupleUser(userId)
-                coupleRepository.deleteById(couple.id)
             }
         }
         cacheManager.evictUserCoupleCache(userId, *couple.userIds.filter { it != userId }.toLongArray())
