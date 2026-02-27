@@ -341,8 +341,7 @@ jobs:
                             --name $CONTAINER_NAME \
                             --restart unless-stopped \
                             --network lokit-net \
-                            --memory="1024m" \
-                            --memory-swap="1536m" \
+                            --memory="1280m" \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=dev \
                             -e DISCORD_LIFECYCLE_ENABLED=true \
