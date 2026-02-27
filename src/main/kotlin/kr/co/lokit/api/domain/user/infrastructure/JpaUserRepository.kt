@@ -69,6 +69,13 @@ class JpaUserRepository(
             userJpaRepository.findByIdOrNull(userId)
                 ?: throw entityNotFound<UserEntity>(userId)
         entity.markWithdrawn(LocalDateTime.now())
+
+        entity.email = "withdrawn-$userId-${System.currentTimeMillis()}@lokit.co.kr"
+        entity.name = "탈퇴한 사용자"
+        entity.profileImageUrl = null
+        entity.withdrawnAt = null
+
+        userJpaRepository.delete(entity)
     }
 
     @Transactional
