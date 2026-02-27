@@ -32,10 +32,11 @@ class CookieGenerator(
     fun createCoupleStatusCookie(
         request: HttpServletRequest,
         value: CoupleCookieStatus,
-    ): ResponseCookie = createCookie(request, DomainCookie.COUPLE_STATUS, value.name, refreshTokenExpiration)
+    ): ResponseCookie =
+        createCookie(request, DomainCookie.COUPLE_STATUS, value.name, refreshTokenExpiration, httpOnly = false)
 
     fun clearCoupleStatusCookie(request: HttpServletRequest): ResponseCookie =
-        createCookie(request, DomainCookie.COUPLE_STATUS, "", 0)
+        createCookie(request, DomainCookie.COUPLE_STATUS, "", 0, httpOnly = false)
 
     fun createCookie(
         request: HttpServletRequest,
@@ -54,21 +55,9 @@ class CookieGenerator(
                 .path("/")
                 .maxAge(maxAgeMillis / 1000)
                 .secure(!isLocal && cookieProperties.secure)
-                .sameSite(if (isLocal) "Lax" else "None")
-
-        val domain = resolveCookieDomain(isLocal)
-        if (domain != null) {
-            builder.domain(domain)
-        }
+                .sameSite("Lax")
 
         return builder.build()
-    }
-
-    private fun resolveCookieDomain(isLocal: Boolean): String? {
-        if (isLocal) return null
-        val configuredDomain = cookieProperties.domain?.trim()
-        require(!configuredDomain.isNullOrBlank())
-        return configuredDomain
     }
 
     private fun isLocalhost(host: String): Boolean {

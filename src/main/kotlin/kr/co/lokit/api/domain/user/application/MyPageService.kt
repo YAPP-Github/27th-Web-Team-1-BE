@@ -1,6 +1,7 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.entityNotFound
+import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.photo.application.port.PhotoRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
@@ -18,6 +19,7 @@ class MyPageService(
     private val userRepository: UserRepositoryPort,
     private val coupleRepository: CoupleRepositoryPort,
     private val photoRepository: PhotoRepositoryPort,
+    private val albumRepository: AlbumRepositoryPort,
 ) : UpdateMyPageUseCase,
     GetMyPageUseCase {
     @Transactional(readOnly = true)
@@ -44,7 +46,8 @@ class MyPageService(
 
         val couplePhotoCount = couple?.let { photoRepository.countByCoupleId(it.id) } ?: 0L
 
-        val firstMetDate = if (isCoupled) requireNotNull(couple).firstMetDate else null
+        val firstMetDate = if (isCoupled) couple.firstMetDate else null
+        val defaultAlbum = albumRepository.findDefaultByCoupleId(couple!!.id)
 
         return MyPageReadModel(
             myEmail = me.email,
@@ -55,6 +58,7 @@ class MyPageService(
             firstMetDate = firstMetDate,
             coupledDay = coupledDay,
             couplePhotoCount = couplePhotoCount,
+            defaultAlbumId = defaultAlbum!!.id,
         )
     }
 

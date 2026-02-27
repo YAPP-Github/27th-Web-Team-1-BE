@@ -11,4 +11,5 @@ data class MyPageReadModel(
     val firstMetDate: LocalDate?,
     val coupledDay: Long?,
     val couplePhotoCount: Long,
+    val defaultAlbumId: Long,
 )
