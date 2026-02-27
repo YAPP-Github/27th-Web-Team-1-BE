@@ -54,16 +54,19 @@ class CoupleController(
     ) = Unit
 
     @PostMapping("invites")
+    @SyncCoupleStatusCookie
     @ResponseStatus(HttpStatus.CREATED)
     override fun createInvite(
         @CurrentUserId userId: Long,
     ): InviteCodeResponse = coupleInviteUseCase.generateInviteCode(userId = userId).toResponse()
 
+    @SyncCoupleStatusCookie
     @PostMapping("invites/refresh")
     override fun refreshInvite(
         @CurrentUserId userId: Long,
     ): InviteCodeResponse = coupleInviteUseCase.refreshInviteCode(userId = userId).toResponse()
 
+    @SyncCoupleStatusCookie
     @PostMapping("invites/verify")
     override fun verifyInviteCode(
         @RequestBody @Valid request: VerifyInviteCodeRequest,
@@ -113,6 +116,7 @@ class CoupleController(
     }
 
     @PatchMapping("me/first-met-date")
+    @SyncCoupleStatusCookie
     @ResponseStatus(HttpStatus.NO_CONTENT)
     override fun updateFirstMetDate(
         @RequestBody @Valid request: UpdateFirstMetDateRequest,
