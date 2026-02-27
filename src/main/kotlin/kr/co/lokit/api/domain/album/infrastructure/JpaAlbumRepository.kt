@@ -2,7 +2,6 @@ package kr.co.lokit.api.domain.album.infrastructure
 
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.common.util.orZero
-import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.album.infrastructure.mapping.toDomain
@@ -11,7 +10,6 @@ import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.infrastructure.CoupleJpaRepository
 import kr.co.lokit.api.domain.user.domain.User
 import kr.co.lokit.api.domain.user.infrastructure.UserJpaRepository
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -108,7 +106,7 @@ class JpaAlbumRepository(
         }
     }
 
-    @Cacheable(cacheNames = [CacheNames.COUPLE_ALBUMS], key = "#coupleId", sync = true)
+    //    @Cacheable(cacheNames = [CacheNames.COUPLE_ALBUMS], key = "#coupleId", sync = true)
     @Transactional(readOnly = true)
     override fun findAllByCoupleId(coupleId: Long): List<Album> {
         val albums = findAllByCoupleIdInternal(coupleId)

@@ -2,7 +2,6 @@ package kr.co.lokit.api.domain.couple.application
 
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.exception.BusinessException
-import kr.co.lokit.api.config.cache.CacheNames
 import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
@@ -10,7 +9,6 @@ import kr.co.lokit.api.domain.couple.domain.Couple
 import kr.co.lokit.api.domain.couple.domain.CoupleProfileImage
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import org.springframework.cache.CacheManager
-import org.springframework.cache.annotation.CachePut
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -24,7 +22,7 @@ class CoupleCommandService(
 ) : CreateCoupleUseCase {
     @OptimisticRetry
     @Transactional
-    @CachePut(cacheNames = [CacheNames.USER_COUPLE], key = "#userId")
+//    @CachePut(cacheNames = [CacheNames.USER_COUPLE], key = "#userId")
     override fun createIfNone(
         couple: Couple,
         userId: Long,
@@ -41,7 +39,10 @@ class CoupleCommandService(
         }
 
     @Transactional
-    fun updateFirstMetDate(userId: Long, firstMetDate: LocalDate) {
+    fun updateFirstMetDate(
+        userId: Long,
+        firstMetDate: LocalDate,
+    ) {
         val couple =
             coupleRepository.findByUserId(userId)
                 ?: throw BusinessException.CoupleNotFoundException()
