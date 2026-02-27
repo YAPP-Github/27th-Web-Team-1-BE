@@ -27,7 +27,7 @@ class MyPageService(
     @Transactional(readOnly = true)
     override fun getMyPage(userId: Long): MyPageReadModel {
         val me = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
-        val couple = coupleRepository.findByUserId(userId)
+        val couple = coupleRepository.findByUserIdFresh(userId)
         val isCoupled = couple?.isConnectedAndFull() == true
 
         val partner =
