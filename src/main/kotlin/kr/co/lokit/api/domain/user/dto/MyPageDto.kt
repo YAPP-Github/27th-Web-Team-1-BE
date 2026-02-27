@@ -42,4 +42,6 @@ data class MyPageResponse(
     val coupledDay: Long?,
     @Schema(description = "커플 내 전체 사진 수", example = "128")
     val couplePhotoCount: Long,
+    @Schema(description = "기본앨범 ID", example = "1")
+    val defaultAlbumId: Long,
 )

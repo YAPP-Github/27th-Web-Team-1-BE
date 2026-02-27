@@ -13,4 +13,5 @@ fun MyPageReadModel.toResponse(): MyPageResponse =
         firstMetDate = firstMetDate,
         coupledDay = coupledDay,
         couplePhotoCount = couplePhotoCount,
+        defaultAlbumId = defaultAlbumId,
     )
