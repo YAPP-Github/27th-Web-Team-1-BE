@@ -6,8 +6,6 @@ import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.CacheNames
-import kr.co.lokit.api.config.cache.CacheRegion
-import kr.co.lokit.api.config.cache.evictKey
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.application.port.`in`.CreateAlbumUseCase
 import kr.co.lokit.api.domain.album.application.port.`in`.UpdateAlbumUseCase
@@ -42,7 +40,7 @@ class AlbumCommandService(
             )
         }
         val saved = albumRepository.save(album, userId)
-        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, currentCoupleId)
+//        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, currentCoupleId)
         return saved
     }
 
@@ -67,7 +65,7 @@ class AlbumCommandService(
             )
         }
         val updated = albumRepository.update(album.renamed(title))
-        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
+//        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
         return updated
     }
 
@@ -75,7 +73,7 @@ class AlbumCommandService(
     @Transactional
     @Caching(
         evict = [
-            CacheEvict(cacheNames = [CacheNames.ALBUM_COUPLE], key = "#id"),
+//            CacheEvict(cacheNames = [CacheNames.ALBUM_COUPLE], key = "#id"),
             CacheEvict(cacheNames = [CacheNames.ALBUM], key = "#userId + ':' + #id"),
         ],
     )
@@ -92,7 +90,7 @@ class AlbumCommandService(
             )
         }
         albumRepository.deleteById(id)
-        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
+//        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, album.coupleId)
         mapPhotosCacheService.evictForCouple(album.coupleId)
     }
 }

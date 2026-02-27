@@ -38,8 +38,8 @@ fun CacheManager.clearPermissionCaches() {
     clearCaches(*CacheRegionGroups.PERMISSION)
 }
 
-fun CacheManager.evictUserCoupleCache(vararg userIds: Long) {
-    userIds.forEach { userId ->
-        evictKey(CacheRegion.USER_COUPLE, userId)
-    }
-}
+// fun CacheManager.evictUserCoupleCache(vararg userIds: Long) {
+//    userIds.forEach { userId ->
+//        evictKey(CacheRegion.USER_COUPLE, userId)
+//    }
+// }

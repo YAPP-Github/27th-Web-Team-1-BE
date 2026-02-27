@@ -1,11 +1,9 @@
 package kr.co.lokit.api.domain.couple.presentation
 
+// import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.annotation.SyncCoupleStatusCookie
-import kr.co.lokit.api.config.cache.CacheRegion
 import kr.co.lokit.api.config.cache.clearPermissionCaches
-import kr.co.lokit.api.config.cache.evictKey
-import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.config.web.CookieGenerator
 import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -84,26 +82,26 @@ class CoupleStatusCookieAspect(
     }
 
     private fun evictCoupleCachesForCookie(userId: Long) {
-        cacheManager.evictUserCoupleCache(userId)
+//        cacheManager.evictUserCoupleCache(userId)
 
         val currentCouple = coupleRepository.findByUserIdFresh(userId)
         currentCouple?.userIds?.let { relatedUserIds ->
-            cacheManager.evictUserCoupleCache(*relatedUserIds.toLongArray())
+//            cacheManager.evictUserCoupleCache(*relatedUserIds.toLongArray())
         }
 
         val currentCoupleId = currentCouple?.id
         if (currentCoupleId != null) {
-            cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, currentCoupleId)
+//            cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, currentCoupleId)
         }
 
         val disconnectedByMe = coupleRepository.findByDisconnectedByUserId(userId)
         disconnectedByMe?.userIds?.let { relatedUserIds ->
-            cacheManager.evictUserCoupleCache(*relatedUserIds.toLongArray())
+//            cacheManager.evictUserCoupleCache(*relatedUserIds.toLongArray())
         }
 
         val disconnectedCoupleId = disconnectedByMe?.id
         if (disconnectedCoupleId != null && disconnectedCoupleId != currentCoupleId) {
-            cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, disconnectedCoupleId)
+//            cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, disconnectedCoupleId)
         }
 
         cacheManager.clearPermissionCaches()

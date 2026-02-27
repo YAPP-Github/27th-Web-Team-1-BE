@@ -6,7 +6,7 @@ import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.clearPermissionCaches
-import kr.co.lokit.api.config.cache.evictUserCoupleCache
+// import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.mapping.toCoupledStatusReadModel
 import kr.co.lokit.api.domain.couple.application.mapping.toIssueReadModel
 import kr.co.lokit.api.domain.couple.application.mapping.toPreviewReadModel
@@ -205,7 +205,7 @@ class CoupleInviteService(
             val joined = coupleRepository.addUser(inviterCouple.id, userId)
             inviteCodeRepository.deleteById(invite.id)
 
-            cacheManager.evictUserCoupleCache(userId, inviterId)
+//            cacheManager.evictUserCoupleCache(userId, inviterId)
             cacheManager.clearPermissionCaches()
             rateLimiter.clearVerificationFailures(userId, clientIp)
             updateProfileImageForRole(inviterId, CoupleProfileImage.LOCK)
@@ -243,7 +243,7 @@ class CoupleInviteService(
         }
         if (couple.status != CoupleStatus.CONNECTED) {
             coupleRepository.removeCoupleUser(userId)
-            cacheManager.evictUserCoupleCache(userId)
+//            cacheManager.evictUserCoupleCache(userId)
             createCoupleUseCase.createIfNone(Couple(name = Couple.DEFAULT_COUPLE_NAME), userId)
         }
     }

@@ -4,8 +4,6 @@ import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.concurrency.StructuredConcurrency
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.config.cache.CacheNames
-import kr.co.lokit.api.config.cache.CacheRegion
-import kr.co.lokit.api.config.cache.evictKey
 import kr.co.lokit.api.domain.album.application.CurrentCoupleAlbumResolver
 import kr.co.lokit.api.domain.map.application.MapPhotosCacheService
 import kr.co.lokit.api.domain.map.application.port.`in`.SearchLocationUseCase
@@ -104,10 +102,11 @@ class PhotoCommandService(
         val photo = photoRepository.findById(id)
         val effectiveAlbumId =
             if (!albumId.isPositiveId()) {
-                currentCoupleAlbumResolver.requireDefaultAlbum(
-                    userId = userId,
-                    errorField = ErrorField.UPLOADED_BY_ID,
-                ).id
+                currentCoupleAlbumResolver
+                    .requireDefaultAlbum(
+                        userId = userId,
+                        errorField = ErrorField.UPLOADED_BY_ID,
+                    ).id
             } else {
                 currentCoupleAlbumResolver.validateAlbumBelongsToCurrentCouple(
                     userId = userId,
@@ -120,7 +119,7 @@ class PhotoCommandService(
         val result = photoRepository.update(updated)
 
         publishPhotoLocationUpdatedEventIfNeeded(updated, result.coupleId)
-        result.coupleId?.let { cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, it) }
+//        result.coupleId?.let { cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, it) }
         evictMapCachesForPhotoIfNeeded(photo)
         evictMapCachesForPhotoIfNeeded(result)
         return result
@@ -179,7 +178,7 @@ class PhotoCommandService(
             return
         }
         val coupleId = photo.coupleId!!
-        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, coupleId)
+//        cacheManager.evictKey(CacheRegion.COUPLE_ALBUMS, coupleId)
         mapPhotosCacheService.evictForPhotoMutation(
             coupleId = coupleId,
             albumId = photo.albumId,
