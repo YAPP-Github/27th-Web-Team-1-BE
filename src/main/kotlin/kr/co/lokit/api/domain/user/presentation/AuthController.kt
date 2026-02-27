@@ -6,7 +6,6 @@ import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorCode
 import kr.co.lokit.api.config.web.CookieGenerator
-import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.user.application.LoginService
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
@@ -33,7 +32,6 @@ class AuthController(
     private val loginService: LoginService,
     private val authService: AuthService,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
-    private val coupleCookieStatusResolver: CoupleCookieStatusResolver,
     private val cookieGenerator: CookieGenerator,
     @Value("\${redirect.local-host}") private val localHostRedirect: String,
     @Value("\${redirect.allowed-domain}") private val allowedDomain: String,

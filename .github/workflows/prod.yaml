@@ -340,7 +340,7 @@ jobs:
                             --restart unless-stopped \
                             --network lokit-net \
                             --memory="1024m" \
-                            --memory-swap="1024m" \
+                            --memory-swap="1280m" \
                             -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=prod \
                             -e DISCORD_LIFECYCLE_ENABLED=true \
@@ -356,7 +356,6 @@ jobs:
 
                         docker rm -f caddy
                         docker compose -f compose.yaml up -d
-                        docker update --memory="192m" --memory-swap="256m" caddy || true
 
                         docker ps --filter "name=$CONTAINER_NAME" --format "{{.Status}}"
 
