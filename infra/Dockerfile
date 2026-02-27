@@ -19,7 +19,7 @@ USER spring
 EXPOSE 8080
 
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
-    -XX:MaxRAMPercentage=45 \
+    -XX:MaxRAMPercentage=55 \
     -XX:InitialRAMPercentage=20 \
     -Xss512k \
     -XX:+TieredCompilation \
