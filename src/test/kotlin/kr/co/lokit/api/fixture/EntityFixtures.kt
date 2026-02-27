@@ -147,6 +147,13 @@ fun userAuth(
     name: String = "테스트",
     role: UserRole = UserRole.USER,
 ): UsernamePasswordAuthenticationToken {
-    val userPrincipal = UserPrincipal(id = id, email = email, name = name, role = role)
+    val userPrincipal =
+        UserPrincipal(
+            id = id,
+            email = email,
+            name = name,
+            role = role,
+            profileImageUrl = "https://example.com/profile.jpg",
+        )
     return UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.authorities)
 }
