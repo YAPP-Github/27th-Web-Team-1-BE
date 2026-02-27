@@ -10,6 +10,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
@@ -48,6 +49,7 @@ class CoupleDisconnectServiceTest {
 
         verify(coupleRepository).disconnect(1L, 1L)
         verify(coupleRepository).removeCoupleUser(1L)
+        verify(coupleRepository, never()).deleteById(1L)
         verify(createCoupleUseCase).createIfNone(createCouple(name = "default"), 1L)
         verify(cache).evict(1L)
         verify(cache).evict(2L)
@@ -93,6 +95,7 @@ class CoupleDisconnectServiceTest {
         coupleDisconnectService.disconnect(2L)
 
         verify(coupleRepository).removeCoupleUser(2L)
+        verify(coupleRepository).deleteById(1L)
         verify(createCoupleUseCase).createIfNone(createCouple(name = "default"), 2L)
         verify(cache).evict(2L)
     }
