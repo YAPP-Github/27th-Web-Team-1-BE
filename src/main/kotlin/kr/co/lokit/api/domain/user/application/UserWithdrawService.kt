@@ -3,10 +3,7 @@ package kr.co.lokit.api.domain.user.application
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
-import kr.co.lokit.api.config.cache.CacheRegion
 import kr.co.lokit.api.config.cache.clearPermissionCaches
-import kr.co.lokit.api.config.cache.evictKey
-import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.RefreshTokenRepositoryPort
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
@@ -50,8 +47,8 @@ class UserWithdrawService(
         userRepository.withdraw(userId)
 
         // 4. 캐시 무효화
-        cacheManager.evictKey(CacheRegion.USER_DETAILS, user.email)
-        cacheManager.evictUserCoupleCache(userId)
+//        cacheManager.evictKey(CacheRegion.USER_DETAILS, user.email)
+//        cacheManager.evictUserCoupleCache(userId)
         cacheManager.clearPermissionCaches()
     }
 }

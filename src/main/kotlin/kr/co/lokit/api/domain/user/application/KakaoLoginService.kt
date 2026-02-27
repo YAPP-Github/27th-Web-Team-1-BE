@@ -5,8 +5,6 @@ import kr.co.lokit.api.common.constants.AccountStatus
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.errorDetailsOf
-import kr.co.lokit.api.config.cache.CacheRegion
-import kr.co.lokit.api.config.cache.evictKey
 import kr.co.lokit.api.config.security.JwtTokenProvider
 import kr.co.lokit.api.domain.couple.application.port.`in`.CreateCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
@@ -56,8 +54,8 @@ class KakaoLoginService(
             })
 
         if (loginResult.recovered) {
-            cacheManager.evictKey(CacheRegion.USER_DETAILS, loginResult.user.email)
-            cacheManager.evictKey(CacheRegion.USER_COUPLE, loginResult.user.id)
+//            cacheManager.evictKey(CacheRegion.USER_DETAILS, loginResult.user.email)
+//            cacheManager.evictKey(CacheRegion.USER_COUPLE, loginResult.user.id)
         }
 
         return LoginResult(

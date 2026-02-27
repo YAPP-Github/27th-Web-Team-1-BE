@@ -34,7 +34,7 @@ class PermissionService(
         return couple.id == coupleId
     }
 
-    @Cacheable(cacheNames = [CacheNames.ALBUM_COUPLE], key = "#albumId", sync = true)
+    //    @Cacheable(cacheNames = [CacheNames.ALBUM_COUPLE], key = "#albumId", sync = true)
     fun getAlbumCoupleId(albumId: Long): Long = getAlbumOrThrow(albumId).coupleId
 
     @Cacheable(cacheNames = [CacheNames.ALBUM], key = "#userId + ':' + #albumId", sync = true)

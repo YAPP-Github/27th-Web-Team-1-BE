@@ -1,8 +1,6 @@
 package kr.co.lokit.api.domain.user.application
 
 import kr.co.lokit.api.common.exception.entityNotFound
-import kr.co.lokit.api.config.cache.CacheRegion
-import kr.co.lokit.api.config.cache.evictKey
 import kr.co.lokit.api.domain.album.application.port.AlbumRepositoryPort
 import kr.co.lokit.api.domain.album.domain.Album
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
@@ -87,7 +85,7 @@ class MyPageService(
     ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
         val updated = userRepository.update(user.withNickname(nickname))
-        cacheManager.evictKey(CacheRegion.USER_DETAILS, updated.email)
+//        cacheManager.evictKey(CacheRegion.USER_DETAILS, updated.email)
         return updated
     }
 
@@ -98,7 +96,7 @@ class MyPageService(
     ): User {
         val user = userRepository.findById(userId) ?: throw entityNotFound<User>(userId)
         val updated = userRepository.update(user.withProfileImage(profileImageUrl))
-        cacheManager.evictKey(CacheRegion.USER_DETAILS, updated.email)
+//        cacheManager.evictKey(CacheRegion.USER_DETAILS, updated.email)
         return updated
     }
 

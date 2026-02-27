@@ -1,19 +1,19 @@
 package kr.co.lokit.api.domain.couple.application
 
+// import kr.co.lokit.api.config.cache.evictUserCoupleCache
 import kr.co.lokit.api.common.annotation.OptimisticRetry
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorField
 import kr.co.lokit.api.common.exception.entityNotFound
 import kr.co.lokit.api.common.exception.errorDetailsOf
 import kr.co.lokit.api.config.cache.clearPermissionCaches
-import kr.co.lokit.api.config.cache.evictUserCoupleCache
+import kr.co.lokit.api.domain.couple.application.mapping.toCoupledStatusReadModel
 import kr.co.lokit.api.domain.couple.application.port.CoupleRepositoryPort
 import kr.co.lokit.api.domain.couple.application.port.`in`.ReconnectCoupleUseCase
 import kr.co.lokit.api.domain.couple.domain.Couple
-import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
 import kr.co.lokit.api.domain.couple.domain.CoupleReconnectRejectReason
 import kr.co.lokit.api.domain.couple.domain.CoupleReconnectRejection
-import kr.co.lokit.api.domain.couple.application.mapping.toCoupledStatusReadModel
+import kr.co.lokit.api.domain.couple.domain.CoupleStatusReadModel
 import kr.co.lokit.api.domain.user.application.port.UserRepositoryPort
 import org.springframework.cache.CacheManager
 import org.springframework.stereotype.Service
@@ -36,7 +36,7 @@ class CoupleReconnectService(
 
         val reconnected = coupleRepository.reconnect(targetCouple.id, userId)
 
-        cacheManager.evictUserCoupleCache(userId, *reconnected.userIds.filter { it != userId }.toLongArray())
+//        cacheManager.evictUserCoupleCache(userId, *reconnected.userIds.filter { it != userId }.toLongArray())
         evictPermissionCaches()
 
         val partnerId = reconnected.partnerIdFor(userId) ?: throw BusinessException.UserNotFoundException()
@@ -48,7 +48,7 @@ class CoupleReconnectService(
 
     private fun ensureReconnectable(targetCouple: Couple) {
         when (targetCouple.reconnectRejectionReason()) {
-            CoupleReconnectRejection.NOT_DISCONNECTED ->
+            CoupleReconnectRejection.NOT_DISCONNECTED -> {
                 throw BusinessException.CoupleNotDisconnectedException(
                     errors =
                         errorDetailsOf(
@@ -56,11 +56,15 @@ class CoupleReconnectService(
                             ErrorField.STATUS to targetCouple.status.name,
                         ),
                 )
-            CoupleReconnectRejection.RECONNECT_WINDOW_EXPIRED ->
+            }
+
+            CoupleReconnectRejection.RECONNECT_WINDOW_EXPIRED -> {
                 throw BusinessException.CoupleReconnectExpiredException(
                     errors = errorDetailsOf(ErrorField.COUPLE_ID to targetCouple.id),
                 )
-            CoupleReconnectRejection.NO_REMAINING_MEMBER ->
+            }
+
+            CoupleReconnectRejection.NO_REMAINING_MEMBER -> {
                 throw BusinessException.CoupleReconnectNotAllowedException(
                     errors =
                         errorDetailsOf(
@@ -68,7 +72,11 @@ class CoupleReconnectService(
                             ErrorField.REASON to CoupleReconnectRejectReason.NO_REMAINING_MEMBER.code,
                         ),
                 )
-            null -> Unit
+            }
+
+            null -> {
+                Unit
+            }
         }
     }
 
