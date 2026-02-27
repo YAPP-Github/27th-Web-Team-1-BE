@@ -37,7 +37,7 @@ data class EmoticonSummaryResponse(
     @Schema(description = "현재 사용자가 반응했는지 여부", example = "true")
     val reacted: Boolean,
     @Schema(description = "조회자가 해당 이모티콘 반응을 제거할 수 있는지 여부", example = "true")
-    @field:JsonProperty("isEditable")
+    @get:JsonProperty("isEditable")
     val isEditable: Boolean,
 )
 
@@ -58,7 +58,7 @@ data class CommentResponse(
     @Schema(description = "이모지 목록")
     val emoticons: List<EmoticonSummaryResponse>,
     @Schema(description = "조회자가 해당 댓글을 수정/삭제할 수 있는지 여부", example = "true")
-    @field:JsonProperty("isEditable")
+    @get:JsonProperty("isEditable")
     val isEditable: Boolean,
 )
 
