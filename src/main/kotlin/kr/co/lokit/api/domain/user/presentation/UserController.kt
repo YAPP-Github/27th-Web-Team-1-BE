@@ -25,11 +25,16 @@ class UserController(
 
         val clearAccessToken = cookieGenerator.clearAccessTokenCookie(request)
         val clearRefreshToken = cookieGenerator.clearRefreshTokenCookie(request)
+        val clearCoupleStatus = cookieGenerator.clearCoupleStatusCookie(request)
 
         return ResponseEntity
             .noContent()
+            .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+            .header("Pragma", "no-cache")
+            .header("Expires", "0")
             .header(HttpHeaders.SET_COOKIE, clearAccessToken.toString())
             .header(HttpHeaders.SET_COOKIE, clearRefreshToken.toString())
+            .header(HttpHeaders.SET_COOKIE, clearCoupleStatus.toString())
             .build()
     }
 }

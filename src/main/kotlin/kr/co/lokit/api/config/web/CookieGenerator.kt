@@ -32,7 +32,8 @@ class CookieGenerator(
     fun createCoupleStatusCookie(
         request: HttpServletRequest,
         value: CoupleCookieStatus,
-    ): ResponseCookie = createCookie(request, DomainCookie.COUPLE_STATUS, value.name, 0, httpOnly = false)
+    ): ResponseCookie =
+        createCookie(request, DomainCookie.COUPLE_STATUS, value.name, refreshTokenExpiration, httpOnly = false)
 
     fun clearCoupleStatusCookie(request: HttpServletRequest): ResponseCookie =
         createCookie(request, DomainCookie.COUPLE_STATUS, "", 0, httpOnly = false)
