@@ -6,6 +6,7 @@ import kr.co.lokit.api.common.annotation.CurrentUserId
 import kr.co.lokit.api.common.exception.BusinessException
 import kr.co.lokit.api.common.exception.ErrorCode
 import kr.co.lokit.api.config.web.CookieGenerator
+import kr.co.lokit.api.domain.couple.application.CoupleCookieStatusResolver
 import kr.co.lokit.api.domain.user.application.AuthService
 import kr.co.lokit.api.domain.user.application.LoginService
 import kr.co.lokit.api.domain.user.infrastructure.oauth.KakaoOAuthProperties
@@ -31,6 +32,7 @@ import java.nio.charset.StandardCharsets
 class AuthController(
     private val loginService: LoginService,
     private val authService: AuthService,
+    private val coupleCookieStatusResolver: CoupleCookieStatusResolver,
     private val kakaoOAuthProperties: KakaoOAuthProperties,
     private val cookieGenerator: CookieGenerator,
     @Value("\${redirect.local-host}") private val localHostRedirect: String,
@@ -89,6 +91,9 @@ class AuthController(
 
             ResponseEntity
                 .status(HttpStatus.FOUND)
+                .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .location(URI.create(redirectUri))
@@ -116,6 +121,9 @@ class AuthController(
         res: HttpServletResponse,
     ) {
         authService.logout(userId)
+        res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+        res.setHeader("Pragma", "no-cache")
+        res.setDateHeader("Expires", 0)
         res.addHeader(HttpHeaders.SET_COOKIE, cookieGenerator.clearAccessTokenCookie(req).toString())
         res.addHeader(HttpHeaders.SET_COOKIE, cookieGenerator.clearRefreshTokenCookie(req).toString())
         res.addHeader(HttpHeaders.SET_COOKIE, cookieGenerator.clearCoupleStatusCookie(req).toString())
